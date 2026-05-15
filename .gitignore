@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.npm
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Java / Gradle
+backend/build/
+backend/.gradle/
+backend/bin/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db

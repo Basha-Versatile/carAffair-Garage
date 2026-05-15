@@ -1,0 +1,28 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb+srv://anudeep_db_user:gRdx5x1GXm403SJ9@ac-bwcipgb.gasaswd.mongodb.net/?retryWrites=true&w=majority}
+      database: garrage
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:car-affair-dev-secret-key-that-is-at-least-256-bits-long-for-hs256}
+    access-token-expiry: 86400000
+    refresh-token-expiry: 604800000
+  otp:
+    mock: ${OTP_MOCK:true}
+    expiry-seconds: 300
