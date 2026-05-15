@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #16a34a;
+  --color-primary-hover: #15803d;
+  --color-primary-light: #f0fdf4;
+  --color-primary-muted: #86efac;
+  --color-surface: #ffffff;
+  --color-surface-dim: #f8fafc;
+  --color-surface-hover: #f1f5f9;
+  --color-edge: #e2e8f0;
+  --color-edge-light: #f1f5f9;
+  --color-ink: #0f172a;
+  --color-ink-secondary: #475569;
+  --color-ink-muted: #94a3b8;
+  --color-ok: #16a34a;
+  --color-ok-light: #f0fdf4;
+  --color-warn: #d97706;
+  --color-warn-light: #fffbeb;
+  --color-bad: #dc2626;
+  --color-bad-light: #fef2f2;
+  --color-accent: #2563eb;
+  --color-accent-light: #eff6ff;
+}
+
+@theme inline {
+  --color-background: var(--color-surface);
+  --color-foreground: var(--color-ink);
+  --color-primary: #16a34a;
+  --color-primary-hover: #15803d;
+  --color-primary-light: #f0fdf4;
+  --color-primary-muted: #86efac;
+  --color-muted: #94a3b8;
+  --color-secondary: #475569;
+  --color-dim: #f8fafc;
+  --color-hover: #f1f5f9;
+  --color-edge: #e2e8f0;
+  --color-edge-light: #f1f5f9;
+  --color-ok: #16a34a;
+  --color-ok-light: #f0fdf4;
+  --color-warn: #d97706;
+  --color-warn-light: #fffbeb;
+  --color-bad: #dc2626;
+  --color-bad-light: #fef2f2;
+  --color-accent: #2563eb;
+  --color-accent-light: #eff6ff;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* { border-color: var(--color-edge); }
+
+body {
+  background: var(--color-surface-dim);
+  color: var(--color-ink);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+input[type="text"], input[type="tel"], input[type="email"], input[type="date"], input[type="number"] {
+  font-size: 0.875rem; line-height: 1.25rem;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-edge); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-ink-muted); }
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scale-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+@keyframes slide-up {
+  from { transform: translateY(10px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.animate-slide-in { animation: slide-in-right 0.2s ease-out; }
+.animate-fade-in  { animation: fade-in 0.15s ease-out; }
+.animate-scale-in { animation: scale-in 0.15s ease-out; }
+.animate-slide-up { animation: slide-up 0.25s ease-out; }
