@@ -96,7 +96,7 @@ export default function CreateGaragePage() {
 
       {/* Form */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <form onSubmit={handleSubmit}>
             <div className="bg-background rounded-lg border border-edge overflow-hidden">
               <div className="flex items-center gap-2 px-5 py-3 bg-dim border-b border-edge">

@@ -11,7 +11,11 @@ import {
   IndianRupee,
   Filter,
   X,
+  LayoutGrid,
+  List,
 } from "lucide-react";
+
+type ViewMode = "cards" | "table";
 
 const statusConfig: Record<
   Order["status"],
@@ -34,6 +38,7 @@ export default function OrderSearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   const runSearch = useCallback(async (jcQ: string, vQ: string, from: string, to: string) => {
     setSearching(true);
@@ -93,13 +98,27 @@ export default function OrderSearchPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground mb-1">
-          Order Search
-        </h1>
-        <p className="text-sm text-muted">
-          Search by Job Card, Invoice, Vehicle, or Customer
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground mb-1">
+            Order Search
+          </h1>
+          <p className="text-sm text-muted">
+            Search by Job Card, Invoice, Vehicle, or Customer
+          </p>
+        </div>
+        <div className="flex items-center border border-edge rounded-lg overflow-hidden">
+          <button onClick={() => setViewMode("cards")}
+            className={`p-2 transition-colors ${viewMode === "cards" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+            title="Card view">
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+          <button onClick={() => setViewMode("table")}
+            className={`p-2 transition-colors ${viewMode === "table" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+            title="Table view">
+            <List className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Search Fields */}
@@ -230,7 +249,7 @@ export default function OrderSearchPage() {
                 No orders match your search criteria. Try adjusting the filters.
               </p>
             </div>
-          ) : (
+          ) : viewMode === "cards" ? (
             /* Results Grid */
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {(results || []).map((order) => {
@@ -303,6 +322,53 @@ export default function OrderSearchPage() {
                   </div>
                 );
               })}
+            </div>
+          ) : (
+            /* Results Table */
+            <div className="bg-background rounded-lg border border-edge overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-dim border-b border-edge">
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Job Card</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Customer</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Vehicle</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Date</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Services</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
+                    <th className="text-right px-4 py-3 font-medium text-secondary">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-edge-light">
+                  {(results || []).map((order) => {
+                    const status = statusConfig[order.status] ?? { label: order.status ?? "-", text: "text-muted", bg: "bg-dim" };
+                    return (
+                      <tr key={order.id} className="hover:bg-hover transition-colors cursor-pointer">
+                        <td className="px-4 py-3 font-medium text-foreground">{order.jobCard || "-"}</td>
+                        <td className="px-4 py-3 text-secondary">{order.customerName || "-"}</td>
+                        <td className="px-4 py-3 text-muted">{order.phone || "-"}</td>
+                        <td className="px-4 py-3 text-secondary">
+                          {order.vehicle || "-"} <span className="text-muted">({order.vehicleNumber || "-"})</span>
+                        </td>
+                        <td className="px-4 py-3 text-muted">{order.date || "-"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {(order.services || []).map((s) => (
+                              <span key={s} className="text-[11px] bg-accent-light text-accent px-2 py-0.5 rounded">{s}</span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${status.text} ${status.bg}`}>{status.label}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold text-foreground">
+                          {(order.amount ?? 0).toLocaleString("en-IN")}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

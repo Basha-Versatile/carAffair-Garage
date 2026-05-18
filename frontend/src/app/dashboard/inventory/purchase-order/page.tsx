@@ -218,7 +218,7 @@ export default function PurchaseOrderPage() {
 
       {/* ── Scrollable content ── */}
       <div className="flex-1 overflow-y-auto animate-fade-in">
-        <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6 animate-slide-up">
+        <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 animate-slide-up">
           {/* ── Vendor ── */}
           <div>
             <label className={labelCls}>Vendor</label>

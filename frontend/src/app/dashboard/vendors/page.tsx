@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getVendors, addVendor, Vendor } from "@/lib/api-vehicles";
-import { Search, Plus, Phone, Mail, MoreVertical, Truck, X, Eye, Loader2 } from "lucide-react";
+import { Search, Plus, Phone, Mail, MoreVertical, Truck, X, Eye, Loader2, LayoutGrid, List } from "lucide-react";
 
 interface VendorForm {
   name: string; phone: string; email: string; address: string;
@@ -13,6 +13,8 @@ const emptyVendorForm: VendorForm = {
   name: "", phone: "", email: "", address: "", gstin: "", pan: "", referenceId: "",
 };
 
+type ViewMode = "list" | "table";
+
 export default function VendorsPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +24,7 @@ export default function VendorsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<VendorForm>(emptyVendorForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   useEffect(() => {
     setLoading(true);
@@ -77,6 +80,18 @@ export default function VendorsPage() {
           <span className="bg-hover text-muted text-xs font-medium px-2 py-0.5 rounded-full">{vendors.length}</span>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex items-center border border-edge rounded-lg overflow-hidden">
+            <button onClick={() => setViewMode("list")}
+              className={`p-2 transition-colors ${viewMode === "list" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+              title="List view">
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button onClick={() => setViewMode("table")}
+              className={`p-2 transition-colors ${viewMode === "table" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+              title="Table view">
+              <List className="w-4 h-4" />
+            </button>
+          </div>
           <button className="text-sm text-primary font-medium hover:underline">VIEW ALL DUE</button>
           <button onClick={() => { setShowForm(true); setForm(emptyVendorForm); setErrors({}); }}
             className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
@@ -119,10 +134,63 @@ export default function VendorsPage() {
               <Plus className="w-4 h-4" />Add Vendor
             </button>
           </div>
-        ) : (
+        ) : viewMode === "list" ? (
           <div className="px-6 py-3">
             <div className="bg-background rounded-xl border border-edge divide-y divide-edge-light">
               {filtered.map((vendor) => <VendorRow key={vendor.id} vendor={vendor} />)}
+            </div>
+          </div>
+        ) : (
+          <div className="px-6 py-3">
+            <div className="bg-background rounded-lg border border-edge overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-dim border-b border-edge">
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Name</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Email</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">GSTIN</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Brands</th>
+                    <th className="text-right px-4 py-3 font-medium text-secondary">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-edge-light">
+                  {filtered.map((vendor) => (
+                    <tr key={vendor.id} className="hover:bg-hover transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-warn-light flex items-center justify-center shrink-0">
+                            <span className="text-xs font-semibold text-warn">{(vendor.name ?? "?").charAt(0).toUpperCase()}</span>
+                          </div>
+                          <span className="font-medium text-foreground">{vendor.name || "-"}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-secondary">{vendor.phone || "-"}</td>
+                      <td className="px-4 py-3 text-muted">{vendor.email || "-"}</td>
+                      <td className="px-4 py-3 text-muted">{vendor.gstin || "-"}</td>
+                      <td className="px-4 py-3">
+                        {(vendor.brands || []).length > 0 ? (
+                          <div className="flex gap-1 flex-wrap">
+                            {(vendor.brands || []).map((b) => (
+                              <span key={b} className="text-xs bg-primary-light text-primary px-1.5 py-0.5 rounded">{b}</span>
+                            ))}
+                          </div>
+                        ) : <span className="text-muted">-</span>}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
+                            <Eye className="w-3.5 h-3.5" />View
+                          </button>
+                          <button className="p-1.5 text-muted hover:bg-hover rounded-md transition-colors">
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

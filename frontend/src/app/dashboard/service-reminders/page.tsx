@@ -13,7 +13,11 @@ import {
   Search,
   ChevronRight,
   Gauge,
+  LayoutGrid,
+  List,
 } from "lucide-react";
+
+type ViewMode = "cards" | "table";
 
 type TabKey = "due" | "overdue" | "done";
 
@@ -37,6 +41,7 @@ export default function ServiceRemindersPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   useEffect(() => {
     setLoading(true);
@@ -70,16 +75,30 @@ export default function ServiceRemindersPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="bg-background border-b border-edge px-6 py-3.5">
-        <div className="flex items-center gap-3">
-          <h1 className="text-base font-semibold text-foreground">Service Reminders</h1>
-          <span className="bg-hover text-muted text-xs font-medium px-2 py-0.5 rounded-full">
-            {safeReminders.length}
-          </span>
+      <div className="bg-background border-b border-edge px-6 py-3.5 flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-base font-semibold text-foreground">Service Reminders</h1>
+            <span className="bg-hover text-muted text-xs font-medium px-2 py-0.5 rounded-full">
+              {safeReminders.length}
+            </span>
+          </div>
+          <p className="text-xs text-muted mt-0.5">
+            Track upcoming, overdue, and completed service reminders for your customers.
+          </p>
         </div>
-        <p className="text-xs text-muted mt-0.5">
-          Track upcoming, overdue, and completed service reminders for your customers.
-        </p>
+        <div className="flex items-center border border-edge rounded-lg overflow-hidden">
+          <button onClick={() => setViewMode("cards")}
+            className={`p-2 transition-colors ${viewMode === "cards" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+            title="Card view">
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+          <button onClick={() => setViewMode("table")}
+            className={`p-2 transition-colors ${viewMode === "table" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+            title="Table view">
+            <List className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -145,12 +164,54 @@ export default function ServiceRemindersPage() {
                     : `No ${STATUS_CONFIG[activeTab].label.toLowerCase()} reminders.`}
                 </p>
               </div>
-            ) : (
+            ) : viewMode === "cards" ? (
               <div className="px-6 pb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {filtered.map((reminder, idx) => (
                     <ReminderCard key={reminder.id} reminder={reminder} index={idx} />
                   ))}
+                </div>
+              </div>
+            ) : (
+              <div className="px-6 pb-6">
+                <div className="bg-background rounded-lg border border-edge overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-dim border-b border-edge">
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Customer</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Vehicle</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Service Type</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Due Date</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Last Service</th>
+                        <th className="text-right px-4 py-3 font-medium text-secondary">KMs Due</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-edge-light">
+                      {filtered.map((r) => {
+                        const config = STATUS_CONFIG[r.status];
+                        return (
+                          <tr key={r.id} className="hover:bg-hover transition-colors cursor-pointer">
+                            <td className="px-4 py-3 font-medium text-foreground">{r.customerName || "Unknown"}</td>
+                            <td className="px-4 py-3 text-muted">{r.customerPhone || "-"}</td>
+                            <td className="px-4 py-3 text-secondary">
+                              {r.vehicleNumber || "-"} <span className="text-muted">{r.vehicleName || ""}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-xs font-medium text-primary bg-primary-light px-2 py-0.5 rounded-full">{r.serviceType}</span>
+                            </td>
+                            <td className="px-4 py-3 text-muted">{r.dueDate || "-"}</td>
+                            <td className="px-4 py-3 text-muted">{r.lastServiceDate || "-"}</td>
+                            <td className="px-4 py-3 text-right text-muted">{r.kmsDue ? r.kmsDue.toLocaleString() : "-"}</td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${config.badgeBg} ${config.badgeText}`}>{config.label}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}

@@ -6,7 +6,7 @@ import {
   getModelsByBrand, getModelById, addModel, Customer, VehicleBrand,
   VehicleModel, FuelType, VehicleCategory,
 } from "@/lib/api-vehicles";
-import { Search, Plus, Phone, MessageCircle, MoreVertical, X, User, Car, ChevronDown, MapPin, Loader2 } from "lucide-react";
+import { Search, Plus, Phone, MessageCircle, MoreVertical, X, User, Car, ChevronDown, MapPin, Loader2, LayoutGrid, List, Mail } from "lucide-react";
 import SelectModal from "@/components/modals/SelectModal";
 import AddModelModal from "@/components/modals/AddModelModal";
 
@@ -24,6 +24,8 @@ const emptyForm: CustomerForm = {
   insurerGstin: "", insurerAddress: "", policyNumber: "", insuranceExpiry: "",
 };
 
+type ViewMode = "list" | "table";
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,7 @@ export default function CustomersPage() {
   const [brandModalOpen, setBrandModalOpen] = useState(false);
   const [modelModalOpen, setModelModalOpen] = useState(false);
   const [addModelModalOpen, setAddModelModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   const [brands, setBrands] = useState<VehicleBrand[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<VehicleBrand | null>(null);
@@ -124,7 +127,6 @@ export default function CustomersPage() {
     try {
       const m = await addModel({ brandId: form.brandId, name: data.name, fuelType: data.fuelType, category: data.category });
       updateForm("modelId", m.id); setAddModelModalOpen(false); setModelModalOpen(false);
-      // refresh models for brand
       getModelsByBrand(form.brandId).then(setModelsForBrand).catch(() => {});
     } catch {
       // handle silently
@@ -143,10 +145,24 @@ export default function CustomersPage() {
           <h1 className="text-base font-semibold text-foreground">My Customers</h1>
           <span className="bg-hover text-muted text-xs font-medium px-2 py-0.5 rounded-full">{customers.length}</span>
         </div>
-        <button onClick={() => { setShowForm(true); setForm(emptyForm); setErrors({}); }}
-          className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
-          <Plus className="w-4 h-4" />Customer
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center border border-edge rounded-lg overflow-hidden">
+            <button onClick={() => setViewMode("list")}
+              className={`p-2 transition-colors ${viewMode === "list" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+              title="List view">
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button onClick={() => setViewMode("table")}
+              className={`p-2 transition-colors ${viewMode === "table" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+              title="Table view">
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+          <button onClick={() => { setShowForm(true); setForm(emptyForm); setErrors({}); }}
+            className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
+            <Plus className="w-4 h-4" />Customer
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -178,10 +194,55 @@ export default function CustomersPage() {
               {customers.length === 0 ? "No customers yet. Add your first customer." : "No customers match your search."}
             </p>
           </div>
-        ) : (
+        ) : viewMode === "list" ? (
           <div className="px-6 py-3">
             <div className="bg-background rounded-xl border border-edge divide-y divide-edge-light">
               {filtered.map((customer) => <CustomerRow key={customer.id} customer={customer} />)}
+            </div>
+          </div>
+        ) : (
+          <div className="px-6 py-3">
+            <div className="bg-background rounded-lg border border-edge overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-dim border-b border-edge">
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Name</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Email</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Address</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">GSTIN</th>
+                    <th className="text-right px-4 py-3 font-medium text-secondary">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-edge-light">
+                  {filtered.map((customer) => (
+                    <tr key={customer.id} className="hover:bg-hover transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-primary-light flex items-center justify-center shrink-0">
+                            <span className="text-xs font-semibold text-primary">{(customer.name ?? "?").charAt(0).toUpperCase()}</span>
+                          </div>
+                          <span className="font-medium text-foreground">{customer.name || "-"}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-secondary">{customer.phone || "-"}</td>
+                      <td className="px-4 py-3 text-muted">{customer.email || "-"}</td>
+                      <td className="px-4 py-3 text-muted max-w-[200px] truncate">{customer.address || "-"}</td>
+                      <td className="px-4 py-3 text-muted">{customer.gstin || "-"}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button className="p-1.5 text-ok hover:bg-ok-light rounded-md transition-colors" title="WhatsApp">
+                            <MessageCircle className="w-3.5 h-3.5" />
+                          </button>
+                          <button className="p-1.5 text-muted hover:bg-hover rounded-md transition-colors">
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

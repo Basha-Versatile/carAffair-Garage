@@ -2,21 +2,53 @@ import { api } from "@/lib/api";
 
 // ── Types ──
 
+export interface PartApplicableBrand {
+  brandId: string;
+  brandName: string;
+  modelIds: string[];
+  modelNames: string[];
+}
+
 export interface Part {
   id: string;
   name: string;
   partNumber: string;
   brand: string;
-  category: PartCategory;
+  category: PartCategory | string;
+  categoryId?: string;
+  manufacturerId?: string;
+  manufacturerName?: string;
+  taxProfileId?: string;
   mrp: number;
   sellingPrice: number;
   purchasePrice: number;
   stockQty: number;
   minStockQty: number;
+  maxStockQty?: number;
+  preferredVendorId?: string;
+  preferredVendorName?: string;
   rackNumber: string;
   hsnCode: string;
   gstRate: number;
   unit: string;
+  comment?: string;
+  isGeneric?: boolean;
+  applicableBrands?: PartApplicableBrand[];
+}
+
+export interface StockHistory {
+  id: string;
+  partId: string;
+  partName: string;
+  partNumber: string;
+  date: string;
+  type: "stockin" | "stockout";
+  qty: number;
+  refNumber?: string;
+  changedBy?: string;
+  mode: string;
+  comment?: string;
+  createdAt?: string;
 }
 
 export type PartCategory =
@@ -166,10 +198,9 @@ export async function getParts(): Promise<Part[]> {
   return api.get<Part[]>("/api/parts");
 }
 
-/** Fetch a single part by id (fetches all, then filters locally). */
-export async function getPartById(id: string): Promise<Part | undefined> {
-  const parts = await getParts();
-  return parts.find((p) => p.id === id);
+/** Fetch a single part by id. */
+export async function getPartById(id: string): Promise<Part> {
+  return api.get<Part>(`/api/parts/${id}`);
 }
 
 /** Create a new part. */
@@ -183,6 +214,18 @@ export async function updatePart(
   updates: Partial<Part>
 ): Promise<void> {
   await api.put<Part>(`/api/parts/${id}`, updates);
+}
+
+// ── Stock History ──
+
+/** Fetch stock history for a specific part. */
+export async function getStockHistory(partId: string): Promise<StockHistory[]> {
+  return api.get<StockHistory[]>(`/api/stock-history/part/${partId}`);
+}
+
+/** Fetch all stock history. */
+export async function getAllStockHistory(): Promise<StockHistory[]> {
+  return api.get<StockHistory[]>("/api/stock-history");
 }
 
 // ── Purchase Orders ──

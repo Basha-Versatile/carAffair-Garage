@@ -242,7 +242,7 @@ export default function CounterSalePage() {
 
       {/* ── Scrollable Content ── */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-6 py-6 space-y-6 animate-slide-up">
+        <div className="max-w-5xl mx-auto px-6 py-6 space-y-6 animate-slide-up">
           {/* ── Customer Details ── */}
           <div className="bg-background rounded-lg border border-edge overflow-hidden">
             <div className="px-5 py-3 bg-dim border-b border-edge">

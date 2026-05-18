@@ -31,6 +31,12 @@ public class CustomerController {
         return ResponseEntity.ok(ApiResponse.ok(customer));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<Customer>>> searchCustomers(@RequestParam("q") String query) {
+        List<Customer> customers = customerService.searchCustomers(query, TenantContext.getGarageId());
+        return ResponseEntity.ok(ApiResponse.ok(customers));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Customer>> getCustomerById(@PathVariable String id) {
         Customer customer = customerService.getCustomerById(id, TenantContext.getGarageId());

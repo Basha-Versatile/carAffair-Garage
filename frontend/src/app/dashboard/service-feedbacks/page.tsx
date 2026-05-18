@@ -4,8 +4,10 @@ import { useState, useEffect, useMemo } from "react";
 import { getServiceFeedbacks, ServiceFeedback } from "@/lib/api-inventory";
 import {
   Star, Phone, Car, Calendar, FileText, Search,
-  MessageSquare, ThumbsUp, ThumbsDown, User,
+  MessageSquare, ThumbsUp, ThumbsDown, User, LayoutGrid, List,
 } from "lucide-react";
+
+type ViewMode = "cards" | "table";
 
 type Tab = "all" | "scheduled" | "pending";
 
@@ -34,6 +36,7 @@ export default function ServiceFeedbacksPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   useEffect(() => {
     setLoading(true);
@@ -99,7 +102,21 @@ export default function ServiceFeedbacksPage() {
             {safeFeedbacks.length}
           </span>
         </div>
-        <p className="text-sm text-muted hidden sm:block">Customer reviews &amp; feedback for completed services</p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted hidden sm:block">Customer reviews &amp; feedback for completed services</p>
+          <div className="flex items-center border border-edge rounded-lg overflow-hidden">
+            <button onClick={() => setViewMode("cards")}
+              className={`p-2 transition-colors ${viewMode === "cards" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+              title="Card view">
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button onClick={() => setViewMode("table")}
+              className={`p-2 transition-colors ${viewMode === "table" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+              title="Table view">
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -210,11 +227,51 @@ export default function ServiceFeedbacksPage() {
                     : `No ${activeTab === "all" ? "reviewed" : activeTab} feedbacks yet.`}
                 </p>
               </div>
-            ) : (
+            ) : viewMode === "cards" ? (
               <div className="px-6 py-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {filtered.map((fb, idx) => (
                   <FeedbackCard key={fb.id} feedback={fb} index={idx} />
                 ))}
+              </div>
+            ) : (
+              <div className="px-6 py-3">
+                <div className="bg-background rounded-lg border border-edge overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-dim border-b border-edge">
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Customer</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Vehicle</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Job Card</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Date</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Rating</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Comment</th>
+                        <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-edge-light">
+                      {filtered.map((fb) => {
+                        const status = STATUS_MAP[fb.status];
+                        return (
+                          <tr key={fb.id} className="hover:bg-hover transition-colors cursor-pointer">
+                            <td className="px-4 py-3 font-medium text-foreground">{fb.customerName || "Unknown"}</td>
+                            <td className="px-4 py-3 text-muted">{fb.customerPhone || "-"}</td>
+                            <td className="px-4 py-3 text-secondary">
+                              {fb.vehicleName || "-"} <span className="text-muted font-mono text-xs">{fb.vehicleNumber || ""}</span>
+                            </td>
+                            <td className="px-4 py-3 text-secondary">{fb.jobCard || "-"}</td>
+                            <td className="px-4 py-3 text-muted">{fb.date || "-"}</td>
+                            <td className="px-4 py-3"><StarRating rating={fb.rating} /></td>
+                            <td className="px-4 py-3 text-muted max-w-[200px] truncate">{fb.comment || "-"}</td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.cls}`}>{status.label}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </>

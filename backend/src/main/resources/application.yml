@@ -7,10 +7,10 @@ spring:
       uri: ${MONGODB_URI:mongodb+srv://anudeep_db_user:gRdx5x1GXm403SJ9@ac-bwcipgb.gasaswd.mongodb.net/?retryWrites=true&w=majority}
       database: garrage
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
+    host: ${MAIL_HOST:smtp.ionos.co.uk}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    username: ${MAIL_USERNAME:help@vercommerce.co.uk}
+    password: ${MAIL_PASSWORD:BlueSocks143&}
     properties:
       mail:
         smtp:

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { clearUser, getUser } from "@/lib/auth";
+import { useSidebar } from "@/context/SidebarContext";
 import {
   LayoutDashboard, ClipboardList, BookOpen, Users, Truck, Search, Car,
   Settings, Clock, Star, Bell, BarChart3, FileSpreadsheet, CalendarX,
@@ -23,6 +24,7 @@ const baseSections: Section[] = [
   {
     title: "Operations",
     items: [
+      { label: "Invoices", icon: FileSpreadsheet, href: "/dashboard/invoices" },
       { label: "Inventory", icon: ClipboardList, href: "/dashboard/inventory" },
       { label: "Accounts", icon: BookOpen, href: "/dashboard/accounts" },
       { label: "Order Search", icon: Search, href: "/dashboard/order-search" },
@@ -72,10 +74,12 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const user = getUser();
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
 
-  const sections: Section[] = user?.role === "super_admin"
-    ? [baseSections[0], superAdminSection]
-    : baseSections;
+  const sections: Section[] =
+    user?.role === "super_admin" ? [baseSections[0], superAdminSection] : baseSections;
+
+  const showFull = isExpanded || isHovered || isMobileOpen;
 
   function handleLogout() {
     clearUser();
@@ -83,28 +87,53 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-[240px] bg-background border-r border-edge flex flex-col h-full shrink-0">
+    <aside
+      className={`fixed top-0 left-0 flex flex-col h-full z-50 border-r
+        bg-white dark:bg-gray-900 dark:border-gray-800 border-gray-200
+        transition-all duration-300 ease-in-out
+        ${showFull ? "w-[240px]" : "w-[72px]"}
+        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+        xl:translate-x-0`}
+      onMouseEnter={() => !isExpanded && setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* Brand */}
-      <div className="h-14 flex items-center gap-2.5 px-5 border-b border-edge">
-        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+      <div
+        className={`h-14 flex items-center gap-2.5 px-4 border-b border-gray-200 dark:border-gray-800 shrink-0 ${
+          !showFull ? "justify-center" : ""
+        }`}
+      >
+        <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center shrink-0">
           <Wrench className="w-4 h-4 text-white" />
         </div>
-        <span className="text-[15px] font-semibold text-foreground tracking-tight">
-          Car Affair
-        </span>
+        {showFull && (
+          <span className="text-[15px] font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">
+            Car Affair
+          </span>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2.5">
+      <nav className="flex-1 overflow-y-auto py-2 px-2 no-scrollbar">
         {sections.map((section, si) => (
           <div key={si}>
             {/* Section header */}
             {section.title && (
-              <div className="mt-4 mb-1.5 px-3 flex items-center gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-                  {section.title}
-                </span>
-                <div className="flex-1 h-px bg-edge-light" />
+              <div
+                className={`mt-4 mb-1.5 flex items-center gap-2 ${
+                  showFull ? "px-3" : "justify-center"
+                }`}
+              >
+                {showFull ? (
+                  <>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                      {section.title}
+                    </span>
+                    <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+                  </>
+                ) : (
+                  <div className="w-5 h-px bg-gray-200 dark:bg-gray-700" />
+                )}
               </div>
             )}
 
@@ -118,14 +147,19 @@ export default function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-1.75 rounded-md text-[13px] mb-0.5 transition-all duration-150 ${
-                    isActive
-                      ? "bg-primary-light text-primary font-medium"
-                      : "text-secondary hover:bg-hover hover:text-foreground"
-                  }`}
+                  title={!showFull ? item.label : undefined}
+                  className={`menu-item group mb-0.5 ${
+                    isActive ? "menu-item-active" : "menu-item-inactive"
+                  } ${!showFull ? "justify-center px-0" : ""}`}
                 >
-                  <item.icon className={`w-4 h-4 shrink-0 ${isActive ? "text-primary" : "text-muted"}`} />
-                  {item.label}
+                  <item.icon
+                    className={`w-[18px] h-[18px] shrink-0 ${
+                      isActive ? "menu-item-icon-active" : "menu-item-icon-inactive"
+                    }`}
+                  />
+                  {showFull && (
+                    <span className="text-[13px] whitespace-nowrap">{item.label}</span>
+                  )}
                 </Link>
               );
             })}
@@ -134,13 +168,16 @@ export default function Sidebar() {
       </nav>
 
       {/* Logout */}
-      <div className="border-t border-edge p-2.5">
+      <div className="border-t border-gray-200 dark:border-gray-800 p-2 shrink-0">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2.5 px-3 py-1.75 rounded-md text-[13px] text-bad hover:bg-bad-light w-full transition-colors"
+          title={!showFull ? "Logout" : undefined}
+          className={`menu-item text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 w-full ${
+            !showFull ? "justify-center px-0" : ""
+          }`}
         >
-          <LogOut className="w-4 h-4" />
-          Logout
+          <LogOut className="w-[18px] h-[18px] shrink-0" />
+          {showFull && <span className="text-[13px]">Logout</span>}
         </button>
       </div>
     </aside>

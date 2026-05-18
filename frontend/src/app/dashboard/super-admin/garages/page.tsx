@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import {
-  Building2, Plus, Search, Phone, Mail, MapPin, CheckCircle, XCircle,
+  Building2, Plus, Search, Phone, Mail, MapPin, CheckCircle, XCircle, LayoutGrid, List,
 } from "lucide-react";
+
+type ViewMode = "cards" | "table";
 
 interface Garage {
   id: string;
@@ -28,6 +30,7 @@ export default function GaragesPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   useEffect(() => {
     async function fetchGarages() {
@@ -62,13 +65,27 @@ export default function GaragesPage() {
             {garages.length}
           </span>
         </div>
-        <Link
-          href="/dashboard/super-admin/garages/create"
-          className="flex items-center gap-1.5 bg-primary text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Garage
-        </Link>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center border border-edge rounded-lg overflow-hidden">
+            <button onClick={() => setViewMode("cards")}
+              className={`p-2 transition-colors ${viewMode === "cards" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+              title="Card view">
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button onClick={() => setViewMode("table")}
+              className={`p-2 transition-colors ${viewMode === "table" ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+              title="Table view">
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+          <Link
+            href="/dashboard/super-admin/garages/create"
+            className="flex items-center gap-1.5 bg-primary text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Garage
+          </Link>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -106,7 +123,7 @@ export default function GaragesPage() {
                 : "No garages match your search."}
             </p>
           </div>
-        ) : (
+        ) : viewMode === "cards" ? (
           <div className="px-6 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {filtered.map((garage) => (
@@ -164,6 +181,48 @@ export default function GaragesPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        ) : (
+          <div className="px-6 py-4">
+            <div className="bg-background rounded-lg border border-edge overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-dim border-b border-edge">
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Name</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Owner</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Email</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Address</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-edge-light">
+                  {filtered.map((garage) => (
+                    <tr key={garage.id} className="hover:bg-hover transition-colors">
+                      <td className="px-4 py-3 font-medium text-foreground">{garage.name}</td>
+                      <td className="px-4 py-3 text-secondary">{garage.ownerName || "-"}</td>
+                      <td className="px-4 py-3 text-muted">{garage.phone || "-"}</td>
+                      <td className="px-4 py-3 text-muted truncate max-w-[180px]">{garage.email || "-"}</td>
+                      <td className="px-4 py-3 text-muted truncate max-w-[200px]">{garage.address || "-"}</td>
+                      <td className="px-4 py-3">
+                        {garage.isActive ? (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-ok-light text-ok">Active</span>
+                        ) : (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-bad-light text-bad">Inactive</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link href={`/dashboard/super-admin/garages/${garage.id}`}
+                          className="text-sm font-medium text-primary hover:underline">
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

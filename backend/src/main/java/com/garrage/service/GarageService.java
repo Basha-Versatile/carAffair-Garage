@@ -32,6 +32,7 @@ public class GarageService {
     private final CustomerRepository customerRepository;
     private final VehicleRepository vehicleRepository;
     private final OrderRepository orderRepository;
+    private final EmailService emailService;
 
     /**
      * Creates a new garage and its admin user.
@@ -40,6 +41,18 @@ public class GarageService {
      * 3. Update user's garageId and garageName
      */
     public GarageResponse createGarage(CreateGarageRequest request) {
+        // Duplicate checks
+        if (request.getPhone() != null && !request.getPhone().isBlank()) {
+            garageRepository.findByPhone(request.getPhone()).ifPresent(g -> {
+                throw new IllegalArgumentException("A garage with phone " + request.getPhone() + " already exists");
+            });
+        }
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            garageRepository.findByEmail(request.getEmail()).ifPresent(g -> {
+                throw new IllegalArgumentException("A garage with email " + request.getEmail() + " already exists");
+            });
+        }
+
         // 1. Create the admin user for this garage
         User adminUser = User.builder()
                 .phone(request.getPhone())
@@ -70,7 +83,12 @@ public class GarageService {
         adminUser.setGarageName(garage.getName());
         userRepository.save(adminUser);
 
-        // TODO: Send onboarding email
+        // Send welcome email to the garage admin (async - won't block)
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            emailService.sendGarageWelcomeEmail(
+                    request.getEmail(), garage.getName(), request.getOwnerName(), request.getPhone());
+        }
+
         log.info("Garage created: {} (id: {}), admin user: {}", garage.getName(), garage.getId(), adminUser.getId());
 
         return toGarageResponse(garage);

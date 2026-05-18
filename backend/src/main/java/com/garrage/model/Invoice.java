@@ -39,6 +39,10 @@ public class Invoice {
 
     private List<InvoiceItem> items;
 
+    private List<String> tags;
+
+    private double discount;
+
     private double totalAmount;
 
     private double gstAmount;
@@ -47,6 +51,10 @@ public class Invoice {
 
     /** "draft", "sent", "paid" */
     private String status;
+
+    private String date;
+
+    private String placeOfSupply;
 
     @CreatedDate
     private LocalDateTime createdAt;
@@ -59,11 +67,18 @@ public class Invoice {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class InvoiceItem {
+        /** "service" or "part" */
+        private String itemType;
+        private String serviceId;
+        private String partId;
         private String description;
+        private String hsnSac;
         private int qty;
         private double rate;
+        private double discount;
         private double amount;
         private double gstRate;
         private double gstAmount;
+        private boolean gstInclusive;
     }
 }

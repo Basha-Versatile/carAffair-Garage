@@ -17,6 +17,13 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
 
     public Customer createCustomer(CreateCustomerRequest request, String garageId) {
+        // Duplicate check: same phone in same garage
+        if (request.getPhone() != null && !request.getPhone().isBlank()) {
+            customerRepository.findByPhoneAndGarageId(request.getPhone(), garageId).ifPresent(c -> {
+                throw new IllegalArgumentException("A customer with phone " + request.getPhone() + " already exists");
+            });
+        }
+
         Customer customer = Customer.builder()
                 .garageId(garageId)
                 .name(request.getName())
@@ -49,5 +56,19 @@ public class CustomerService {
 
     public Optional<Customer> findByPhone(String phone, String garageId) {
         return customerRepository.findByPhoneAndGarageId(phone, garageId);
+    }
+
+    public List<Customer> searchCustomers(String query, String garageId) {
+        if (query == null || query.isBlank()) {
+            return customerRepository.findByGarageId(garageId);
+        }
+        // Search by name or phone
+        List<Customer> byName = customerRepository.findByGarageIdAndNameContainingIgnoreCase(garageId, query);
+        List<Customer> byPhone = customerRepository.findByGarageIdAndPhoneContaining(garageId, query);
+        // Merge, deduplicate by id
+        java.util.LinkedHashMap<String, Customer> map = new java.util.LinkedHashMap<>();
+        byName.forEach(c -> map.put(c.getId(), c));
+        byPhone.forEach(c -> map.put(c.getId(), c));
+        return new java.util.ArrayList<>(map.values());
     }
 }

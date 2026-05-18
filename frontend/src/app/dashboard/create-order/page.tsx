@@ -174,7 +174,7 @@ export default function CreateOrderPage() {
 
       <div className="flex-1 overflow-y-auto">
         {step === "search" ? (
-          <div className="max-w-lg mx-auto mt-16 px-6">
+          <div className="max-w-2xl mx-auto mt-16 px-6">
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center bg-primary-light p-4 rounded-full mb-4">
                 <Car className="w-8 h-8 text-primary" />
@@ -202,7 +202,7 @@ export default function CreateOrderPage() {
             </div>
           </div>
         ) : (
-          <div className="max-w-2xl mx-auto px-6 py-6 space-y-5">
+          <div className="max-w-5xl mx-auto px-6 py-6 space-y-5">
             {/* Reg badge */}
             <div className="inline-flex items-center gap-2 bg-primary-light text-primary px-4 py-2 rounded-lg text-sm font-medium">
               <Car className="w-4 h-4" />{form.regNumber}

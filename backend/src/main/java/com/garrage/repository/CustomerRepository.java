@@ -11,4 +11,5 @@ public interface CustomerRepository extends MongoRepository<Customer, String> {
     Optional<Customer> findByIdAndGarageId(String id, String garageId);
     Optional<Customer> findByPhoneAndGarageId(String phone, String garageId);
     List<Customer> findByGarageIdAndNameContainingIgnoreCase(String garageId, String name);
+    List<Customer> findByGarageIdAndPhoneContaining(String garageId, String phone);
 }
