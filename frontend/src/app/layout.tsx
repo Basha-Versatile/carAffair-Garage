@@ -9,7 +9,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Car Affair",
+  title: "Car Affair / Garrage",
   description: "Garage Management System",
 };
 

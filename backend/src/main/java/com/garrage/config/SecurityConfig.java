@@ -73,9 +73,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/vendors/register").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/brands").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/models").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/garage-registrations").permitAll()
 
                         // Super Admin only
                         .requestMatchers("/api/garages/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/garage-registrations/**").hasRole("SUPER_ADMIN")
 
                         // Customer endpoints
                         .requestMatchers(HttpMethod.GET, "/api/bookings").hasAnyRole("CUSTOMER", "SUPER_ADMIN")
@@ -95,6 +97,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/invoices/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/service-reminders/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/service-feedbacks/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/rc-lookup/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
 
                         .anyRequest().authenticated()
                 )

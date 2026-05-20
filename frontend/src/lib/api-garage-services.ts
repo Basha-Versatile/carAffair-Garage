@@ -31,3 +31,10 @@ export async function createGarageService(
 ): Promise<GarageService> {
   return api.post<GarageService>("/api/garage-services", service);
 }
+
+export async function updateGarageService(
+  id: string,
+  updates: Partial<GarageService>
+): Promise<GarageService> {
+  return api.put<GarageService>(`/api/garage-services/${id}`, updates);
+}

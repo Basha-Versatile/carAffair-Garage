@@ -19,9 +19,9 @@ public class CustomerService {
     public Customer createCustomer(CreateCustomerRequest request, String garageId) {
         // Duplicate check: same phone in same garage
         if (request.getPhone() != null && !request.getPhone().isBlank()) {
-            customerRepository.findByPhoneAndGarageId(request.getPhone(), garageId).ifPresent(c -> {
-                throw new IllegalArgumentException("A customer with phone " + request.getPhone() + " already exists");
-            });
+            if (customerRepository.existsByPhoneAndGarageId(request.getPhone(), garageId)) {
+                throw new IllegalArgumentException("A customer with phone number " + request.getPhone() + " already exists. Please use a different phone number.");
+            }
         }
 
         Customer customer = Customer.builder()
@@ -55,7 +55,7 @@ public class CustomerService {
     }
 
     public Optional<Customer> findByPhone(String phone, String garageId) {
-        return customerRepository.findByPhoneAndGarageId(phone, garageId);
+        return customerRepository.findFirstByPhoneAndGarageId(phone, garageId);
     }
 
     public List<Customer> searchCustomers(String query, String garageId) {

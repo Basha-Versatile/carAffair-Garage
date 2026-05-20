@@ -41,16 +41,24 @@ public class GarageService {
      * 3. Update user's garageId and garageName
      */
     public GarageResponse createGarage(CreateGarageRequest request) {
-        // Duplicate checks
+        // Validate phone
         if (request.getPhone() != null && !request.getPhone().isBlank()) {
-            garageRepository.findByPhone(request.getPhone()).ifPresent(g -> {
-                throw new IllegalArgumentException("A garage with phone " + request.getPhone() + " already exists");
-            });
+            if (garageRepository.existsByPhone(request.getPhone())) {
+                throw new IllegalArgumentException("A garage with phone number " + request.getPhone() + " already exists. Please use a different phone number.");
+            }
+            if (userRepository.existsByPhone(request.getPhone())) {
+                throw new IllegalArgumentException("Phone number " + request.getPhone() + " is already registered. Please use a different phone number.");
+            }
         }
+
+        // Validate email
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
-            garageRepository.findByEmail(request.getEmail()).ifPresent(g -> {
-                throw new IllegalArgumentException("A garage with email " + request.getEmail() + " already exists");
-            });
+            if (garageRepository.existsByEmail(request.getEmail())) {
+                throw new IllegalArgumentException("A garage with email " + request.getEmail() + " already exists. Please use a different email address.");
+            }
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new IllegalArgumentException("Email " + request.getEmail() + " is already registered. Please use a different email address.");
+            }
         }
 
         // 1. Create the admin user for this garage

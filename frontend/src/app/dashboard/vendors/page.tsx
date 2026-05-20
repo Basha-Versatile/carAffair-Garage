@@ -3,6 +3,70 @@
 import { useState, useEffect } from "react";
 import { getVendors, addVendor, Vendor } from "@/lib/api-vehicles";
 import { Search, Plus, Phone, Mail, MoreVertical, Truck, X, Eye, Loader2, LayoutGrid, List } from "lucide-react";
+import { DataTable, DataColumn } from "@/components/tables/DataTable";
+
+const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
+
+const vendorColumns: DataColumn<Vendor>[] = [
+  {
+    key: "name",
+    header: "Name",
+    render: (v) => (
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-full bg-warn-light flex items-center justify-center shrink-0">
+          <span className="text-xs font-semibold text-warn">{(v.name ?? "?").charAt(0).toUpperCase()}</span>
+        </div>
+        <span className="font-medium text-foreground">{v.name || "-"}</span>
+      </div>
+    ),
+    filterValue: (v) => v.name || "",
+    sortValue: (v) => v.name || "",
+  },
+  {
+    key: "phone",
+    header: "Phone",
+    render: (v) => <span className="text-secondary">{v.phone || "-"}</span>,
+  },
+  {
+    key: "email",
+    header: "Email",
+    render: (v) => <span className="text-muted">{v.email || "-"}</span>,
+  },
+  {
+    key: "gstin",
+    header: "GSTIN",
+    render: (v) => <span className="text-muted">{v.gstin || "-"}</span>,
+  },
+  {
+    key: "brands",
+    header: "Brands",
+    render: (v) =>
+      (v.brands || []).length > 0 ? (
+        <div className="flex gap-1 flex-wrap">
+          {(v.brands || []).map((b) => (
+            <span key={b} className="text-xs bg-primary-light text-primary px-1.5 py-0.5 rounded">{b}</span>
+          ))}
+        </div>
+      ) : (
+        <span className="text-muted">-</span>
+      ),
+  },
+  {
+    key: "actions",
+    header: "Actions",
+    align: "right",
+    render: () => (
+      <div className="flex items-center justify-end gap-1">
+        <button className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
+          <Eye className="w-3.5 h-3.5" />View
+        </button>
+        <button className="p-1.5 text-muted hover:bg-hover rounded-md transition-colors">
+          <MoreVertical className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    ),
+  },
+];
 
 interface VendorForm {
   name: string; phone: string; email: string; address: string;
@@ -24,7 +88,7 @@ export default function VendorsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<VendorForm>(emptyVendorForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   useEffect(() => {
     setLoading(true);
@@ -142,56 +206,12 @@ export default function VendorsPage() {
           </div>
         ) : (
           <div className="px-6 py-3">
-            <div className="bg-background rounded-lg border border-edge overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-dim border-b border-edge">
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Name</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Email</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">GSTIN</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Brands</th>
-                    <th className="text-right px-4 py-3 font-medium text-secondary">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-edge-light">
-                  {filtered.map((vendor) => (
-                    <tr key={vendor.id} className="hover:bg-hover transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-warn-light flex items-center justify-center shrink-0">
-                            <span className="text-xs font-semibold text-warn">{(vendor.name ?? "?").charAt(0).toUpperCase()}</span>
-                          </div>
-                          <span className="font-medium text-foreground">{vendor.name || "-"}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-secondary">{vendor.phone || "-"}</td>
-                      <td className="px-4 py-3 text-muted">{vendor.email || "-"}</td>
-                      <td className="px-4 py-3 text-muted">{vendor.gstin || "-"}</td>
-                      <td className="px-4 py-3">
-                        {(vendor.brands || []).length > 0 ? (
-                          <div className="flex gap-1 flex-wrap">
-                            {(vendor.brands || []).map((b) => (
-                              <span key={b} className="text-xs bg-primary-light text-primary px-1.5 py-0.5 rounded">{b}</span>
-                            ))}
-                          </div>
-                        ) : <span className="text-muted">-</span>}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
-                            <Eye className="w-3.5 h-3.5" />View
-                          </button>
-                          <button className="p-1.5 text-muted hover:bg-hover rounded-md transition-colors">
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={vendorColumns}
+              data={filtered}
+              keyExtractor={(v) => v.id}
+              className={TABLE_CLS}
+            />
           </div>
         )}
       </div>

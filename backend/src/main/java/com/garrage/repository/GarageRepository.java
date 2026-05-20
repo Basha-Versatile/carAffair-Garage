@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface GarageRepository extends MongoRepository<Garage, String> {
     List<Garage> findByIsActiveTrue();
     Optional<Garage> findByAdminUserId(String adminUserId);
-    Optional<Garage> findByPhone(String phone);
-    Optional<Garage> findByEmail(String email);
+    boolean existsByPhone(String phone);
+    boolean existsByEmail(String email);
+    Optional<Garage> findFirstByPhone(String phone);
+    Optional<Garage> findFirstByEmail(String email);
 }

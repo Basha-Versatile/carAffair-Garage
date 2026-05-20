@@ -175,8 +175,14 @@ export default function Home() {
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
             <Link
-              href="/partner"
+              href="/register-garage"
               className="inline-flex items-center justify-center h-14 px-8 rounded-full border-2 border-white/60 text-white font-semibold text-lg transition-all duration-200 hover:bg-white/10 hover:border-white hover:scale-105 active:scale-[0.98]"
+            >
+              Register Garage
+            </Link>
+            <Link
+              href="/partner"
+              className="inline-flex items-center justify-center h-14 px-8 rounded-full border-2 border-white/40 text-white/90 font-semibold text-lg transition-all duration-200 hover:bg-white/10 hover:border-white/70 hover:scale-105 active:scale-[0.98]"
             >
               Become a Partner
             </Link>

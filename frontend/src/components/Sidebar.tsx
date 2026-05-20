@@ -5,9 +5,24 @@ import { usePathname, useRouter } from "next/navigation";
 import { clearUser, getUser } from "@/lib/auth";
 import { useSidebar } from "@/context/SidebarContext";
 import {
-  LayoutDashboard, ClipboardList, BookOpen, Users, Truck, Search, Car,
-  Settings, Clock, Star, Bell, BarChart3, FileSpreadsheet, CalendarX,
-  Share2, LogOut, Wrench, Building2,
+  LayoutDashboard,
+  ClipboardList,
+  BookOpen,
+  Users,
+  Truck,
+  Search,
+  Car,
+  Settings,
+  Clock,
+  Star,
+  Bell,
+  BarChart3,
+  FileSpreadsheet,
+  CalendarX,
+  Share2,
+  LogOut,
+  Wrench,
+  Building2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -17,9 +32,7 @@ type Section = { title: string; items: MenuItem[] };
 const baseSections: Section[] = [
   {
     title: "",
-    items: [
-      { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-    ],
+    items: [{ label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }],
   },
   {
     title: "Operations",
@@ -28,7 +41,11 @@ const baseSections: Section[] = [
       { label: "Inventory", icon: ClipboardList, href: "/dashboard/inventory" },
       { label: "Accounts", icon: BookOpen, href: "/dashboard/accounts" },
       { label: "Order Search", icon: Search, href: "/dashboard/order-search" },
-      { label: "Cancelled Orders", icon: CalendarX, href: "/dashboard/cancelled-orders" },
+      {
+        label: "Cancelled Orders",
+        icon: CalendarX,
+        href: "/dashboard/cancelled-orders",
+      },
     ],
   },
   {
@@ -42,8 +59,16 @@ const baseSections: Section[] = [
   {
     title: "Services",
     items: [
-      { label: "Service Reminders", icon: Clock, href: "/dashboard/service-reminders" },
-      { label: "Service Feedbacks", icon: Star, href: "/dashboard/service-feedbacks" },
+      {
+        label: "Service Reminders",
+        icon: Clock,
+        href: "/dashboard/service-reminders",
+      },
+      {
+        label: "Service Feedbacks",
+        icon: Star,
+        href: "/dashboard/service-feedbacks",
+      },
       { label: "Insurance Due", icon: Bell, href: "/dashboard/insurance-due" },
     ],
   },
@@ -51,7 +76,11 @@ const baseSections: Section[] = [
     title: "Reports",
     items: [
       { label: "Reports", icon: BarChart3, href: "/dashboard/reports" },
-      { label: "Tally Export", icon: FileSpreadsheet, href: "/dashboard/tally-export" },
+      {
+        label: "Tally Export",
+        icon: FileSpreadsheet,
+        href: "/dashboard/tally-export",
+      },
     ],
   },
   {
@@ -66,7 +95,16 @@ const baseSections: Section[] = [
 const superAdminSection: Section = {
   title: "Super Admin",
   items: [
-    { label: "Garages", icon: Building2, href: "/dashboard/super-admin/garages" },
+    {
+      label: "Garages",
+      icon: Building2,
+      href: "/dashboard/super-admin/garages",
+    },
+    {
+      label: "Garage Requests",
+      icon: ClipboardList,
+      href: "/dashboard/super-admin/garage-requests",
+    },
   ],
 };
 
@@ -77,7 +115,9 @@ export default function Sidebar() {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
 
   const sections: Section[] =
-    user?.role === "super_admin" ? [baseSections[0], superAdminSection] : baseSections;
+    user?.role === "super_admin"
+      ? [baseSections[0], superAdminSection]
+      : baseSections;
 
   const showFull = isExpanded || isHovered || isMobileOpen;
 
@@ -108,7 +148,7 @@ export default function Sidebar() {
         </div>
         {showFull && (
           <span className="text-[15px] font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">
-            Car Affair
+            Car Affair - Garrage
           </span>
         )}
       </div>
@@ -154,11 +194,15 @@ export default function Sidebar() {
                 >
                   <item.icon
                     className={`w-[18px] h-[18px] shrink-0 ${
-                      isActive ? "menu-item-icon-active" : "menu-item-icon-inactive"
+                      isActive
+                        ? "menu-item-icon-active"
+                        : "menu-item-icon-inactive"
                     }`}
                   />
                   {showFull && (
-                    <span className="text-[13px] whitespace-nowrap">{item.label}</span>
+                    <span className="text-[13px] whitespace-nowrap">
+                      {item.label}
+                    </span>
                   )}
                 </Link>
               );

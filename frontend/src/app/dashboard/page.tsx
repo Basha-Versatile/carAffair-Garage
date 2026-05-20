@@ -135,11 +135,11 @@ function RevenueTooltip({ active, payload, label }: { active?: boolean; payload?
 /* ── Status colors for donut chart ────────────────── */
 
 const STATUS_COLORS: Record<string, string> = {
-  Open: "#465fff",
-  WIP: "#f79009",
-  Ready: "#12b76a",
-  "Payment Due": "#f04438",
-  Completed: "#98a2b3",
+  Open: "#dc2626",
+  WIP: "#d97706",
+  Ready: "#16a34a",
+  "Payment Due": "#e11d48",
+  Completed: "#a1a1aa",
 };
 
 /* ── Main dashboard ───────────────────────────────── */
@@ -300,8 +300,8 @@ export default function DashboardPage() {
                 <AreaChart data={monthlyRevenueData}>
                   <defs>
                     <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#465fff" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#465fff" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#dc2626" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#dc2626" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <XAxis
@@ -322,7 +322,7 @@ export default function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="revenue"
-                    stroke="#465fff"
+                    stroke="#dc2626"
                     strokeWidth={2.5}
                     fill="url(#revenueGradient)"
                   />

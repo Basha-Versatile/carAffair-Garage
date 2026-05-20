@@ -28,4 +28,11 @@ public class ServiceEntryController {
         ServiceEntry created = serviceEntryService.createService(serviceEntry, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(created));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<ServiceEntry>> updateService(
+            @PathVariable String id, @RequestBody ServiceEntry serviceEntry) {
+        ServiceEntry updated = serviceEntryService.updateService(id, serviceEntry, TenantContext.getGarageId());
+        return ResponseEntity.ok(ApiResponse.ok(updated));
+    }
 }

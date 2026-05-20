@@ -6,6 +6,9 @@ import {
   Star, Phone, Car, Calendar, FileText, Search,
   MessageSquare, ThumbsUp, ThumbsDown, User, LayoutGrid, List,
 } from "lucide-react";
+import { DataTable, DataColumn } from "@/components/tables/DataTable";
+
+const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
 
 type ViewMode = "cards" | "table";
 
@@ -16,6 +19,61 @@ const STATUS_MAP: Record<ServiceFeedback["status"], { label: string; cls: string
   scheduled: { label: "Scheduled", cls: "bg-accent-light text-accent" },
   pending:   { label: "Pending",   cls: "bg-warn-light text-warn" },
 };
+
+const feedbackColumns: DataColumn<ServiceFeedback>[] = [
+  {
+    key: "customer",
+    header: "Customer",
+    render: (fb) => <span className="font-medium text-foreground">{fb.customerName || "Unknown"}</span>,
+    filterValue: (fb) => fb.customerName || "",
+  },
+  {
+    key: "phone",
+    header: "Phone",
+    render: (fb) => <span className="text-muted">{fb.customerPhone || "-"}</span>,
+  },
+  {
+    key: "vehicle",
+    header: "Vehicle",
+    render: (fb) => (
+      <span className="text-secondary">
+        {fb.vehicleName || "-"} <span className="text-muted font-mono text-xs">{fb.vehicleNumber || ""}</span>
+      </span>
+    ),
+  },
+  {
+    key: "jobCard",
+    header: "Job Card",
+    render: (fb) => <span className="text-secondary">{fb.jobCard || "-"}</span>,
+  },
+  {
+    key: "date",
+    header: "Date",
+    render: (fb) => <span className="text-muted">{fb.date || "-"}</span>,
+    sortValue: (fb) => new Date(fb.date || "").getTime(),
+  },
+  {
+    key: "rating",
+    header: "Rating",
+    render: (fb) => <StarRating rating={fb.rating} />,
+    sortValue: (fb) => fb.rating,
+    filterValue: (fb) => `${fb.rating} Star${fb.rating !== 1 ? "s" : ""}`,
+  },
+  {
+    key: "comment",
+    header: "Comment",
+    render: (fb) => <span className="text-muted max-w-[200px] truncate block">{fb.comment || "-"}</span>,
+  },
+  {
+    key: "status",
+    header: "Status",
+    render: (fb) => {
+      const s = STATUS_MAP[fb.status];
+      return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${s.cls}`}>{s.label}</span>;
+    },
+    filterValue: (fb) => STATUS_MAP[fb.status].label,
+  },
+];
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -235,43 +293,12 @@ export default function ServiceFeedbacksPage() {
               </div>
             ) : (
               <div className="px-6 py-3">
-                <div className="bg-background rounded-lg border border-edge overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-dim border-b border-edge">
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Customer</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Vehicle</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Job Card</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Date</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Rating</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Comment</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-edge-light">
-                      {filtered.map((fb) => {
-                        const status = STATUS_MAP[fb.status];
-                        return (
-                          <tr key={fb.id} className="hover:bg-hover transition-colors cursor-pointer">
-                            <td className="px-4 py-3 font-medium text-foreground">{fb.customerName || "Unknown"}</td>
-                            <td className="px-4 py-3 text-muted">{fb.customerPhone || "-"}</td>
-                            <td className="px-4 py-3 text-secondary">
-                              {fb.vehicleName || "-"} <span className="text-muted font-mono text-xs">{fb.vehicleNumber || ""}</span>
-                            </td>
-                            <td className="px-4 py-3 text-secondary">{fb.jobCard || "-"}</td>
-                            <td className="px-4 py-3 text-muted">{fb.date || "-"}</td>
-                            <td className="px-4 py-3"><StarRating rating={fb.rating} /></td>
-                            <td className="px-4 py-3 text-muted max-w-[200px] truncate">{fb.comment || "-"}</td>
-                            <td className="px-4 py-3">
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.cls}`}>{status.label}</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  columns={feedbackColumns}
+                  data={filtered}
+                  keyExtractor={(fb) => fb.id}
+                  className={TABLE_CLS}
+                />
               </div>
             )}
           </>

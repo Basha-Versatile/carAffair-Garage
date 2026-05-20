@@ -7,6 +7,7 @@ import { Wrench, Menu, X, ChevronRight } from "lucide-react";
 const navLinks = [
   { label: "Services", href: "#services" },
   { label: "Book Now", href: "/book" },
+  { label: "Register Garage", href: "/register-garage" },
   { label: "Partner With Us", href: "/partner" },
 ];
 

@@ -9,6 +9,61 @@ import {
 import { Search, Plus, Phone, MessageCircle, MoreVertical, X, User, Car, ChevronDown, MapPin, Loader2, LayoutGrid, List, Mail } from "lucide-react";
 import SelectModal from "@/components/modals/SelectModal";
 import AddModelModal from "@/components/modals/AddModelModal";
+import { DataTable, DataColumn } from "@/components/tables/DataTable";
+
+const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
+
+const customerColumns: DataColumn<Customer>[] = [
+  {
+    key: "name",
+    header: "Name",
+    render: (c) => (
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-full bg-primary-light flex items-center justify-center shrink-0">
+          <span className="text-xs font-semibold text-primary">{(c.name ?? "?").charAt(0).toUpperCase()}</span>
+        </div>
+        <span className="font-medium text-foreground">{c.name || "-"}</span>
+      </div>
+    ),
+    filterValue: (c) => c.name || "",
+    sortValue: (c) => c.name || "",
+  },
+  {
+    key: "phone",
+    header: "Phone",
+    render: (c) => <span className="text-secondary">{c.phone || "-"}</span>,
+  },
+  {
+    key: "email",
+    header: "Email",
+    render: (c) => <span className="text-muted">{c.email || "-"}</span>,
+  },
+  {
+    key: "address",
+    header: "Address",
+    render: (c) => <span className="text-muted max-w-[200px] truncate block">{c.address || "-"}</span>,
+  },
+  {
+    key: "gstin",
+    header: "GSTIN",
+    render: (c) => <span className="text-muted">{c.gstin || "-"}</span>,
+  },
+  {
+    key: "actions",
+    header: "Actions",
+    align: "right",
+    render: () => (
+      <div className="flex items-center justify-end gap-1">
+        <button className="p-1.5 text-ok hover:bg-ok-light rounded-md transition-colors" title="WhatsApp">
+          <MessageCircle className="w-3.5 h-3.5" />
+        </button>
+        <button className="p-1.5 text-muted hover:bg-hover rounded-md transition-colors">
+          <MoreVertical className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    ),
+  },
+];
 
 interface CustomerForm {
   customerName: string; mobile: string; email: string; address: string; gstin: string;
@@ -39,7 +94,7 @@ export default function CustomersPage() {
   const [brandModalOpen, setBrandModalOpen] = useState(false);
   const [modelModalOpen, setModelModalOpen] = useState(false);
   const [addModelModalOpen, setAddModelModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   const [brands, setBrands] = useState<VehicleBrand[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<VehicleBrand | null>(null);
@@ -202,48 +257,12 @@ export default function CustomersPage() {
           </div>
         ) : (
           <div className="px-6 py-3">
-            <div className="bg-background rounded-lg border border-edge overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-dim border-b border-edge">
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Name</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Email</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Address</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">GSTIN</th>
-                    <th className="text-right px-4 py-3 font-medium text-secondary">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-edge-light">
-                  {filtered.map((customer) => (
-                    <tr key={customer.id} className="hover:bg-hover transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-primary-light flex items-center justify-center shrink-0">
-                            <span className="text-xs font-semibold text-primary">{(customer.name ?? "?").charAt(0).toUpperCase()}</span>
-                          </div>
-                          <span className="font-medium text-foreground">{customer.name || "-"}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-secondary">{customer.phone || "-"}</td>
-                      <td className="px-4 py-3 text-muted">{customer.email || "-"}</td>
-                      <td className="px-4 py-3 text-muted max-w-[200px] truncate">{customer.address || "-"}</td>
-                      <td className="px-4 py-3 text-muted">{customer.gstin || "-"}</td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button className="p-1.5 text-ok hover:bg-ok-light rounded-md transition-colors" title="WhatsApp">
-                            <MessageCircle className="w-3.5 h-3.5" />
-                          </button>
-                          <button className="p-1.5 text-muted hover:bg-hover rounded-md transition-colors">
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={customerColumns}
+              data={filtered}
+              keyExtractor={(c) => c.id}
+              className={TABLE_CLS}
+            />
           </div>
         )}
       </div>

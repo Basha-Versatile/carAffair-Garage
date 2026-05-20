@@ -7,9 +7,10 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 import com.garrage.config.JwtProperties;
 import com.garrage.config.OtpProperties;
+import com.garrage.config.SurePassProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties({JwtProperties.class, OtpProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, OtpProperties.class, SurePassProperties.class})
 @EnableAsync
 public class GarrageApplication {
 

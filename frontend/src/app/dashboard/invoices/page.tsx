@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getInvoices, Invoice } from "@/lib/api-invoices";
 import { Plus, FileText, IndianRupee, Calendar, LayoutGrid, List } from "lucide-react";
+import { DataTable, DataColumn } from "@/components/tables/DataTable";
 
 type StatusFilter = "all" | "draft" | "sent" | "paid";
 type ViewMode = "cards" | "table";
@@ -13,6 +14,55 @@ const STATUS_STYLES: Record<string, string> = {
   sent: "bg-primary-light text-primary",
   paid: "bg-ok-light text-ok",
 };
+
+const invoiceColumns: DataColumn<Invoice>[] = [
+  {
+    key: "invoiceNumber",
+    header: "Invoice #",
+    render: (inv) => (
+      <div>
+        <p className="font-medium text-foreground">{inv.invoiceNumber}</p>
+        <p className="text-xs text-muted">{inv.type === "tax" ? "Tax" : "Proforma"}</p>
+      </div>
+    ),
+  },
+  {
+    key: "customer",
+    header: "Customer",
+    render: (inv) => <span className="text-secondary">{inv.customerName}</span>,
+    filterValue: (inv) => inv.customerName,
+  },
+  {
+    key: "date",
+    header: "Date",
+    render: (inv) => <span className="text-muted">{inv.date || inv.createdAt?.split("T")[0] || "-"}</span>,
+    sortValue: (inv) => new Date(inv.date || inv.createdAt || "").getTime(),
+  },
+  {
+    key: "items",
+    header: "Items",
+    render: (inv) => <span className="text-muted">{inv.items?.length || 0}</span>,
+  },
+  {
+    key: "status",
+    header: "Status",
+    render: (inv) => (
+      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${STATUS_STYLES[inv.status] ?? "bg-hover text-muted"}`}>
+        {inv.status.toUpperCase()}
+      </span>
+    ),
+    filterValue: (inv) => inv.status,
+  },
+  {
+    key: "amount",
+    header: "Amount",
+    align: "right",
+    render: (inv) => (
+      <span className="font-semibold text-foreground">{(inv.grandTotal ?? 0).toLocaleString("en-IN")}</span>
+    ),
+    sortValue: (inv) => inv.grandTotal ?? 0,
+  },
+];
 
 export default function InvoicesPage() {
   const router = useRouter();
@@ -142,43 +192,13 @@ export default function InvoicesPage() {
           ))}
         </div>
       ) : (
-        /* Table View */
-        <div className="bg-background rounded-lg border border-edge overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-dim border-b border-edge">
-                <th className="text-left px-4 py-3 font-medium text-secondary">Invoice #</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Customer</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Date</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Items</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
-                <th className="text-right px-4 py-3 font-medium text-secondary">Amount</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-edge-light">
-              {filtered.map(inv => (
-                <tr key={inv.id} onClick={() => router.push(`/dashboard/invoices/${inv.id}`)}
-                  className="hover:bg-hover transition-colors cursor-pointer">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">{inv.invoiceNumber}</p>
-                    <p className="text-xs text-muted">{inv.type === "tax" ? "Tax" : "Proforma"}</p>
-                  </td>
-                  <td className="px-4 py-3 text-secondary">{inv.customerName}</td>
-                  <td className="px-4 py-3 text-muted">{inv.date || inv.createdAt?.split("T")[0] || "-"}</td>
-                  <td className="px-4 py-3 text-muted">{inv.items?.length || 0}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${STATUS_STYLES[inv.status] ?? "bg-hover text-muted"}`}>
-                      {inv.status.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-foreground">
-                    {(inv.grandTotal ?? 0).toLocaleString("en-IN")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={invoiceColumns}
+          data={filtered}
+          keyExtractor={(inv) => inv.id}
+          onRowClick={(inv) => router.push(`/dashboard/invoices/${inv.id}`)}
+          className="bg-background rounded-lg border border-edge overflow-hidden"
+        />
       )}
     </div>
   );

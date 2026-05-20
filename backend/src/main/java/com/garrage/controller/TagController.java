@@ -35,4 +35,17 @@ public class TagController {
         Tag created = tagService.createTag(tag, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(created));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Tag>> updateTag(
+            @PathVariable String id, @RequestBody Tag tag) {
+        Tag updated = tagService.updateTag(id, tag, TenantContext.getGarageId());
+        return ResponseEntity.ok(ApiResponse.ok(updated));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteTag(@PathVariable String id) {
+        tagService.deleteTag(id, TenantContext.getGarageId());
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
 }

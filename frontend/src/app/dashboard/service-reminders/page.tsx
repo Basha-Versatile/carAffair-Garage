@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getServiceReminders, ServiceReminder } from "@/lib/api-inventory";
+import { useState, useEffect, useMemo } from "react";
+import { getOrders, Order } from "@/lib/api-orders";
 import {
   Clock,
   Phone,
@@ -11,32 +11,124 @@ import {
   CheckCircle2,
   Bell,
   Search,
-  ChevronRight,
-  Gauge,
+  FileText,
   LayoutGrid,
   List,
+  Loader2,
+  IndianRupee,
 } from "lucide-react";
+import { DataTable, DataColumn } from "@/components/tables/DataTable";
 
 type ViewMode = "cards" | "table";
-
 type TabKey = "due" | "overdue" | "done";
 
-const STATUS_CONFIG: Record<
-  TabKey,
-  {
-    label: string;
-    badgeBg: string;
-    badgeText: string;
-    icon: typeof Clock;
-  }
-> = {
-  due: { label: "Due", badgeBg: "bg-warn-light", badgeText: "text-warn", icon: Clock },
-  overdue: { label: "Overdue", badgeBg: "bg-bad-light", badgeText: "text-bad", icon: AlertTriangle },
-  done: { label: "Done", badgeBg: "bg-ok-light", badgeText: "text-ok", icon: CheckCircle2 },
+const TAB_CONFIG: Record<TabKey, { label: string; badgeBg: string; badgeText: string; icon: typeof Clock }> = {
+  due:      { label: "Due",      badgeBg: "bg-warn-light",  badgeText: "text-warn",  icon: Clock },
+  overdue:  { label: "Overdue",  badgeBg: "bg-bad-light",   badgeText: "text-bad",   icon: AlertTriangle },
+  done:     { label: "Done",     badgeBg: "bg-ok-light",    badgeText: "text-ok",    icon: CheckCircle2 },
 };
 
+const ORDER_STATUS_STYLES: Record<string, { label: string; cls: string }> = {
+  open:        { label: "Open",        cls: "bg-primary-light text-primary" },
+  wip:         { label: "WIP",         cls: "bg-warn-light text-warn" },
+  ready:       { label: "Ready",       cls: "bg-ok-light text-ok" },
+  payment_due: { label: "Payment Due", cls: "bg-bad-light text-bad" },
+  completed:   { label: "Completed",   cls: "bg-dim text-muted" },
+};
+
+/** Map order status → reminder tab */
+function getTabForOrder(o: Order): TabKey {
+  if (o.status === "completed") return "done";
+  if (o.status === "ready" || o.status === "payment_due") return "overdue";
+  return "due"; // open, wip
+}
+
+const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
+
+function makeColumns(activeTab: TabKey): DataColumn<Order>[] {
+  const tabCfg = TAB_CONFIG[activeTab];
+  return [
+    {
+      key: "jobCard",
+      header: "Job Card",
+      render: (o) => <span className="font-semibold text-foreground">{o.jobCard || "-"}</span>,
+      sortValue: (o) => o.jobCard || "",
+    },
+    {
+      key: "customer",
+      header: "Customer",
+      render: (o) => (
+        <div>
+          <p className="text-foreground font-medium">{o.customerName || "-"}</p>
+          <p className="text-xs text-muted">{o.phone || o.customerPhone || "-"}</p>
+        </div>
+      ),
+    },
+    {
+      key: "vehicle",
+      header: "Vehicle",
+      render: (o) => (
+        <div>
+          <p className="text-secondary">{o.vehicle || "-"}</p>
+          <p className="text-xs text-muted font-mono tracking-wider">{o.vehicleNumber || "-"}</p>
+        </div>
+      ),
+    },
+    {
+      key: "services",
+      header: "Services",
+      render: (o) => (
+        <div className="flex flex-wrap gap-1">
+          {(o.services || []).map((s) => (
+            <span key={s} className="text-[11px] bg-accent-light text-accent px-2 py-0.5 rounded">{s}</span>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key: "date",
+      header: "Date",
+      render: (o) => (
+        <span className="text-muted whitespace-nowrap">
+          {o.date ? new Date(o.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "-"}
+        </span>
+      ),
+      sortValue: (o) => o.date ? new Date(o.date).getTime() : 0,
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      align: "right",
+      render: (o) => (
+        <span className="font-semibold text-foreground tabular-nums">
+          ₹{(o.amount ?? 0).toLocaleString("en-IN")}
+        </span>
+      ),
+      sortValue: (o) => o.amount ?? 0,
+    },
+    {
+      key: "orderStatus",
+      header: "Order Status",
+      render: (o) => {
+        const s = ORDER_STATUS_STYLES[o.status] || { label: o.status || "-", cls: "bg-dim text-muted" };
+        return <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${s.cls}`}>{s.label}</span>;
+      },
+      filterValue: (o) => ORDER_STATUS_STYLES[o.status]?.label || o.status || "",
+    },
+    {
+      key: "reminderStatus",
+      header: "Status",
+      render: () => (
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${tabCfg.badgeBg} ${tabCfg.badgeText}`}>
+          {tabCfg.label}
+        </span>
+      ),
+    },
+  ];
+}
+
 export default function ServiceRemindersPage() {
-  const [reminders, setReminders] = useState<ServiceReminder[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState<TabKey>("due");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -46,46 +138,42 @@ export default function ServiceRemindersPage() {
   useEffect(() => {
     setLoading(true);
     setError("");
-    getServiceReminders()
-      .then((data) => setReminders(data || []))
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "Failed to load service reminders");
-      })
+    getOrders()
+      .then((data) => setOrders(data || []))
+      .catch(() => setError("Failed to load orders"))
       .finally(() => setLoading(false));
   }, []);
 
-  const safeReminders = reminders || [];
-
-  const counts: Record<TabKey, number> = {
-    due: safeReminders.filter((r) => r.status === "due").length,
-    overdue: safeReminders.filter((r) => r.status === "overdue").length,
-    done: safeReminders.filter((r) => r.status === "done").length,
-  };
+  const counts: Record<TabKey, number> = useMemo(() => {
+    const c: Record<TabKey, number> = { due: 0, overdue: 0, done: 0 };
+    for (const o of orders) c[getTabForOrder(o)]++;
+    return c;
+  }, [orders]);
 
   const query = search.toLowerCase();
-  const filtered = safeReminders
-    .filter((r) => r.status === activeTab)
-    .filter(
-      (r) =>
-        (r.customerName ?? "").toLowerCase().includes(query) ||
-        (r.vehicleNumber ?? "").toLowerCase().includes(query) ||
-        (r.customerPhone ?? "").includes(query)
-    );
+  const filtered = useMemo(() => {
+    return orders
+      .filter((o) => getTabForOrder(o) === activeTab)
+      .filter((o) =>
+        (o.jobCard ?? "").toLowerCase().includes(query) ||
+        (o.customerName ?? "").toLowerCase().includes(query) ||
+        (o.vehicleNumber ?? "").toLowerCase().includes(query) ||
+        (o.phone ?? o.customerPhone ?? "").includes(query) ||
+        (o.vehicle ?? "").toLowerCase().includes(query)
+      );
+  }, [orders, activeTab, query]);
+
+  const columns = useMemo(() => makeColumns(activeTab), [activeTab]);
 
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="bg-background border-b border-edge px-6 py-3.5 flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-base font-semibold text-foreground">Service Reminders</h1>
-            <span className="bg-hover text-muted text-xs font-medium px-2 py-0.5 rounded-full">
-              {safeReminders.length}
-            </span>
-          </div>
-          <p className="text-xs text-muted mt-0.5">
-            Track upcoming, overdue, and completed service reminders for your customers.
-          </p>
+        <div className="flex items-center gap-3">
+          <h1 className="text-base font-semibold text-foreground">Service Reminders</h1>
+          <span className="bg-hover text-muted text-xs font-medium px-2 py-0.5 rounded-full">
+            {orders.length}
+          </span>
         </div>
         <div className="flex items-center border border-edge rounded-lg overflow-hidden">
           <button onClick={() => setViewMode("cards")}
@@ -104,50 +192,53 @@ export default function ServiceRemindersPage() {
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-7 h-7 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
           </div>
         ) : error ? (
           <div className="text-center py-16">
-            <p className="text-sm text-red-500">{error}</p>
+            <p className="text-sm text-bad">{error}</p>
           </div>
         ) : (
           <>
-            {/* Tabs */}
-            <div className="px-6 pt-4 pb-2 flex items-center gap-2">
-              {(["due", "overdue", "done"] as TabKey[]).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === tab
-                      ? "bg-primary text-white"
-                      : "text-secondary hover:bg-hover"
-                  }`}
-                >
-                  {STATUS_CONFIG[tab].label}
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+            {/* Tabs + Search */}
+            <div className="px-6 pt-4 pb-2 flex flex-wrap items-center gap-3">
+              {/* Tabs */}
+              <div className="flex items-center gap-2">
+                {(["due", "overdue", "done"] as TabKey[]).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       activeTab === tab
-                        ? "bg-white/20 text-white"
-                        : "bg-hover text-muted"
+                        ? "bg-primary text-white"
+                        : "text-secondary hover:bg-hover"
                     }`}
                   >
-                    {counts[tab]}
-                  </span>
-                </button>
-              ))}
-            </div>
+                    {TAB_CONFIG[tab].label}
+                    <span
+                      className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
+                        activeTab === tab
+                          ? "bg-white/20 text-white"
+                          : "bg-hover text-muted"
+                      }`}
+                    >
+                      {counts[tab]}
+                    </span>
+                  </button>
+                ))}
+              </div>
 
-            {/* Search */}
-            <div className="px-6 pb-3">
-              <div className="relative max-w-md">
+              <div className="flex-1" />
+
+              {/* Search */}
+              <div className="relative w-72">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by customer name, vehicle number, phone"
-                  className="w-full pl-10 pr-4 py-2.5 border border-edge rounded-lg text-sm text-foreground placeholder:text-muted bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Search job card, customer, vehicle..."
+                  className="w-full pl-10 pr-4 py-2 border border-edge rounded-lg text-sm text-foreground placeholder:text-muted bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
             </div>
@@ -158,61 +249,31 @@ export default function ServiceRemindersPage() {
                 <div className="inline-flex items-center justify-center bg-hover p-4 rounded-full mb-4">
                   <Bell className="w-8 h-8 text-muted" />
                 </div>
-                <p className="text-muted text-sm">
+                <p className="text-foreground font-medium mb-1">
                   {search
-                    ? "No reminders match your search."
-                    : `No ${STATUS_CONFIG[activeTab].label.toLowerCase()} reminders.`}
+                    ? "No orders match your search"
+                    : `No ${TAB_CONFIG[activeTab].label.toLowerCase()} orders`}
+                </p>
+                <p className="text-muted text-sm">
+                  {search ? "Try adjusting your search." : "All caught up!"}
                 </p>
               </div>
             ) : viewMode === "cards" ? (
-              <div className="px-6 pb-6">
+              <div className="px-6 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filtered.map((reminder, idx) => (
-                    <ReminderCard key={reminder.id} reminder={reminder} index={idx} />
+                  {filtered.map((order) => (
+                    <OrderReminderCard key={order.id} order={order} tab={activeTab} />
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="px-6 pb-6">
-                <div className="bg-background rounded-lg border border-edge overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-dim border-b border-edge">
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Customer</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Vehicle</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Service Type</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Due Date</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Last Service</th>
-                        <th className="text-right px-4 py-3 font-medium text-secondary">KMs Due</th>
-                        <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-edge-light">
-                      {filtered.map((r) => {
-                        const config = STATUS_CONFIG[r.status];
-                        return (
-                          <tr key={r.id} className="hover:bg-hover transition-colors cursor-pointer">
-                            <td className="px-4 py-3 font-medium text-foreground">{r.customerName || "Unknown"}</td>
-                            <td className="px-4 py-3 text-muted">{r.customerPhone || "-"}</td>
-                            <td className="px-4 py-3 text-secondary">
-                              {r.vehicleNumber || "-"} <span className="text-muted">{r.vehicleName || ""}</span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="text-xs font-medium text-primary bg-primary-light px-2 py-0.5 rounded-full">{r.serviceType}</span>
-                            </td>
-                            <td className="px-4 py-3 text-muted">{r.dueDate || "-"}</td>
-                            <td className="px-4 py-3 text-muted">{r.lastServiceDate || "-"}</td>
-                            <td className="px-4 py-3 text-right text-muted">{r.kmsDue ? r.kmsDue.toLocaleString() : "-"}</td>
-                            <td className="px-4 py-3">
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${config.badgeBg} ${config.badgeText}`}>{config.label}</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+              <div className="px-6 py-4">
+                <DataTable
+                  columns={columns}
+                  data={filtered}
+                  keyExtractor={(o) => o.id}
+                  className={TABLE_CLS}
+                />
               </div>
             )}
           </>
@@ -222,78 +283,60 @@ export default function ServiceRemindersPage() {
   );
 }
 
-function ReminderCard({ reminder, index }: { reminder: ServiceReminder; index: number }) {
-  const config = STATUS_CONFIG[reminder.status];
-  const StatusIcon = config.icon;
+function OrderReminderCard({ order, tab }: { order: Order; tab: TabKey }) {
+  const tabCfg = TAB_CONFIG[tab];
+  const StatusIcon = tabCfg.icon;
+  const st = ORDER_STATUS_STYLES[order.status] || { label: order.status || "-", cls: "bg-dim text-muted" };
 
   return (
-    <div
-      className="bg-background border border-edge rounded-xl p-4 hover:shadow-md transition-shadow animate-slide-up"
-      style={{ animationDelay: `${index * 50}ms` }}
-    >
-      {/* Status + Service Type */}
+    <div className="bg-background border border-edge rounded-lg p-5 hover:shadow-md transition-shadow">
+      {/* Top row: job card + tab badge */}
       <div className="flex items-center justify-between mb-3">
-        <span
-          className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${config.badgeBg} ${config.badgeText}`}
-        >
-          <StatusIcon className="w-3.5 h-3.5" />
-          {config.label}
+        <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          <FileText className="w-4 h-4 text-primary" />{order.jobCard || "-"}
         </span>
-        <span className="text-xs font-medium text-primary bg-primary-light px-2.5 py-1 rounded-full">
-          {reminder.serviceType}
+        <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full ${tabCfg.badgeBg} ${tabCfg.badgeText}`}>
+          <StatusIcon className="w-3 h-3" />
+          {tabCfg.label}
         </span>
       </div>
 
-      {/* Customer Info */}
-      <div className="mb-3">
-        <p className="text-sm font-bold text-foreground">{reminder.customerName || "Unknown"}</p>
-        <div className="flex items-center gap-1 text-xs text-muted mt-0.5">
-          <Phone className="w-3 h-3" />
-          {reminder.customerPhone || "-"}
-        </div>
+      {/* Customer */}
+      <p className="text-sm font-medium text-foreground">{order.customerName || "-"}</p>
+      <div className="flex items-center gap-1 text-xs text-muted mt-0.5">
+        <Phone className="w-3 h-3" />
+        {order.phone || order.customerPhone || "-"}
       </div>
 
       {/* Vehicle */}
-      <div className="flex items-center gap-1.5 text-xs text-secondary mb-3">
+      <div className="flex items-center gap-1.5 mt-2 text-sm text-secondary">
         <Car className="w-3.5 h-3.5 text-muted" />
-        <span className="font-medium">{reminder.vehicleNumber || "-"}</span>
-        <span className="text-muted">-</span>
-        <span className="text-muted">{reminder.vehicleName || "-"}</span>
+        <span>{order.vehicle || "-"}</span>
+        <span className="text-muted font-mono text-xs">({order.vehicleNumber || "-"})</span>
       </div>
 
-      {/* Dates + KMs */}
-      <div className="space-y-1.5 mb-3">
-        <div className="flex items-center gap-1.5 text-xs text-secondary">
-          <Calendar className="w-3.5 h-3.5 text-muted" />
-          <span>Due: {reminder.dueDate || "-"}</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted">
-          <Calendar className="w-3.5 h-3.5" />
-          <span>Last Service: {reminder.lastServiceDate || "-"}</span>
-        </div>
-        {reminder.kmsDue && (
-          <div className="flex items-center gap-1.5 text-xs text-secondary">
-            <Gauge className="w-3.5 h-3.5 text-muted" />
-            <span>{reminder.kmsDue.toLocaleString()} km due</span>
-          </div>
-        )}
+      {/* Date */}
+      <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted">
+        <Calendar className="w-3 h-3" />
+        {order.date ? new Date(order.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "-"}
       </div>
 
-      {/* Notes */}
-      {reminder.notes && (
-        <p className="text-xs italic text-muted mb-3 leading-relaxed">
-          {reminder.notes}
-        </p>
+      {/* Services */}
+      {(order.services || []).length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {order.services.map((s) => (
+            <span key={s} className="text-xs bg-accent-light text-accent px-2 py-0.5 rounded">{s}</span>
+          ))}
+        </div>
       )}
 
-      {/* Action */}
-      {reminder.status !== "done" && (
-        <button className="w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary border border-edge rounded-lg px-3 py-2 hover:bg-hover transition-colors">
-          <Bell className="w-3.5 h-3.5" />
-          Send Reminder
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
-      )}
+      {/* Footer: amount + order status */}
+      <div className="pt-3 mt-3 border-t border-edge-light flex items-center justify-between">
+        <span className="inline-flex items-center gap-0.5 text-sm font-semibold text-foreground">
+          <IndianRupee className="w-3.5 h-3.5" />{(order.amount ?? 0).toLocaleString("en-IN")}
+        </span>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${st.cls}`}>{st.label}</span>
+      </div>
     </div>
   );
 }

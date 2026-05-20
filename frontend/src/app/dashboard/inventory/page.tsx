@@ -14,9 +14,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { getAccessToken } from "@/lib/auth";
+import { DataTable, DataColumn } from "@/components/tables/DataTable";
 
 type ViewMode = "cards" | "table";
-
 type TabKey = "parts" | "po" | "stockin" | "countersale";
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
@@ -25,6 +25,242 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: "stockin", label: "Stock In", icon: <ArrowDownToLine className="w-4 h-4" /> },
   { key: "countersale", label: "Counter Sale", icon: <Receipt className="w-4 h-4" /> },
 ];
+
+const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
+
+/* ─── Column definitions ─── */
+
+const partColumns: DataColumn<Part>[] = [
+  {
+    key: "name",
+    header: "P.No / Name",
+    render: (p) => (
+      <div>
+        <p className="font-medium text-foreground">{p.name}</p>
+        <p className="text-xs text-muted flex items-center gap-1 mt-0.5">
+          <Hash className="w-3 h-3" />
+          {p.partNumber || "-"}
+        </p>
+      </div>
+    ),
+    sortValue: (p) => p.name,
+    filterValue: (p) => p.name,
+  },
+  {
+    key: "stock",
+    header: "Stock",
+    align: "right",
+    render: (p) => (
+      <span className={`font-medium whitespace-nowrap ${(p.stockQty ?? 0) <= (p.minStockQty ?? 0) ? "text-bad" : "text-foreground"}`}>
+        {p.stockQty ?? 0}
+        {(p.stockQty ?? 0) <= (p.minStockQty ?? 0) && <span className="text-xs text-bad ml-1">(Low)</span>}
+      </span>
+    ),
+    sortValue: (p) => p.stockQty ?? 0,
+  },
+  {
+    key: "mrp",
+    header: "MRP",
+    align: "right",
+    render: (p) => (
+      <span className="text-foreground whitespace-nowrap inline-flex items-center gap-0.5">
+        <IndianRupee className="w-3 h-3" />
+        {(p.mrp ?? 0).toLocaleString("en-IN")}
+      </span>
+    ),
+    sortValue: (p) => p.mrp ?? 0,
+  },
+  {
+    key: "rack",
+    header: "Rack No",
+    render: (p) => (
+      <span className="inline-flex items-center gap-1 text-muted text-xs">
+        <MapPin className="w-3 h-3" />
+        {p.rackNumber || "-"}
+      </span>
+    ),
+  },
+  {
+    key: "category",
+    header: "Category",
+    render: (p) => (
+      <span className="inline-block bg-dim text-secondary text-xs font-medium px-2 py-0.5 rounded">
+        {p.category || "-"}
+      </span>
+    ),
+    filterValue: (p) => String(p.category || ""),
+  },
+  {
+    key: "arrow",
+    header: "",
+    render: () => <ChevronRight className="w-4 h-4 text-muted" />,
+  },
+];
+
+function poStatusStyle(status: PurchaseOrder["status"]) {
+  switch (status) {
+    case "draft": return "bg-dim text-secondary";
+    case "ordered": return "bg-accent-light text-accent";
+    case "received": return "bg-ok-light text-ok";
+    case "cancelled": return "bg-bad-light text-bad";
+  }
+}
+
+const poColumns: DataColumn<PurchaseOrder>[] = [
+  {
+    key: "poNumber",
+    header: "PO Number",
+    render: (po) => <span className="font-medium text-foreground">{po.poNumber}</span>,
+  },
+  {
+    key: "vendor",
+    header: "Vendor",
+    render: (po) => <span className="text-secondary">{po.vendorName}</span>,
+    filterValue: (po) => po.vendorName,
+  },
+  {
+    key: "date",
+    header: "Date",
+    render: (po) => <span className="text-muted">{po.date}</span>,
+    sortValue: (po) => new Date(po.date).getTime(),
+  },
+  {
+    key: "items",
+    header: "Items",
+    render: (po) => <span className="text-muted">{(po.items || []).length}</span>,
+  },
+  {
+    key: "status",
+    header: "Status",
+    render: (po) => (
+      <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${poStatusStyle(po.status)}`}>
+        {po.status}
+      </span>
+    ),
+    filterValue: (po) => po.status,
+  },
+  {
+    key: "total",
+    header: "Total",
+    align: "right",
+    render: (po) => <span className="font-semibold text-foreground">{(po.grandTotal ?? 0).toLocaleString("en-IN")}</span>,
+    sortValue: (po) => po.grandTotal ?? 0,
+  },
+];
+
+const stockInColumns: DataColumn<StockInRecord>[] = [
+  {
+    key: "invoice",
+    header: "Invoice #",
+    render: (r) => <span className="font-medium text-foreground">{r.invoiceNumber}</span>,
+  },
+  {
+    key: "vendor",
+    header: "Vendor",
+    render: (r) => <span className="text-secondary">{r.vendorName}</span>,
+    filterValue: (r) => r.vendorName,
+  },
+  {
+    key: "date",
+    header: "Date",
+    render: (r) => <span className="text-muted">{r.date}</span>,
+    sortValue: (r) => new Date(r.date).getTime(),
+  },
+  {
+    key: "payment",
+    header: "Payment",
+    render: (r) => (
+      <span className="text-xs font-medium text-muted px-2 py-0.5 rounded bg-dim capitalize">
+        {r.paymentChannel}
+      </span>
+    ),
+    filterValue: (r) => r.paymentChannel,
+  },
+  {
+    key: "items",
+    header: "Items",
+    render: (r) => <span className="text-muted">{(r.items || []).length}</span>,
+  },
+  {
+    key: "gst",
+    header: "GST",
+    render: (r) =>
+      r.isGstBill ? (
+        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-ok-light text-ok">Yes</span>
+      ) : (
+        <span className="text-xs text-muted">No</span>
+      ),
+    filterValue: (r) => (r.isGstBill ? "Yes" : "No"),
+  },
+  {
+    key: "total",
+    header: "Total",
+    align: "right",
+    render: (r) => <span className="font-semibold text-foreground">{(r.grandTotal ?? 0).toLocaleString("en-IN")}</span>,
+    sortValue: (r) => r.grandTotal ?? 0,
+  },
+];
+
+function csPaymentStyle(status: CounterSale["paymentStatus"]) {
+  switch (status) {
+    case "paid": return "bg-ok-light text-ok";
+    case "pending": return "bg-warn-light text-warn";
+    case "partial": return "bg-accent-light text-accent";
+  }
+}
+
+const csColumns: DataColumn<CounterSale>[] = [
+  {
+    key: "invoice",
+    header: "Invoice #",
+    render: (s) => <span className="font-medium text-foreground">{s.invoiceNumber}</span>,
+  },
+  {
+    key: "customer",
+    header: "Customer",
+    render: (s) => <span className="text-secondary">{s.customerName}</span>,
+    filterValue: (s) => s.customerName,
+  },
+  {
+    key: "date",
+    header: "Date",
+    render: (s) => <span className="text-muted">{s.date}</span>,
+    sortValue: (s) => new Date(s.date).getTime(),
+  },
+  {
+    key: "items",
+    header: "Items",
+    render: (s) => {
+      const ic = (s.items || []).length;
+      const sc = (s.services || []).length;
+      return (
+        <span className="text-muted">
+          {ic} item{ic !== 1 ? "s" : ""}
+          {sc > 0 && ` + ${sc} svc`}
+        </span>
+      );
+    },
+  },
+  {
+    key: "payment",
+    header: "Payment",
+    render: (s) => (
+      <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${csPaymentStyle(s.paymentStatus)}`}>
+        {s.paymentStatus}
+      </span>
+    ),
+    filterValue: (s) => s.paymentStatus,
+  },
+  {
+    key: "total",
+    header: "Total",
+    align: "right",
+    render: (s) => <span className="font-semibold text-foreground">{(s.grandTotal ?? 0).toLocaleString("en-IN")}</span>,
+    sortValue: (s) => s.grandTotal ?? 0,
+  },
+];
+
+/* ─── Page ─── */
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -117,7 +353,7 @@ export default function InventoryPage() {
   );
 }
 
-/* ─────────────────────────── Parts Tab ─────────────────────────── */
+/* ─────────── Parts Tab ─────────── */
 
 function PartsTab({ parts, onAddStock }: { parts: Part[]; onAddStock: () => void }) {
   const router = useRouter();
@@ -206,12 +442,10 @@ function PartsTab({ parts, onAddStock }: { parts: Part[]; onAddStock: () => void
         </div>
       </div>
 
-      {/* Parts Count */}
       <div className="flex items-center gap-2">
         <span className="text-sm text-muted">{filtered.length} parts found</span>
       </div>
 
-      {/* Table */}
       {filtered.length === 0 ? (
         <div className="text-center py-16">
           <div className="inline-flex items-center justify-center bg-hover p-4 rounded-full mb-4">
@@ -223,88 +457,24 @@ function PartsTab({ parts, onAddStock }: { parts: Part[]; onAddStock: () => void
           </p>
         </div>
       ) : (
-        <div className="bg-background rounded-lg border border-edge overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-dim border-b border-edge">
-                  <th className="text-left px-4 py-2.5 font-medium text-secondary whitespace-nowrap">P.No / Name</th>
-                  <th className="text-right px-4 py-2.5 font-medium text-secondary whitespace-nowrap">Stock</th>
-                  <th className="text-right px-4 py-2.5 font-medium text-secondary whitespace-nowrap">MRP</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-secondary whitespace-nowrap">Rack No</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-secondary whitespace-nowrap">Category</th>
-                  <th className="w-10 px-4 py-2.5"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-edge-light">
-                {filtered.map((part) => (
-                  <tr
-                    key={part.id}
-                    onClick={() => router.push(`/dashboard/inventory/edit-stock/${part.id}`)}
-                    className="hover:bg-hover transition-colors cursor-pointer"
-                  >
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-foreground">{part.name}</p>
-                      <p className="text-xs text-muted flex items-center gap-1 mt-0.5">
-                        <Hash className="w-3 h-3" />
-                        {part.partNumber || "-"}
-                      </p>
-                    </td>
-                    <td className={`px-4 py-3 text-right font-medium whitespace-nowrap ${
-                      (part.stockQty ?? 0) <= (part.minStockQty ?? 0) ? "text-bad" : "text-foreground"
-                    }`}>
-                      {part.stockQty ?? 0}
-                      {(part.stockQty ?? 0) <= (part.minStockQty ?? 0) && (
-                        <span className="text-xs text-bad ml-1">(Low)</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right text-foreground whitespace-nowrap">
-                      <span className="inline-flex items-center gap-0.5">
-                        <IndianRupee className="w-3 h-3" />
-                        {(part.mrp ?? 0).toLocaleString("en-IN")}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1 text-muted text-xs">
-                        <MapPin className="w-3 h-3" />
-                        {part.rackNumber || "-"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="inline-block bg-dim text-secondary text-xs font-medium px-2 py-0.5 rounded">
-                        {part.category || "-"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <ChevronRight className="w-4 h-4 text-muted" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DataTable
+          columns={partColumns}
+          data={filtered}
+          keyExtractor={(p) => p.id}
+          onRowClick={(p) => router.push(`/dashboard/inventory/edit-stock/${p.id}`)}
+          className={TABLE_CLS}
+        />
       )}
     </div>
   );
 }
 
-/* ─────────────────────── Purchase Orders Tab ─────────────────────── */
-
-function poStatusStyle(status: PurchaseOrder["status"]) {
-  switch (status) {
-    case "draft": return "bg-dim text-secondary";
-    case "ordered": return "bg-accent-light text-accent";
-    case "received": return "bg-ok-light text-ok";
-    case "cancelled": return "bg-bad-light text-bad";
-  }
-}
+/* ─────────── Purchase Orders Tab ─────────── */
 
 function PurchaseOrdersTab({ orders, onCreatePO, viewMode }: { orders: PurchaseOrder[]; onCreatePO: () => void; viewMode: ViewMode }) {
   const safeOrders = orders || [];
   return (
     <div className="p-6 space-y-4 animate-slide-up">
-      {/* Toolbar */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-secondary">
           {safeOrders.length} purchase order{safeOrders.length !== 1 ? "s" : ""}
@@ -326,17 +496,12 @@ function PurchaseOrdersTab({ orders, onCreatePO, viewMode }: { orders: PurchaseO
       ) : viewMode === "cards" ? (
         <div className="grid gap-3">
           {safeOrders.map((po) => (
-            <div
-              key={po.id}
-              className="bg-background border border-edge rounded-lg p-4 hover:bg-hover transition-colors cursor-pointer animate-scale-in"
-            >
+            <div key={po.id} className="bg-background border border-edge rounded-lg p-4 hover:bg-hover transition-colors cursor-pointer animate-scale-in">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-sm font-semibold text-foreground">{po.poNumber}</h3>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${poStatusStyle(po.status)}`}>
-                      {po.status}
-                    </span>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${poStatusStyle(po.status)}`}>{po.status}</span>
                   </div>
                   <p className="text-sm text-secondary">{po.vendorName}</p>
                   <p className="text-xs text-muted mt-1">{po.date}</p>
@@ -353,46 +518,23 @@ function PurchaseOrdersTab({ orders, onCreatePO, viewMode }: { orders: PurchaseO
           ))}
         </div>
       ) : (
-        <div className="bg-background rounded-lg border border-edge overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-dim border-b border-edge">
-                <th className="text-left px-4 py-3 font-medium text-secondary">PO Number</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Vendor</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Date</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Items</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
-                <th className="text-right px-4 py-3 font-medium text-secondary">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-edge-light">
-              {safeOrders.map((po) => (
-                <tr key={po.id} className="hover:bg-hover transition-colors cursor-pointer">
-                  <td className="px-4 py-3 font-medium text-foreground">{po.poNumber}</td>
-                  <td className="px-4 py-3 text-secondary">{po.vendorName}</td>
-                  <td className="px-4 py-3 text-muted">{po.date}</td>
-                  <td className="px-4 py-3 text-muted">{(po.items || []).length}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${poStatusStyle(po.status)}`}>{po.status}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-foreground">{(po.grandTotal ?? 0).toLocaleString("en-IN")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={poColumns}
+          data={safeOrders}
+          keyExtractor={(po) => po.id}
+          className={TABLE_CLS}
+        />
       )}
     </div>
   );
 }
 
-/* ─────────────────────────── Stock In Tab ─────────────────────────── */
+/* ─────────── Stock In Tab ─────────── */
 
 function StockInTab({ records, onNewStockIn, viewMode }: { records: StockInRecord[]; onNewStockIn: () => void; viewMode: ViewMode }) {
   const safeRecords = records || [];
   return (
     <div className="p-6 space-y-4 animate-slide-up">
-      {/* Toolbar */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-secondary">
           {safeRecords.length} stock-in record{safeRecords.length !== 1 ? "s" : ""}
@@ -414,24 +556,17 @@ function StockInTab({ records, onNewStockIn, viewMode }: { records: StockInRecor
       ) : viewMode === "cards" ? (
         <div className="grid gap-3">
           {safeRecords.map((rec) => (
-            <div
-              key={rec.id}
-              className="bg-background border border-edge rounded-lg p-4 hover:bg-hover transition-colors cursor-pointer animate-scale-in"
-            >
+            <div key={rec.id} className="bg-background border border-edge rounded-lg p-4 hover:bg-hover transition-colors cursor-pointer animate-scale-in">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-sm font-semibold text-foreground">{rec.invoiceNumber}</h3>
-                    {rec.isGstBill && (
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-ok-light text-ok">GST</span>
-                    )}
+                    {rec.isGstBill && <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-ok-light text-ok">GST</span>}
                   </div>
                   <p className="text-sm text-secondary">{rec.vendorName}</p>
                   <div className="flex items-center gap-3 mt-1">
                     <p className="text-xs text-muted">{rec.date}</p>
-                    <span className="text-xs font-medium text-muted px-2 py-0.5 rounded bg-dim capitalize">
-                      {rec.paymentChannel}
-                    </span>
+                    <span className="text-xs font-medium text-muted px-2 py-0.5 rounded bg-dim capitalize">{rec.paymentChannel}</span>
                   </div>
                 </div>
                 <div className="text-right shrink-0">
@@ -446,58 +581,23 @@ function StockInTab({ records, onNewStockIn, viewMode }: { records: StockInRecor
           ))}
         </div>
       ) : (
-        <div className="bg-background rounded-lg border border-edge overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-dim border-b border-edge">
-                <th className="text-left px-4 py-3 font-medium text-secondary">Invoice #</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Vendor</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Date</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Payment</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Items</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">GST</th>
-                <th className="text-right px-4 py-3 font-medium text-secondary">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-edge-light">
-              {safeRecords.map((rec) => (
-                <tr key={rec.id} className="hover:bg-hover transition-colors cursor-pointer">
-                  <td className="px-4 py-3 font-medium text-foreground">{rec.invoiceNumber}</td>
-                  <td className="px-4 py-3 text-secondary">{rec.vendorName}</td>
-                  <td className="px-4 py-3 text-muted">{rec.date}</td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs font-medium text-muted px-2 py-0.5 rounded bg-dim capitalize">{rec.paymentChannel}</span>
-                  </td>
-                  <td className="px-4 py-3 text-muted">{(rec.items || []).length}</td>
-                  <td className="px-4 py-3">
-                    {rec.isGstBill ? <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-ok-light text-ok">Yes</span> : <span className="text-xs text-muted">No</span>}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-foreground">{(rec.grandTotal ?? 0).toLocaleString("en-IN")}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={stockInColumns}
+          data={safeRecords}
+          keyExtractor={(r) => r.id}
+          className={TABLE_CLS}
+        />
       )}
     </div>
   );
 }
 
-/* ─────────────────────── Counter Sale Tab ─────────────────────── */
-
-function csPaymentStyle(status: CounterSale["paymentStatus"]) {
-  switch (status) {
-    case "paid": return "bg-ok-light text-ok";
-    case "pending": return "bg-warn-light text-warn";
-    case "partial": return "bg-accent-light text-accent";
-  }
-}
+/* ─────────── Counter Sale Tab ─────────── */
 
 function CounterSaleTab({ sales, onNewSale, viewMode }: { sales: CounterSale[]; onNewSale: () => void; viewMode: ViewMode }) {
   const safeSales = sales || [];
   return (
     <div className="p-6 space-y-4 animate-slide-up">
-      {/* Toolbar */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-secondary">
           {safeSales.length} counter sale{safeSales.length !== 1 ? "s" : ""}
@@ -522,17 +622,12 @@ function CounterSaleTab({ sales, onNewSale, viewMode }: { sales: CounterSale[]; 
             const itemCount = (sale.items || []).length;
             const serviceCount = (sale.services || []).length;
             return (
-              <div
-                key={sale.id}
-                className="bg-background border border-edge rounded-lg p-4 hover:bg-hover transition-colors cursor-pointer animate-scale-in"
-              >
+              <div key={sale.id} className="bg-background border border-edge rounded-lg p-4 hover:bg-hover transition-colors cursor-pointer animate-scale-in">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-sm font-semibold text-foreground">{sale.invoiceNumber}</h3>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${csPaymentStyle(sale.paymentStatus)}`}>
-                        {sale.paymentStatus}
-                      </span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${csPaymentStyle(sale.paymentStatus)}`}>{sale.paymentStatus}</span>
                     </div>
                     <p className="text-sm text-secondary">{sale.customerName}</p>
                     <div className="flex items-center gap-3 mt-1">
@@ -555,41 +650,12 @@ function CounterSaleTab({ sales, onNewSale, viewMode }: { sales: CounterSale[]; 
           })}
         </div>
       ) : (
-        <div className="bg-background rounded-lg border border-edge overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-dim border-b border-edge">
-                <th className="text-left px-4 py-3 font-medium text-secondary">Invoice #</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Customer</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Date</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Items</th>
-                <th className="text-left px-4 py-3 font-medium text-secondary">Payment</th>
-                <th className="text-right px-4 py-3 font-medium text-secondary">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-edge-light">
-              {safeSales.map((sale) => {
-                const itemCount = (sale.items || []).length;
-                const serviceCount = (sale.services || []).length;
-                return (
-                  <tr key={sale.id} className="hover:bg-hover transition-colors cursor-pointer">
-                    <td className="px-4 py-3 font-medium text-foreground">{sale.invoiceNumber}</td>
-                    <td className="px-4 py-3 text-secondary">{sale.customerName}</td>
-                    <td className="px-4 py-3 text-muted">{sale.date}</td>
-                    <td className="px-4 py-3 text-muted">
-                      {itemCount} item{itemCount !== 1 ? "s" : ""}
-                      {serviceCount > 0 && ` + ${serviceCount} svc`}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${csPaymentStyle(sale.paymentStatus)}`}>{sale.paymentStatus}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-foreground">{(sale.grandTotal ?? 0).toLocaleString("en-IN")}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={csColumns}
+          data={safeSales}
+          keyExtractor={(s) => s.id}
+          className={TABLE_CLS}
+        />
       )}
     </div>
   );

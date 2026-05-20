@@ -220,3 +220,38 @@ export async function getVendorById(
   const vendors = await getVendors();
   return vendors.find((v) => v.id === id);
 }
+
+// ── RC Lookup ──
+
+export interface RcLookupResult {
+  ownerName: string | null;
+  address: string | null;
+  mobileNumber: string | null;
+  makerDescription: string | null;
+  makerModel: string | null;
+  fuelType: string | null;
+  engineNumber: string | null;
+  chassisNumber: string | null;
+  manufacturingDate: string | null;
+  registrationDate: string | null;
+  color: string | null;
+  bodyType: string | null;
+  vehicleCategory: string | null;
+  rcStatus: string | null;
+  insuranceCompany: string | null;
+  policyNumber: string | null;
+  insuranceUpto: string | null;
+  financer: string | null;
+  matchedBrandId: string | null;
+  matchedBrandName: string | null;
+  matchedModelId: string | null;
+  matchedModelName: string | null;
+  matchedFuelType: string | null;
+}
+
+/** Fetch RC details from SurePass via backend proxy. */
+export async function lookupRC(
+  registrationNumber: string
+): Promise<RcLookupResult> {
+  return api.post<RcLookupResult>("/api/rc-lookup", { registrationNumber });
+}

@@ -6,6 +6,9 @@ import { api } from "@/lib/api";
 import {
   Building2, Plus, Search, Phone, Mail, MapPin, CheckCircle, XCircle, LayoutGrid, List,
 } from "lucide-react";
+import { DataTable, DataColumn } from "@/components/tables/DataTable";
+
+const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
 
 type ViewMode = "cards" | "table";
 
@@ -24,6 +27,55 @@ interface Garage {
   createdAt: string;
   updatedAt: string;
 }
+
+const garageColumns: DataColumn<Garage>[] = [
+  {
+    key: "name",
+    header: "Name",
+    render: (g) => <span className="font-medium text-foreground">{g.name}</span>,
+    sortValue: (g) => g.name,
+  },
+  {
+    key: "owner",
+    header: "Owner",
+    render: (g) => <span className="text-secondary">{g.ownerName || "-"}</span>,
+  },
+  {
+    key: "phone",
+    header: "Phone",
+    render: (g) => <span className="text-muted">{g.phone || "-"}</span>,
+  },
+  {
+    key: "email",
+    header: "Email",
+    render: (g) => <span className="text-muted truncate max-w-[180px] block">{g.email || "-"}</span>,
+  },
+  {
+    key: "address",
+    header: "Address",
+    render: (g) => <span className="text-muted truncate max-w-[200px] block">{g.address || "-"}</span>,
+  },
+  {
+    key: "status",
+    header: "Status",
+    render: (g) =>
+      g.isActive ? (
+        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-ok-light text-ok">Active</span>
+      ) : (
+        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-bad-light text-bad">Inactive</span>
+      ),
+    filterValue: (g) => (g.isActive ? "Active" : "Inactive"),
+  },
+  {
+    key: "actions",
+    header: "Actions",
+    render: (g) => (
+      <Link href={`/dashboard/super-admin/garages/${g.id}`} className="text-sm font-medium text-primary hover:underline">
+        View
+      </Link>
+    ),
+  },
+];
 
 export default function GaragesPage() {
   const [garages, setGarages] = useState<Garage[]>([]);
@@ -185,45 +237,12 @@ export default function GaragesPage() {
           </div>
         ) : (
           <div className="px-6 py-4">
-            <div className="bg-background rounded-lg border border-edge overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-dim border-b border-edge">
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Name</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Owner</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Email</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Address</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-edge-light">
-                  {filtered.map((garage) => (
-                    <tr key={garage.id} className="hover:bg-hover transition-colors">
-                      <td className="px-4 py-3 font-medium text-foreground">{garage.name}</td>
-                      <td className="px-4 py-3 text-secondary">{garage.ownerName || "-"}</td>
-                      <td className="px-4 py-3 text-muted">{garage.phone || "-"}</td>
-                      <td className="px-4 py-3 text-muted truncate max-w-[180px]">{garage.email || "-"}</td>
-                      <td className="px-4 py-3 text-muted truncate max-w-[200px]">{garage.address || "-"}</td>
-                      <td className="px-4 py-3">
-                        {garage.isActive ? (
-                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-ok-light text-ok">Active</span>
-                        ) : (
-                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-bad-light text-bad">Inactive</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link href={`/dashboard/super-admin/garages/${garage.id}`}
-                          className="text-sm font-medium text-primary hover:underline">
-                          View
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              columns={garageColumns}
+              data={filtered}
+              keyExtractor={(g) => g.id}
+              className={TABLE_CLS}
+            />
           </div>
         )}
       </div>

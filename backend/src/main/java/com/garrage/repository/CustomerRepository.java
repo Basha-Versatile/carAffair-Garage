@@ -9,7 +9,8 @@ import java.util.Optional;
 public interface CustomerRepository extends MongoRepository<Customer, String> {
     List<Customer> findByGarageId(String garageId);
     Optional<Customer> findByIdAndGarageId(String id, String garageId);
-    Optional<Customer> findByPhoneAndGarageId(String phone, String garageId);
+    Optional<Customer> findFirstByPhoneAndGarageId(String phone, String garageId);
+    boolean existsByPhoneAndGarageId(String phone, String garageId);
     List<Customer> findByGarageIdAndNameContainingIgnoreCase(String garageId, String name);
     List<Customer> findByGarageIdAndPhoneContaining(String garageId, String phone);
 }

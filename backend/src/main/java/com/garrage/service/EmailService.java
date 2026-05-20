@@ -60,6 +60,86 @@ public class EmailService {
     }
 
     @Async
+    public void sendGarageApprovalEmail(String toEmail, String garageName, String ownerName, String phone) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress);
+            helper.setTo(toEmail);
+            helper.setSubject("Your Garage Registration Has Been Approved — Car Affair");
+
+            String loginUrl = "http://localhost:3000/login";
+
+            String html = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto'>"
+                    + "<div style='background:#16a34a;color:white;padding:24px;text-align:center;border-radius:8px 8px 0 0'>"
+                    + "<h1 style='margin:0;font-size:22px'>Registration Approved!</h1>"
+                    + "</div>"
+                    + "<div style='padding:24px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px'>"
+                    + "<p>Hi <b>" + ownerName + "</b>,</p>"
+                    + "<p>Great news! Your garage <b>" + garageName + "</b> has been approved and registered on Car Affair.</p>"
+                    + "<p>You can now log in using your phone number <b>" + phone + "</b> with OTP verification and start managing your garage.</p>"
+                    + "<div style='text-align:center;margin:24px 0'>"
+                    + "<a href='" + loginUrl + "' style='display:inline-block;padding:14px 32px;background:#16a34a;color:white;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px'>Login to Your Dashboard</a>"
+                    + "</div>"
+                    + "<div style='background:#f0fdf4;border-radius:8px;padding:16px;margin:16px 0'>"
+                    + "<p style='margin:0 0 8px;font-weight:600'>Quick Start:</p>"
+                    + "<ul style='margin:0;padding-left:20px'>"
+                    + "<li>Add your customers and vehicles</li>"
+                    + "<li>Create repair orders and invoices</li>"
+                    + "<li>Manage your parts inventory</li>"
+                    + "<li>Track service reminders</li>"
+                    + "</ul>"
+                    + "</div>"
+                    + "<p style='color:#64748b;font-size:13px'>If you have any questions, please contact our support team.</p>"
+                    + "<p>Best regards,<br><b>Car Affair Team</b></p>"
+                    + "</div></div>";
+
+            helper.setText(html, true);
+            mailSender.send(message);
+            log.info("Approval email sent to {} for garage {}", toEmail, garageName);
+        } catch (Exception e) {
+            log.error("Failed to send approval email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendGarageRejectionEmail(String toEmail, String garageName, String ownerName, String reason) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress);
+            helper.setTo(toEmail);
+            helper.setSubject("Update on Your Garage Registration — Car Affair");
+
+            String reasonBlock = (reason != null && !reason.isBlank())
+                    ? "<div style='background:#fef2f2;border-left:4px solid #ef4444;border-radius:4px;padding:12px 16px;margin:16px 0'>"
+                      + "<p style='margin:0;font-size:14px;color:#991b1b'><b>Reason:</b> " + reason + "</p></div>"
+                    : "";
+
+            String html = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto'>"
+                    + "<div style='background:#dc2626;color:white;padding:24px;text-align:center;border-radius:8px 8px 0 0'>"
+                    + "<h1 style='margin:0;font-size:22px'>Registration Update</h1>"
+                    + "</div>"
+                    + "<div style='padding:24px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px'>"
+                    + "<p>Hi <b>" + ownerName + "</b>,</p>"
+                    + "<p>Thank you for your interest in joining Car Affair. After reviewing your registration for <b>" + garageName + "</b>, we are unable to approve it at this time.</p>"
+                    + reasonBlock
+                    + "<p>If you believe this was in error or would like to reapply with updated information, please feel free to submit a new registration.</p>"
+                    + "<p style='color:#64748b;font-size:13px'>For any queries, please contact our support team.</p>"
+                    + "<p>Best regards,<br><b>Car Affair Team</b></p>"
+                    + "</div></div>";
+
+            helper.setText(html, true);
+            mailSender.send(message);
+            log.info("Rejection email sent to {} for garage {}", toEmail, garageName);
+        } catch (Exception e) {
+            log.error("Failed to send rejection email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Async
     public void sendInvoiceEmail(String toEmail, String customerName, String invoiceNumber,
                                   String garageName, byte[] pdfBytes) {
         try {

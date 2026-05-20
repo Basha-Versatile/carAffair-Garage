@@ -8,6 +8,21 @@ interface ApiResponse<T> {
   data: T;
 }
 
+/** Sanitize error messages — never show raw Java/Mongo exceptions to the user. */
+function sanitizeErrorMessage(raw: string | undefined | null): string {
+  if (!raw) return "An unexpected error occurred";
+  const isTechnical =
+    raw.includes("Query {") ||
+    raw.includes("Exception") ||
+    raw.includes("org.") ||
+    raw.includes("com.garrage") ||
+    raw.includes("java.") ||
+    raw.includes("$java") ||
+    raw.includes("returned non unique") ||
+    raw.length > 250;
+  return isTechnical ? "Something went wrong. Please try again." : raw;
+}
+
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 
@@ -133,18 +148,19 @@ export async function apiFetch<T>(
     }
   }
 
-  let json: ApiResponse<T>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let json: any;
   try {
     json = await response.json();
   } catch {
     throw new Error(`Unexpected server response (status ${response.status}). Please try again.`);
   }
 
-  if (!json.success) {
-    throw new Error(json.message || "An unexpected error occurred");
+  if (json.success === false || !response.ok) {
+    throw new Error(sanitizeErrorMessage(json.message || json.error));
   }
 
-  return json.data;
+  return (json as ApiResponse<T>).data;
 }
 
 export const api = {
@@ -187,16 +203,17 @@ export async function publicPost<T>(
     throw new Error("Network error. Please check your connection and try again.");
   }
 
-  let json: ApiResponse<T>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let json: any;
   try {
     json = await response.json();
   } catch {
     throw new Error(`Unexpected server response (status ${response.status}). Please try again.`);
   }
 
-  if (!json.success) {
-    throw new Error(json.message || "An unexpected error occurred");
+  if (json.success === false || !response.ok) {
+    throw new Error(sanitizeErrorMessage(json.message || json.error));
   }
 
-  return json.data;
+  return (json as ApiResponse<T>).data;
 }
