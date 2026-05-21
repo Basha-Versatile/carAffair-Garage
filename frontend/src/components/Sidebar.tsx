@@ -23,6 +23,7 @@ import {
   LogOut,
   Wrench,
   Building2,
+  Calendar,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -59,6 +60,11 @@ const baseSections: Section[] = [
   {
     title: "Services",
     items: [
+      {
+        label: "Appointments",
+        icon: Calendar,
+        href: "/dashboard/appointments",
+      },
       {
         label: "Service Reminders",
         icon: Clock,
