@@ -15,6 +15,7 @@ import java.util.List;
 public class VendorService {
 
     private final VendorRepository vendorRepository;
+    private final ActivityLogService activityLogService;
 
     public Vendor createVendor(CreateVendorRequest request, String garageId) {
         Vendor vendor = Vendor.builder()
@@ -31,7 +32,10 @@ public class VendorService {
                 .source("admin")
                 .status("approved")
                 .build();
-        return vendorRepository.save(vendor);
+        Vendor saved = vendorRepository.save(vendor);
+        activityLogService.log("CREATE", "VENDOR", saved.getId(),
+                "created vendor " + saved.getName());
+        return saved;
     }
 
     public Vendor registerVendor(RegisterVendorRequest request) {
@@ -65,13 +69,19 @@ public class VendorService {
         Vendor vendor = vendorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with id: " + id));
         vendor.setStatus("approved");
-        return vendorRepository.save(vendor);
+        Vendor saved = vendorRepository.save(vendor);
+        activityLogService.log("UPDATE", "VENDOR", saved.getId(),
+                "approved vendor " + saved.getName());
+        return saved;
     }
 
     public Vendor rejectVendor(String id) {
         Vendor vendor = vendorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with id: " + id));
         vendor.setStatus("rejected");
-        return vendorRepository.save(vendor);
+        Vendor saved = vendorRepository.save(vendor);
+        activityLogService.log("UPDATE", "VENDOR", saved.getId(),
+                "rejected vendor " + saved.getName());
+        return saved;
     }
 }

@@ -15,6 +15,7 @@ import java.util.List;
 public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
+    private final ActivityLogService activityLogService;
 
     public List<Expense> getExpenses(String garageId) {
         return expenseRepository.findByGarageIdOrderByCreatedAtDesc(garageId);
@@ -24,7 +25,10 @@ public class ExpenseService {
         expense.setGarageId(garageId);
         expense.setVoucherNo(generateVoucherNo(garageId));
         log.info("Creating expense {} for garage {}", expense.getVoucherNo(), garageId);
-        return expenseRepository.save(expense);
+        Expense saved = expenseRepository.save(expense);
+        activityLogService.log("CREATE", "EXPENSE", saved.getId(),
+                "created expense " + saved.getVoucherNo());
+        return saved;
     }
 
     private String generateVoucherNo(String garageId) {

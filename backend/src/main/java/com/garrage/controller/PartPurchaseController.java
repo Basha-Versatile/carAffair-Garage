@@ -2,6 +2,7 @@ package com.garrage.controller;
 
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.PartPurchase;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.PartPurchaseService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class PartPurchaseController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<PartPurchase>> createPartPurchase(@RequestBody PartPurchase partPurchase) {
+        PermissionChecker.require("INVENTORY:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("POST /api/part-purchases for garage {}", garageId);
         PartPurchase created = partPurchaseService.createPartPurchase(partPurchase, garageId);

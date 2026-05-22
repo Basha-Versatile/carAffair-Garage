@@ -16,6 +16,7 @@ import {
   Package,
 } from "lucide-react";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
+import { canManage } from "@/lib/auth";
 
 // ── Tab config ──
 
@@ -298,15 +299,17 @@ export default function AccountsPage() {
         {/* ── Expenses Tab ── */}
         {activeTab === "expenses" && (
           <div>
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={() => router.push("/dashboard/accounts/add-expense")}
-                className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-theme-xs"
-              >
-                <Plus className="w-4 h-4" />
-                Add Expense
-              </button>
-            </div>
+            {canManage("ACCOUNTS") && (
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={() => router.push("/dashboard/accounts/add-expense")}
+                  className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-theme-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Expense
+                </button>
+              </div>
+            )}
 
             {expensesLoading ? (
               <div className="glass-card p-8 text-center">
@@ -336,15 +339,17 @@ export default function AccountsPage() {
         {/* ── Part Purchase Tab ── */}
         {activeTab === "partPurchase" && (
           <div>
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={() => router.push("/dashboard/accounts/add-part-purchase")}
-                className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-theme-xs"
-              >
-                <Plus className="w-4 h-4" />
-                Add Part Purchase
-              </button>
-            </div>
+            {canManage("ACCOUNTS") && (
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={() => router.push("/dashboard/accounts/add-part-purchase")}
+                  className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-theme-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Part Purchase
+                </button>
+              </div>
+            )}
 
             {purchasesLoading ? (
               <div className="glass-card p-8 text-center">

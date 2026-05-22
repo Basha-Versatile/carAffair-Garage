@@ -1,20 +1,51 @@
 @import "tailwindcss";
 
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
 :root {
   --background: #ffffff;
-  --foreground: #111827;
-  --primary: #16a34a;
-  --primary-hover: #15803d;
-  --primary-light: #f0fdf4;
-  --primary-muted: #86efac;
+  --foreground: #1A1A1B;
+  --primary: #E63946;
+  --primary-hover: #CF2F3D;
+  --primary-light: #fef2f2;
+  --primary-muted: #F5A3AA;
   --secondary: #4b5563;
   --muted: #9ca3af;
   --edge: #e5e7eb;
   --edge-light: #f3f4f6;
-  --dim: #f9fafb;
+  --dim: #F1F1F1;
   --hover: #f3f4f6;
   --accent: #2563eb;
   --accent-light: #eff6ff;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --card-bg: #ffffff;
+  --glow-color: rgba(230, 57, 70, 0.4);
+}
+
+.dark {
+  --background: #121212;
+  --foreground: #E0E0E0;
+  --primary: #E63946;
+  --primary-hover: #FF4D5A;
+  --primary-light: rgba(230, 57, 70, 0.12);
+  --primary-muted: #F5A3AA;
+  --secondary: #A0A0A0;
+  --muted: #6B6B6B;
+  --edge: #2A2A2A;
+  --edge-light: #2A2A2A;
+  --dim: #1E1E1E;
+  --hover: #2A2A2A;
+  --accent: #3b82f6;
+  --accent-light: rgba(59, 130, 246, 0.1);
+  --glass-bg: rgba(30, 30, 30, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --card-bg: #1E1E1E;
+  --glow-color: rgba(230, 57, 70, 0.6);
 }
 
 @theme inline {
@@ -32,6 +63,10 @@
   --color-hover: var(--hover);
   --color-accent: var(--accent);
   --color-accent-light: var(--accent-light);
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+  --color-card-bg: var(--card-bg);
+  --color-glow: var(--glow-color);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
@@ -62,6 +97,22 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(10px); }
 }
+@keyframes button-glow {
+  0%, 100% { box-shadow: 0 0 15px rgba(230, 57, 70, 0.3), 0 0 30px rgba(230, 57, 70, 0.1); }
+  50% { box-shadow: 0 0 25px rgba(230, 57, 70, 0.5), 0 0 50px rgba(230, 57, 70, 0.2); }
+}
+@keyframes border-revolve {
+  from { --border-angle: 0deg; }
+  to { --border-angle: 360deg; }
+}
+@keyframes icon-lift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-4px); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
 
 body {
   background: var(--background);
@@ -71,4 +122,171 @@ body {
 
 html {
   scroll-behavior: smooth;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Glassmorphism utilities                                            */
+/* ------------------------------------------------------------------ */
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-bg {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Button glow effect                                                 */
+/* ------------------------------------------------------------------ */
+
+.btn-glow {
+  transition: box-shadow 0.3s ease-in-out;
+}
+.btn-glow:hover {
+  animation: button-glow 2s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Border revolve for service cards                                   */
+/* ------------------------------------------------------------------ */
+
+.border-revolve {
+  position: relative;
+}
+
+.border-revolve::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    transparent 0%,
+    var(--primary) 10%,
+    transparent 20%
+  );
+  border-radius: inherit;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.border-revolve::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  background: var(--card-bg);
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.border-revolve > * {
+  position: relative;
+  z-index: 1;
+}
+
+.border-revolve:hover::before {
+  opacity: 1;
+  animation: border-revolve 3s linear infinite;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Icon shift on group hover                                          */
+/* ------------------------------------------------------------------ */
+
+.icon-shift-up {
+  transition: transform 0.3s ease-in-out;
+}
+
+.group:hover .icon-shift-up {
+  transform: translateY(-4px);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Page gradient backgrounds                                          */
+/* ------------------------------------------------------------------ */
+
+.page-gradient {
+  background: linear-gradient(135deg, var(--background) 0%, var(--dim) 50%, var(--background) 100%);
+  position: relative;
+}
+
+.page-gradient::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  right: -30%;
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 57, 70, 0.04) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page-gradient::after {
+  content: '';
+  position: fixed;
+  bottom: -30%;
+  left: -20%;
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 57, 70, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Premium glass card with subtle gradient border                     */
+/* ------------------------------------------------------------------ */
+
+.glass-card-premium {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.glass-card-premium:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+}
+
+.dark .glass-card-premium {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.dark .glass-card-premium:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Form panel glass effect                                            */
+/* ------------------------------------------------------------------ */
+
+.form-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Section divider gradient                                           */
+/* ------------------------------------------------------------------ */
+
+.section-gradient-top {
+  background: linear-gradient(180deg, var(--dim) 0%, var(--background) 100%);
+}
+
+.section-gradient-bottom {
+  background: linear-gradient(180deg, var(--background) 0%, var(--dim) 100%);
 }

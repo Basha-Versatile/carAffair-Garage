@@ -16,6 +16,7 @@ import java.util.List;
 public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
+    private final ActivityLogService activityLogService;
 
     public Invoice createInvoice(Invoice invoice, String garageId) {
         log.info("Creating invoice for garage {}", garageId);
@@ -25,7 +26,10 @@ public class InvoiceService {
         String invoiceNumber = generateInvoiceNumber(invoice.getType(), garageId);
         invoice.setInvoiceNumber(invoiceNumber);
 
-        return invoiceRepository.save(invoice);
+        Invoice saved = invoiceRepository.save(invoice);
+        activityLogService.log("CREATE", "INVOICE", saved.getId(),
+                "created invoice " + saved.getInvoiceNumber());
+        return saved;
     }
 
     public List<Invoice> getInvoices(String garageId) {
@@ -44,7 +48,10 @@ public class InvoiceService {
         Invoice invoice = invoiceRepository.findByIdAndGarageId(id, garageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with id: " + id));
         invoice.setStatus(status);
-        return invoiceRepository.save(invoice);
+        Invoice saved = invoiceRepository.save(invoice);
+        activityLogService.log("UPDATE", "INVOICE", saved.getId(),
+                "updated invoice " + saved.getInvoiceNumber() + " status to '" + status + "'");
+        return saved;
     }
 
     private String generateInvoiceNumber(String type, String garageId) {

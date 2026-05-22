@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import ReportShell, { ReportDateRange } from "@/components/reports/ReportShell";
+import { useState, useCallback } from "react";
+import ReportShell, { ReportDateRange, ExportColumn } from "@/components/reports/ReportShell";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 import { getInvoices } from "@/lib/api-invoices";
 
 interface Row { id: string; name: string; qty: number; rate: number; total: number; gst: number; }
 
-const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
+const TABLE_CLS = "glass-card overflow-hidden";
 
 const columns: DataColumn<Row>[] = [
   { key: "name", header: "Part Name", render: (r) => <span className="font-medium text-foreground">{r.name}</span>, sortValue: (r) => r.name },
@@ -17,12 +17,20 @@ const columns: DataColumn<Row>[] = [
   { key: "total", header: "Total", align: "right", render: (r) => <span className="font-semibold text-foreground tabular-nums">₹{r.total.toLocaleString("en-IN")}</span>, sortValue: (r) => r.total },
 ];
 
+const exportCols: ExportColumn<Row>[] = [
+  { header: "Part Name", value: (r) => r.name },
+  { header: "Qty", value: (r) => r.qty },
+  { header: "Avg Rate", value: (r) => r.rate },
+  { header: "GST", value: (r) => r.gst },
+  { header: "Total", value: (r) => r.total },
+];
+
 export default function SalesPartsReport() {
   const [data, setData] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
 
-  async function generate(range: ReportDateRange) {
+  const generate = useCallback(async (range: ReportDateRange) => {
     setLoading(true);
     try {
       const invoices = await getInvoices();
@@ -46,10 +54,10 @@ export default function SalesPartsReport() {
       setData(rows);
       setGenerated(true);
     } finally { setLoading(false); }
-  }
+  }, []);
 
   return (
-    <ReportShell title="Parts Sales Reports" loading={loading} generated={generated} onGenerate={generate}>
+    <ReportShell title="Parts Sales Reports" loading={loading} generated={generated} onGenerate={generate} exportColumns={exportCols} exportData={data}>
       <DataTable columns={columns} data={data} keyExtractor={(r) => r.id} className={TABLE_CLS} />
     </ReportShell>
   );

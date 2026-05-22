@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getVehicles, getBrandById, getModelById, getCustomerById, Vehicle } from "@/lib/api-vehicles";
 import { Search, Car, User, Phone, Calendar, Shield, Loader2, LayoutGrid, List, Plus } from "lucide-react";
+import { canManage } from "@/lib/auth";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 
 const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
@@ -156,13 +157,15 @@ export default function VehicleSearchPage() {
               <List className="w-4 h-4" />
             </button>
           </div>
-          <button
-            onClick={() => router.push("/dashboard/create-order")}
-            className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Vehicle
-          </button>
+          {canManage("VEHICLES") && (
+            <button
+              onClick={() => router.push("/dashboard/create-order")}
+              className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Vehicle
+            </button>
+          )}
         </div>
       </div>
 
@@ -196,13 +199,15 @@ export default function VehicleSearchPage() {
             <p className="text-muted text-sm mb-5">
               No vehicles match &quot;{search}&quot;. You can add it as a new vehicle.
             </p>
-            <button
-              onClick={() => router.push("/dashboard/create-order")}
-              className="inline-flex items-center gap-1.5 bg-primary text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add New Vehicle
-            </button>
+            {canManage("VEHICLES") && (
+              <button
+                onClick={() => router.push("/dashboard/create-order")}
+                className="inline-flex items-center gap-1.5 bg-primary text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add New Vehicle
+              </button>
+            )}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
@@ -211,13 +216,15 @@ export default function VehicleSearchPage() {
             </div>
             <p className="text-foreground font-medium mb-1">No vehicles yet</p>
             <p className="text-muted text-sm mb-5">Create a repair order to add vehicles.</p>
-            <button
-              onClick={() => router.push("/dashboard/create-order")}
-              className="inline-flex items-center gap-1.5 bg-primary text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Vehicle
-            </button>
+            {canManage("VEHICLES") && (
+              <button
+                onClick={() => router.push("/dashboard/create-order")}
+                className="inline-flex items-center gap-1.5 bg-primary text-white px-5 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add Vehicle
+              </button>
+            )}
           </div>
         ) : viewMode === "cards" ? (
           <div className="px-6 py-4">

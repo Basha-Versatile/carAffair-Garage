@@ -3,6 +3,7 @@ package com.garrage.controller;
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.ExpenseLabel;
 import com.garrage.repository.ExpenseLabelRepository;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class ExpenseLabelController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ExpenseLabel>> createLabel(@RequestBody Map<String, String> body) {
+        PermissionChecker.require("ACCOUNTS:MANAGE");
         String garageId = TenantContext.getGarageId();
         String name = body.get("name");
         log.info("POST /api/expense-labels name='{}' for garage {}", name, garageId);

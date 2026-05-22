@@ -12,6 +12,7 @@ import java.util.List;
 public class TaxProfileService {
 
     private final TaxProfileRepository taxProfileRepository;
+    private final ActivityLogService activityLogService;
 
     public List<TaxProfile> getProfiles(String garageId) {
         return taxProfileRepository.findByGarageId(garageId);
@@ -23,6 +24,9 @@ public class TaxProfileService {
 
     public TaxProfile createProfile(TaxProfile profile, String garageId) {
         profile.setGarageId(garageId);
-        return taxProfileRepository.save(profile);
+        TaxProfile saved = taxProfileRepository.save(profile);
+        activityLogService.log("CREATE", "TAX_PROFILE", saved.getId(),
+                "created tax profile '" + saved.getName() + "'");
+        return saved;
     }
 }

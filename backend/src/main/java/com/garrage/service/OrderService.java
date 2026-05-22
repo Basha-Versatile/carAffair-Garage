@@ -19,6 +19,7 @@ import java.util.Map;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final ActivityLogService activityLogService;
 
     public Order createOrder(CreateOrderRequest request, String garageId) {
         String jobCard = generateJobCard(garageId);
@@ -38,7 +39,10 @@ public class OrderService {
                 .services(request.getServices())
                 .build();
 
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+        activityLogService.log("CREATE", "ORDER", saved.getId(),
+                "created order " + saved.getJobCard());
+        return saved;
     }
 
     public List<Order> getOrders(String garageId) {
@@ -64,7 +68,10 @@ public class OrderService {
             order.setAmount(request.getAmount());
         }
 
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+        activityLogService.log("UPDATE", "ORDER", saved.getId(),
+                "updated order " + saved.getJobCard() + " (status: " + saved.getStatus() + ")");
+        return saved;
     }
 
     public Map<String, Long> getOrderCounts(String garageId) {

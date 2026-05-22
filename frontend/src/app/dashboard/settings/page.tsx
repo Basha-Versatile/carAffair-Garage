@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { isGarageOwner, isSuperAdmin } from "@/lib/auth";
 import {
   Building2,
   Users,
@@ -17,6 +18,8 @@ import {
   FileText,
   CreditCard,
   ShieldX,
+  Shield,
+  ScrollText,
   X,
 } from "lucide-react";
 
@@ -28,6 +31,7 @@ interface SettingCard {
   href?: string;
   fullWidth?: boolean;
   restricted?: boolean;
+  ownerOnly?: boolean;
 }
 
 const GARAGE_SETTINGS: SettingCard[] = [
@@ -45,7 +49,23 @@ const GARAGE_SETTINGS: SettingCard[] = [
     iconBg: "bg-accent-light",
     iconColor: "text-accent",
     href: "/dashboard/settings/users",
-    restricted: true,
+    ownerOnly: true,
+  },
+  {
+    label: "Roles & Permissions",
+    icon: Shield,
+    iconBg: "bg-warn-light",
+    iconColor: "text-warn",
+    href: "/dashboard/settings/roles",
+    ownerOnly: true,
+  },
+  {
+    label: "Activity Logs",
+    icon: ScrollText,
+    iconBg: "bg-primary-light",
+    iconColor: "text-primary",
+    href: "/dashboard/settings/logs",
+    ownerOnly: true,
   },
   {
     label: "Service & Parts Master",
@@ -135,7 +155,13 @@ export default function SettingsPage() {
   const router = useRouter();
   const [showDenied, setShowDenied] = useState(false);
 
+  const owner = isGarageOwner() || isSuperAdmin();
+
   function handleClick(item: SettingCard) {
+    if (item.ownerOnly && !owner) {
+      setShowDenied(true);
+      return;
+    }
     if (item.restricted) {
       setShowDenied(true);
       return;

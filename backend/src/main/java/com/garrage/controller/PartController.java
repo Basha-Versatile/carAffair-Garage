@@ -3,6 +3,7 @@ package com.garrage.controller;
 import com.garrage.dto.request.CreatePartRequest;
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.Part;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.PartService;
 import jakarta.validation.Valid;
@@ -45,6 +46,7 @@ public class PartController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Part>> createPart(@Valid @RequestBody CreatePartRequest request) {
+        PermissionChecker.require("INVENTORY:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("POST /api/parts for garage {}", garageId);
         Part part = partService.createPart(request, garageId);
@@ -55,6 +57,7 @@ public class PartController {
     public ResponseEntity<ApiResponse<Part>> updatePart(
             @PathVariable String id,
             @RequestBody Part request) {
+        PermissionChecker.require("INVENTORY:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("PUT /api/parts/{} for garage {}", id, garageId);
         Part part = partService.updatePartFromModel(id, request, garageId);
@@ -71,6 +74,7 @@ public class PartController {
 
     @PostMapping(value = "/upload-csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<List<Part>>> uploadCsv(@RequestParam("file") MultipartFile file) {
+        PermissionChecker.require("INVENTORY:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("POST /api/parts/upload-csv for garage {}", garageId);
 

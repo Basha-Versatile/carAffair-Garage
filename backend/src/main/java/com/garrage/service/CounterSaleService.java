@@ -19,6 +19,7 @@ public class CounterSaleService {
 
     private final CounterSaleRepository counterSaleRepository;
     private final PartRepository partRepository;
+    private final ActivityLogService activityLogService;
 
     public CounterSale createCounterSale(CounterSale sale, String garageId) {
         log.info("Creating counter sale for garage {}", garageId);
@@ -42,6 +43,9 @@ public class CounterSaleService {
                 }
             }
         }
+
+        activityLogService.log("CREATE", "COUNTER_SALE", saved.getId(),
+                "created counter sale " + saved.getInvoiceNumber());
 
         return saved;
     }

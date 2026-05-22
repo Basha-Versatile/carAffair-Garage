@@ -6,6 +6,7 @@ C:\Users\korat\Garrage\backend\src\main\java\com\garrage\config\RestTemplateConf
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\config\SecurityConfig.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\config\SurePassProperties.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\config\WebConfig.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\ActivityLogController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\AuthController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\BookingController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\BrandModelController.java
@@ -16,6 +17,8 @@ C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\ExpenseLabel
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\FeedbackController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\GarageController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\GarageRegistrationController.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\GarageRoleController.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\GarageStaffController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\InvoiceController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\ManufacturerController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\OrderController.java
@@ -38,6 +41,8 @@ C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\CreateCusto
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\CreateGarageRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\CreateOrderRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\CreatePartRequest.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\CreateRoleRequest.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\CreateStaffRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\CreateVehicleRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\CreateVendorRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\GarageRegistrationRequest.java
@@ -45,16 +50,21 @@ C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\RefreshToke
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\RegisterVendorRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\SendOtpRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\UpdateOrderRequest.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\UpdateRoleRequest.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\UpdateStaffRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\VerifyOtpRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\response\ApiResponse.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\response\AuthResponse.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\response\GarageResponse.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\response\RcLookupResponse.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\response\StaffResponse.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\exception\BadRequestException.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\exception\ForbiddenException.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\exception\GlobalExceptionHandler.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\exception\ResourceNotFoundException.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\exception\UnauthorizedException.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\GarrageApplication.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\ActivityLog.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\Booking.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\Brand.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\CounterSale.java
@@ -63,6 +73,7 @@ C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\Expense.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\ExpenseLabel.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\Garage.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\GarageRegistration.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\GarageRole.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\Invoice.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\Manufacturer.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\Order.java
@@ -83,6 +94,7 @@ C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\User.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\Vehicle.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\VehicleModel.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\model\Vendor.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\ActivityLogRepository.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\BookingRepository.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\BrandRepository.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\CounterSaleRepository.java
@@ -92,6 +104,7 @@ C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\ExpenseRepos
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\FeedbackRepository.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\GarageRegistrationRepository.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\GarageRepository.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\GarageRoleRepository.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\InvoiceRepository.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\ManufacturerRepository.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\OrderRepository.java
@@ -113,8 +126,10 @@ C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\VehicleRepos
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\repository\VendorRepository.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\security\JwtAuthFilter.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\security\JwtTokenProvider.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\security\PermissionChecker.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\security\TenantContext.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\security\UserPrincipal.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\ActivityLogService.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\AuthService.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\BookingService.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\BrandModelService.java
@@ -124,7 +139,9 @@ C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\EmailService.ja
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\ExpenseService.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\FeedbackService.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\GarageRegistrationService.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\GarageRoleService.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\GarageService.java
+C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\GarageStaffService.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\InvoicePdfService.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\InvoiceService.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\service\ManufacturerService.java

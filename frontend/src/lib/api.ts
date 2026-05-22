@@ -59,6 +59,9 @@ async function tryRefreshToken(): Promise<boolean> {
         role: string;
         garageId: string | null;
         garageName: string;
+        permissions?: string[];
+        garageRoleId?: string;
+        staffTitle?: string;
       }>;
       try {
         json = await res.json();
@@ -77,6 +80,9 @@ async function tryRefreshToken(): Promise<boolean> {
           role: d.role,
           garageId: d.garageId,
           garageName: d.garageName,
+          permissions: d.permissions,
+          garageRoleId: d.garageRoleId,
+          staffTitle: d.staffTitle,
         },
         accessToken: d.accessToken,
         refreshToken: d.refreshToken,

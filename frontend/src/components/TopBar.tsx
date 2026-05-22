@@ -6,7 +6,7 @@ import { getUser, User } from "@/lib/auth";
 import { useSidebar } from "@/context/SidebarContext";
 import { useTheme } from "@/context/ThemeContext";
 import {
-  Search, QrCode, Bell, Menu, X, Sun, Moon,
+  Search, Bell, Menu, X, Sun, Moon,
   Car, User as UserIcon, FileText, ShoppingCart, Loader2,
 } from "lucide-react";
 import { getCustomers, Customer } from "@/lib/api-vehicles";
@@ -248,7 +248,7 @@ export default function TopBar() {
   };
 
   return (
-    <header className="sticky top-0 z-10 flex w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+    <header className="sticky top-0 z-10 flex w-full bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl backdrop-saturate-150 border-b border-white/50 dark:border-gray-800/50">
       <div className="flex items-center justify-between w-full px-4 py-3 xl:px-6">
         {/* Left — hamburger + info */}
         <div className="flex items-center gap-3 min-w-0">
@@ -349,10 +349,6 @@ export default function TopBar() {
 
           <button className="flex items-center justify-center w-10 h-10 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
             <Bell className="w-5 h-5" />
-          </button>
-
-          <button className="hidden sm:flex items-center justify-center w-10 h-10 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-            <QrCode className="w-5 h-5" />
           </button>
 
           <div className="ml-1 w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center">

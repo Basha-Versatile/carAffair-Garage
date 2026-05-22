@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { clearUser, getUser } from "@/lib/auth";
+import { clearUser, getUser, isGarageStaff, isGarageOwner, isSuperAdmin, canView } from "@/lib/auth";
 import { useSidebar } from "@/context/SidebarContext";
 import {
   LayoutDashboard,
@@ -24,75 +24,66 @@ import {
   Wrench,
   Building2,
   Calendar,
+  Shield,
+  UserCog,
+  ScrollText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-type MenuItem = { label: string; icon: LucideIcon; href: string };
+type MenuItem = { label: string; icon: LucideIcon; href: string; module?: string; ownerOnly?: boolean; exact?: boolean };
 type Section = { title: string; items: MenuItem[] };
 
 const baseSections: Section[] = [
   {
     title: "",
-    items: [{ label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" }],
+    items: [{ label: "Dashboard", icon: LayoutDashboard, href: "/dashboard", module: "DASHBOARD" }],
   },
   {
     title: "Operations",
     items: [
-      { label: "Invoices", icon: FileSpreadsheet, href: "/dashboard/invoices" },
-      { label: "Inventory", icon: ClipboardList, href: "/dashboard/inventory" },
-      { label: "Accounts", icon: BookOpen, href: "/dashboard/accounts" },
-      { label: "Order Search", icon: Search, href: "/dashboard/order-search" },
-      {
-        label: "Cancelled Orders",
-        icon: CalendarX,
-        href: "/dashboard/cancelled-orders",
-      },
+      { label: "Invoices", icon: FileSpreadsheet, href: "/dashboard/invoices", module: "INVOICES" },
+      { label: "Inventory", icon: ClipboardList, href: "/dashboard/inventory", module: "INVENTORY" },
+      { label: "Accounts", icon: BookOpen, href: "/dashboard/accounts", module: "ACCOUNTS" },
+      { label: "Order Search", icon: Search, href: "/dashboard/order-search", module: "ORDERS" },
+      { label: "Cancelled Orders", icon: CalendarX, href: "/dashboard/cancelled-orders", module: "ORDERS" },
     ],
   },
   {
     title: "Contacts",
     items: [
-      { label: "My Customers", icon: Users, href: "/dashboard/customers" },
-      { label: "My Vendors", icon: Truck, href: "/dashboard/vendors" },
-      { label: "Vehicle Search", icon: Car, href: "/dashboard/vehicle-search" },
+      { label: "My Customers", icon: Users, href: "/dashboard/customers", module: "CUSTOMERS" },
+      { label: "My Vendors", icon: Truck, href: "/dashboard/vendors", module: "VENDORS" },
+      { label: "Vehicle Search", icon: Car, href: "/dashboard/vehicle-search", module: "VEHICLES" },
     ],
   },
   {
     title: "Services",
     items: [
-      {
-        label: "Appointments",
-        icon: Calendar,
-        href: "/dashboard/appointments",
-      },
-      {
-        label: "Service Reminders",
-        icon: Clock,
-        href: "/dashboard/service-reminders",
-      },
-      {
-        label: "Service Feedbacks",
-        icon: Star,
-        href: "/dashboard/service-feedbacks",
-      },
-      { label: "Insurance Due", icon: Bell, href: "/dashboard/insurance-due" },
+      { label: "Appointments", icon: Calendar, href: "/dashboard/appointments", module: "APPOINTMENTS" },
+      { label: "Service Reminders", icon: Clock, href: "/dashboard/service-reminders", module: "REMINDERS" },
+      { label: "Service Feedbacks", icon: Star, href: "/dashboard/service-feedbacks", module: "REMINDERS" },
+      { label: "Insurance Due", icon: Bell, href: "/dashboard/insurance-due", module: "REMINDERS" },
     ],
   },
   {
     title: "Reports",
     items: [
-      { label: "Reports", icon: BarChart3, href: "/dashboard/reports" },
-      {
-        label: "Tally Export",
-        icon: FileSpreadsheet,
-        href: "/dashboard/tally-export",
-      },
+      { label: "Reports", icon: BarChart3, href: "/dashboard/reports", module: "REPORTS" },
+      { label: "Tally Export", icon: FileSpreadsheet, href: "/dashboard/tally-export", module: "REPORTS" },
+    ],
+  },
+  {
+    title: "Management",
+    items: [
+      { label: "Roles & Permissions", icon: Shield, href: "/dashboard/settings/roles", ownerOnly: true },
+      { label: "Garage Users", icon: UserCog, href: "/dashboard/settings/users", ownerOnly: true },
+      { label: "Activity Logs", icon: ScrollText, href: "/dashboard/settings/logs", ownerOnly: true },
     ],
   },
   {
     title: "More",
     items: [
-      { label: "Garage Settings", icon: Settings, href: "/dashboard/settings" },
+      { label: "Garage Settings", icon: Settings, href: "/dashboard/settings", module: "SETTINGS", exact: true },
       { label: "Refer & Earn", icon: Share2, href: "/dashboard/refer" },
     ],
   },
@@ -120,10 +111,25 @@ export default function Sidebar() {
   const user = getUser();
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
 
-  const sections: Section[] =
+  const staffMode = isGarageStaff();
+  const owner = isGarageOwner() || isSuperAdmin();
+
+  const rawSections: Section[] =
     user?.role === "super_admin"
       ? [baseSections[0], superAdminSection]
       : baseSections;
+
+  // Filter items: ownerOnly items hidden from non-owners, module items hidden from unpermitted staff
+  const sections: Section[] = rawSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => {
+        if (item.ownerOnly && !owner) return false;
+        if (staffMode && item.module && !canView(item.module)) return false;
+        return true;
+      }),
+    }))
+    .filter((section) => section.items.length > 0);
 
   const showFull = isExpanded || isHovered || isMobileOpen;
 
@@ -186,9 +192,9 @@ export default function Sidebar() {
             {/* Section items */}
             {section.items.map((item) => {
               const isActive =
-                item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
+                item.href === "/dashboard" || item.exact
+                  ? pathname === item.href
+                  : pathname === item.href || pathname.startsWith(item.href + "/");
               return (
                 <Link
                   key={item.href}

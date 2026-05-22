@@ -20,6 +20,7 @@ public class VehicleService {
     private final VehicleRepository vehicleRepository;
     private final BrandRepository brandRepository;
     private final VehicleModelRepository vehicleModelRepository;
+    private final ActivityLogService activityLogService;
 
     public Vehicle createVehicle(CreateVehicleRequest request, String garageId) {
         // Resolve brandName from brandId if not provided
@@ -65,7 +66,10 @@ public class VehicleService {
                 .policyNumber(request.getPolicyNumber())
                 .insuranceExpiry(request.getInsuranceExpiry())
                 .build();
-        return vehicleRepository.save(vehicle);
+        Vehicle saved = vehicleRepository.save(vehicle);
+        activityLogService.log("CREATE", "VEHICLE", saved.getId(),
+                "created vehicle " + saved.getRegistrationNumber());
+        return saved;
     }
 
     public List<Vehicle> getVehicles(String garageId) {

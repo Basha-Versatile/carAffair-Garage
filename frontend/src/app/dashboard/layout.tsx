@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { isLoggedIn } from "@/lib/auth";
+import { useRouter, usePathname } from "next/navigation";
+import { isLoggedIn, isGarageStaff, canView, getFirstPermittedRoute } from "@/lib/auth";
 import { SidebarProvider, useSidebar } from "@/context/SidebarContext";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
@@ -18,9 +18,72 @@ function Backdrop() {
   );
 }
 
+/** Maps route prefixes to permission modules for garage_staff route guards. */
+const ROUTE_MODULE_MAP: Record<string, string> = {
+  "/dashboard/create-order": "ORDERS",
+  "/dashboard/create-invoice": "INVOICES",
+  "/dashboard/invoices": "INVOICES",
+  "/dashboard/inventory": "INVENTORY",
+  "/dashboard/accounts": "ACCOUNTS",
+  "/dashboard/order-search": "ORDERS",
+  "/dashboard/cancelled-orders": "ORDERS",
+  "/dashboard/customers": "CUSTOMERS",
+  "/dashboard/vendors": "VENDORS",
+  "/dashboard/vehicle-search": "VEHICLES",
+  "/dashboard/appointments": "APPOINTMENTS",
+  "/dashboard/service-reminders": "REMINDERS",
+  "/dashboard/service-feedbacks": "REMINDERS",
+  "/dashboard/insurance-due": "REMINDERS",
+  "/dashboard/reports": "REPORTS",
+  "/dashboard/tally-export": "REPORTS",
+  "/dashboard/settings": "SETTINGS",
+};
+
+function getRequiredModule(pathname: string): string | null {
+  for (const [prefix, module] of Object.entries(ROUTE_MODULE_MAP)) {
+    if (pathname === prefix || pathname.startsWith(prefix + "/")) {
+      return module;
+    }
+  }
+  return null;
+}
+
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { isExpanded, isHovered } = useSidebar();
   const showFull = isExpanded || isHovered;
+  const pathname = usePathname();
+  const router = useRouter();
+  const [denied, setDenied] = useState(false);
+
+  useEffect(() => {
+    if (!isGarageStaff()) {
+      setDenied(false);
+      return;
+    }
+
+    // Dashboard page: if staff lacks DASHBOARD:VIEW, redirect to first permitted route
+    if (pathname === "/dashboard") {
+      if (!canView("DASHBOARD")) {
+        const target = getFirstPermittedRoute();
+        if (target !== "/dashboard") {
+          router.replace(target);
+          return;
+        }
+      }
+      setDenied(false);
+      return;
+    }
+
+    const requiredModule = getRequiredModule(pathname);
+    if (requiredModule && !canView(requiredModule)) {
+      setDenied(true);
+      const target = getFirstPermittedRoute();
+      const timer = setTimeout(() => router.replace(target), 2000);
+      return () => clearTimeout(timer);
+    } else {
+      setDenied(false);
+    }
+  }, [pathname, router]);
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
@@ -31,7 +94,25 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           ${showFull ? "xl:ml-[240px]" : "xl:ml-[72px]"}`}
       >
         <TopBar />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto relative">
+          {/* Glassmorphic mesh gradient background */}
+          <div className="glass-bg-mesh" aria-hidden="true" />
+          <div className="relative">
+            {denied ? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+                <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Access Denied</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">You don&apos;t have permission to access this page. Redirecting...</p>
+              </div>
+            ) : (
+              children
+            )}
+          </div>
+        </main>
       </div>
     </div>
   );

@@ -161,13 +161,13 @@ export default function LoginPage() {
   const isOtpComplete = otp.every((digit) => digit !== "");
 
   return (
-    <div className="flex flex-col min-h-screen bg-dim">
+    <div className="flex flex-col min-h-screen bg-dim page-gradient">
       <Navbar />
 
       <main className="flex-1 pt-16 flex items-center justify-center px-4 py-12 sm:py-16">
-        <div className="w-full max-w-md animate-scale-in">
+        <div className="relative z-10 w-full max-w-md animate-scale-in">
           {/* Card */}
-          <div className="bg-background rounded-2xl shadow-lg border border-edge overflow-hidden">
+          <div className="glass-card-premium rounded-2xl overflow-hidden">
             {/* Tab Header */}
             <div className="flex border-b border-edge">
               <button
@@ -192,7 +192,7 @@ export default function LoginPage() {
                 }`}
               >
                 <Building2 className="h-4 w-4" />
-                Partner
+                Vendor
               </button>
             </div>
 
@@ -208,12 +208,12 @@ export default function LoginPage() {
                   )}
                 </div>
                 <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-                  {activeTab === "customer" ? "Welcome Back" : "Partner Login"}
+                  {activeTab === "customer" ? "Welcome Back" : "Vendor Login"}
                 </h1>
                 <p className="mt-2 text-sm text-secondary">
                   {activeTab === "customer"
                     ? "Login to manage your bookings and service history"
-                    : "Login to your partner dashboard"}
+                    : "Login to your vendor dashboard"}
                 </p>
               </div>
 
@@ -434,7 +434,7 @@ export default function LoginPage() {
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-hover transition-colors"
               >
                 <Building2 className="h-4 w-4" />
-                Become a Partner
+                Become a Vendor
                 <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>

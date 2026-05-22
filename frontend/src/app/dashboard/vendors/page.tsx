@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { getVendors, addVendor, Vendor } from "@/lib/api-vehicles";
 import { Search, Plus, Phone, Mail, MoreVertical, Truck, X, Eye, Loader2, LayoutGrid, List } from "lucide-react";
+import { canManage } from "@/lib/auth";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 
 const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
@@ -157,10 +158,12 @@ export default function VendorsPage() {
             </button>
           </div>
           <button className="text-sm text-primary font-medium hover:underline">VIEW ALL DUE</button>
-          <button onClick={() => { setShowForm(true); setForm(emptyVendorForm); setErrors({}); }}
-            className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
-            <Plus className="w-4 h-4" />Vendor
-          </button>
+          {canManage("VENDORS") && (
+            <button onClick={() => { setShowForm(true); setForm(emptyVendorForm); setErrors({}); }}
+              className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
+              <Plus className="w-4 h-4" />Vendor
+            </button>
+          )}
         </div>
       </div>
 
@@ -193,10 +196,12 @@ export default function VendorsPage() {
             <p className="text-muted text-sm mb-4">
               {search ? "No vendors match your search criteria." : "Add your first vendor to get started."}
             </p>
-            <button onClick={() => { setShowForm(true); setForm(emptyVendorForm); setErrors({}); }}
-              className="inline-flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
-              <Plus className="w-4 h-4" />Add Vendor
-            </button>
+            {canManage("VENDORS") && (
+              <button onClick={() => { setShowForm(true); setForm(emptyVendorForm); setErrors({}); }}
+                className="inline-flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
+                <Plus className="w-4 h-4" />Add Vendor
+              </button>
+            )}
           </div>
         ) : viewMode === "list" ? (
           <div className="px-6 py-3">

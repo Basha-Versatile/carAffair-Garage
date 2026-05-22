@@ -2,6 +2,7 @@ package com.garrage.controller;
 
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.TaxProfile;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.TaxProfileService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class TaxProfileController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<TaxProfile>> createProfile(@RequestBody TaxProfile profile) {
+        PermissionChecker.require("SETTINGS:MANAGE");
         TaxProfile created = taxProfileService.createProfile(profile, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(created));
     }

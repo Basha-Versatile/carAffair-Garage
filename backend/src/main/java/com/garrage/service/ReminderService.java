@@ -15,11 +15,15 @@ import java.util.List;
 public class ReminderService {
 
     private final ReminderRepository reminderRepository;
+    private final ActivityLogService activityLogService;
 
     public ServiceReminder createReminder(ServiceReminder reminder, String garageId) {
         log.info("Creating service reminder for garage {}", garageId);
         reminder.setGarageId(garageId);
-        return reminderRepository.save(reminder);
+        ServiceReminder saved = reminderRepository.save(reminder);
+        activityLogService.log("CREATE", "REMINDER", saved.getId(),
+                "created reminder for " + saved.getCustomerName());
+        return saved;
     }
 
     public List<ServiceReminder> getReminders(String garageId) {
@@ -49,6 +53,9 @@ public class ReminderService {
         reminder.setKmsDue(updates.getKmsDue());
         reminder.setNotes(updates.getNotes());
 
-        return reminderRepository.save(reminder);
+        ServiceReminder saved = reminderRepository.save(reminder);
+        activityLogService.log("UPDATE", "REMINDER", saved.getId(),
+                "updated reminder for " + saved.getCustomerName());
+        return saved;
     }
 }

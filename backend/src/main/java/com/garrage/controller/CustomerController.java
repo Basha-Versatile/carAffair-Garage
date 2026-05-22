@@ -3,6 +3,7 @@ package com.garrage.controller;
 import com.garrage.dto.request.CreateCustomerRequest;
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.Customer;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.CustomerService;
 import jakarta.validation.Valid;
@@ -27,6 +28,7 @@ public class CustomerController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Customer>> createCustomer(@Valid @RequestBody CreateCustomerRequest request) {
+        PermissionChecker.require("CUSTOMERS:MANAGE");
         Customer customer = customerService.createCustomer(request, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(customer));
     }
@@ -47,6 +49,7 @@ public class CustomerController {
     public ResponseEntity<ApiResponse<Customer>> updateCustomer(
             @PathVariable String id,
             @Valid @RequestBody CreateCustomerRequest request) {
+        PermissionChecker.require("CUSTOMERS:MANAGE");
         Customer customer = customerService.updateCustomer(id, request, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(customer));
     }

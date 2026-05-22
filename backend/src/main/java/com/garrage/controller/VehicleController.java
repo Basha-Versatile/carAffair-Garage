@@ -3,6 +3,7 @@ package com.garrage.controller;
 import com.garrage.dto.request.CreateVehicleRequest;
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.Vehicle;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.VehicleService;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ public class VehicleController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Vehicle>> createVehicle(@Valid @RequestBody CreateVehicleRequest request) {
+        PermissionChecker.require("VEHICLES:MANAGE");
         Vehicle vehicle = vehicleService.createVehicle(request, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(vehicle));
     }

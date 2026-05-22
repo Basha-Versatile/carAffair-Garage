@@ -21,6 +21,7 @@ public class PartService {
 
     private final PartRepository partRepository;
     private final StockHistoryRepository stockHistoryRepository;
+    private final ActivityLogService activityLogService;
 
     public Part createPart(CreatePartRequest request, String garageId) {
         log.info("Creating part '{}' for garage {}", request.getName(), garageId);
@@ -81,6 +82,8 @@ public class PartService {
             stockHistoryRepository.save(history);
         }
 
+        activityLogService.log("CREATE", "PART", saved.getId(),
+                "created part " + saved.getName());
         return saved;
     }
 
@@ -118,7 +121,10 @@ public class PartService {
         part.setUnit(request.getUnit());
         part.setComment(request.getComment());
 
-        return partRepository.save(part);
+        Part saved = partRepository.save(part);
+        activityLogService.log("UPDATE", "PART", saved.getId(),
+                "updated part " + saved.getName());
+        return saved;
     }
 
     public Part updatePartFromModel(String id, Part request, String garageId) {
@@ -165,6 +171,8 @@ public class PartService {
             stockHistoryRepository.save(history);
         }
 
+        activityLogService.log("UPDATE", "PART", saved.getId(),
+                "updated part " + saved.getName());
         return saved;
     }
 

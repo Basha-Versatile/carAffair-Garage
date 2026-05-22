@@ -2,6 +2,7 @@ package com.garrage.controller;
 
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.StockInRecord;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.StockInService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class StockInController {
     @PostMapping
     public ResponseEntity<ApiResponse<StockInRecord>> createStockIn(
             @RequestBody StockInRecord record) {
+        PermissionChecker.require("INVENTORY:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("POST /api/stock-in for garage {}", garageId);
         StockInRecord created = stockInService.createStockIn(record, garageId);

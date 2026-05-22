@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { setAuth, isLoggedIn } from "@/lib/auth";
+import { setAuth, isLoggedIn, getFirstPermittedRoute } from "@/lib/auth";
 import { publicPost } from "@/lib/api";
 import { Wrench, Phone, ShieldCheck } from "lucide-react";
 
@@ -62,6 +62,9 @@ export default function LoginPage() {
         role: string;
         garageId: string | null;
         garageName: string;
+        permissions?: string[];
+        garageRoleId?: string;
+        staffTitle?: string;
       }>("/api/auth/verify-otp", { phone, otp: otp.join(""), role: "garage_admin" });
       setAuth({
         user: {
@@ -71,11 +74,14 @@ export default function LoginPage() {
           role: data.role,
           garageId: data.garageId,
           garageName: data.garageName,
+          permissions: data.permissions,
+          garageRoleId: data.garageRoleId,
+          staffTitle: data.staffTitle,
         },
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
       });
-      router.replace("/dashboard");
+      router.replace(getFirstPermittedRoute());
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to verify OTP");
     } finally {

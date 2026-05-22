@@ -12,6 +12,7 @@ import java.util.List;
 public class ServiceCategoryService {
 
     private final ServiceCategoryRepository serviceCategoryRepository;
+    private final ActivityLogService activityLogService;
 
     public List<ServiceCategory> getCategories(String garageId) {
         return serviceCategoryRepository.findByGarageId(garageId);
@@ -25,7 +26,10 @@ public class ServiceCategoryService {
                             .garageId(garageId)
                             .name(name)
                             .build();
-                    return serviceCategoryRepository.save(category);
+                    ServiceCategory saved = serviceCategoryRepository.save(category);
+                    activityLogService.log("CREATE", "SERVICE_CATEGORY", saved.getId(),
+                            "created service category '" + saved.getName() + "'");
+                    return saved;
                 });
     }
 }

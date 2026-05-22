@@ -9,6 +9,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -37,6 +39,7 @@ public class Garage {
 
     private Double longitude;
 
+    @JsonProperty("isActive")
     @Builder.Default
     private boolean isActive = true;
 

@@ -3,6 +3,7 @@ package com.garrage.controller;
 import com.garrage.dto.request.CreateBookingRequest;
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.Booking;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.security.UserPrincipal;
 import com.garrage.service.BookingService;
@@ -50,6 +51,7 @@ public class BookingController {
     public ResponseEntity<ApiResponse<Booking>> updateBookingStatus(
             @PathVariable String id,
             @RequestBody Map<String, String> body) {
+        PermissionChecker.require("APPOINTMENTS:MANAGE");
         String status = body.get("status");
         Booking booking = bookingService.updateBookingStatus(id, status, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(booking));

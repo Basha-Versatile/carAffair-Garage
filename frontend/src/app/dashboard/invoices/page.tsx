@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { canManage } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { getInvoices, Invoice } from "@/lib/api-invoices";
 import { Plus, FileText, IndianRupee, Calendar, LayoutGrid, List } from "lucide-react";
@@ -105,10 +106,12 @@ export default function InvoicesPage() {
               <List className="w-4 h-4" />
             </button>
           </div>
-          <button onClick={() => router.push("/dashboard/create-invoice")}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors">
-            <Plus className="w-4 h-4" /> Create Invoice
-          </button>
+          {canManage("INVOICES") && (
+            <button onClick={() => router.push("/dashboard/create-invoice")}
+              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors">
+              <Plus className="w-4 h-4" /> Create Invoice
+            </button>
+          )}
         </div>
       </div>
 

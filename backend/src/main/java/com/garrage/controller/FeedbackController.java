@@ -2,6 +2,7 @@ package com.garrage.controller;
 
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.ServiceFeedback;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.FeedbackService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class FeedbackController {
     @PostMapping
     public ResponseEntity<ApiResponse<ServiceFeedback>> createFeedback(
             @RequestBody ServiceFeedback feedback) {
+        PermissionChecker.require("REMINDERS:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("POST /api/service-feedbacks for garage {}", garageId);
         ServiceFeedback created = feedbackService.createFeedback(feedback, garageId);

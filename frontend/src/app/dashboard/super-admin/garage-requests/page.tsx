@@ -66,8 +66,7 @@ function formatDate(dateStr: string) {
   }
 }
 
-const TABLE_CLS =
-  "bg-background rounded-lg border border-edge overflow-hidden";
+const TABLE_CLS = "glass-card overflow-hidden";
 
 const columns: DataColumn<GarageRegistration>[] = [
   {
@@ -172,7 +171,7 @@ export default function GarageRequestsPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="bg-background border-b border-edge px-6 py-3.5 flex items-center justify-between">
+      <div className="glass-card rounded-none border-x-0 border-t-0 px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-base font-semibold text-foreground">
             Garage Requests

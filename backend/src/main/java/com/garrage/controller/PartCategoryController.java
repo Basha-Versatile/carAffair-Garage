@@ -2,6 +2,7 @@ package com.garrage.controller;
 
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.PartCategory;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.PartCategoryService;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class PartCategoryController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<PartCategory>> createCategory(@RequestBody Map<String, String> body) {
+        PermissionChecker.require("INVENTORY:MANAGE");
         String name = body.get("name");
         PartCategory category = partCategoryService.createCategory(name, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(category));

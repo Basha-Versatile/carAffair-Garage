@@ -1,6 +1,7 @@
 package com.garrage.security;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,12 +39,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String garageName = claims.get("garageName", String.class);
                 String phone = claims.get("phone", String.class);
 
+                // Extract permissions from JWT (only present for garage_staff)
+                @SuppressWarnings("unchecked")
+                List<String> permissions = claims.get("permissions", List.class);
+
                 UserPrincipal userPrincipal = UserPrincipal.builder()
                         .id(userId)
                         .phone(phone)
                         .role(role != null ? role : "")
                         .garageId(garageId)
                         .garageName(garageName)
+                        .permissions(permissions)
                         .build();
 
                 UsernamePasswordAuthenticationToken authentication =

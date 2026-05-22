@@ -15,6 +15,7 @@ import java.util.List;
 public class PartPurchaseService {
 
     private final PartPurchaseRepository partPurchaseRepository;
+    private final ActivityLogService activityLogService;
 
     public List<PartPurchase> getPartPurchases(String garageId) {
         return partPurchaseRepository.findByGarageIdOrderByCreatedAtDesc(garageId);
@@ -24,7 +25,10 @@ public class PartPurchaseService {
         partPurchase.setGarageId(garageId);
         partPurchase.setVoucherNo(generateVoucherNo(garageId));
         log.info("Creating part purchase {} for garage {}", partPurchase.getVoucherNo(), garageId);
-        return partPurchaseRepository.save(partPurchase);
+        PartPurchase saved = partPurchaseRepository.save(partPurchase);
+        activityLogService.log("CREATE", "PART_PURCHASE", saved.getId(),
+                "created part purchase " + saved.getVoucherNo());
+        return saved;
     }
 
     private String generateVoucherNo(String garageId) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { canManage } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -96,14 +97,15 @@ function makeServiceColumns(onEdit: (s: GarageService) => void): DataColumn<Gara
       key: "edit",
       header: "Edit",
       align: "right",
-      render: (s) => (
-        <button
-          onClick={(e) => { e.stopPropagation(); onEdit(s); }}
-          className="p-1.5 rounded-md text-muted hover:text-primary hover:bg-hover transition-colors"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-      ),
+      render: (s) =>
+        canManage("SETTINGS") ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(s); }}
+            className="p-1.5 rounded-md text-muted hover:text-primary hover:bg-hover transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+        ) : null,
     },
   ];
 }
@@ -168,14 +170,15 @@ function makePartColumns(onEdit: (p: Part) => void): DataColumn<Part>[] {
       key: "edit",
       header: "Edit",
       align: "right",
-      render: (p) => (
-        <button
-          onClick={(e) => { e.stopPropagation(); onEdit(p); }}
-          className="p-1.5 rounded-md text-muted hover:text-primary hover:bg-hover transition-colors"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-      ),
+      render: (p) =>
+        canManage("SETTINGS") ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(p); }}
+            className="p-1.5 rounded-md text-muted hover:text-primary hover:bg-hover transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+        ) : null,
     },
   ];
 }
@@ -396,13 +399,15 @@ export default function ServicePartsPage() {
           </div>
 
           {/* Add button */}
-          <button
-            onClick={isServiceTab ? openAddService : openAddPart}
-            className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {isServiceTab ? "Add Service" : "Add Part"}
-          </button>
+          {canManage("SETTINGS") && (
+            <button
+              onClick={isServiceTab ? openAddService : openAddPart}
+              className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {isServiceTab ? "Add Service" : "Add Part"}
+            </button>
+          )}
         </div>
 
         {/* Content */}

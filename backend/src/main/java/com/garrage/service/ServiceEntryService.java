@@ -12,6 +12,7 @@ import java.util.List;
 public class ServiceEntryService {
 
     private final ServiceEntryRepository serviceEntryRepository;
+    private final ActivityLogService activityLogService;
 
     public List<ServiceEntry> getServices(String garageId) {
         return serviceEntryRepository.findByGarageId(garageId);
@@ -19,7 +20,10 @@ public class ServiceEntryService {
 
     public ServiceEntry createService(ServiceEntry serviceEntry, String garageId) {
         serviceEntry.setGarageId(garageId);
-        return serviceEntryRepository.save(serviceEntry);
+        ServiceEntry saved = serviceEntryRepository.save(serviceEntry);
+        activityLogService.log("CREATE", "SERVICE", saved.getId(),
+                "created service '" + saved.getName() + "'");
+        return saved;
     }
 
     public ServiceEntry updateService(String id, ServiceEntry updates, String garageId) {
@@ -37,7 +41,10 @@ public class ServiceEntryService {
         existing.setHasGst(updates.isHasGst());
         existing.setGeneric(updates.isGeneric());
         if (updates.getApplicableBrands() != null) existing.setApplicableBrands(updates.getApplicableBrands());
-        return serviceEntryRepository.save(existing);
+        ServiceEntry saved = serviceEntryRepository.save(existing);
+        activityLogService.log("UPDATE", "SERVICE", saved.getId(),
+                "updated service '" + saved.getName() + "'");
+        return saved;
     }
 
     public List<ServiceEntry> getByCategory(String categoryId, String garageId) {

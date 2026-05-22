@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import ReportShell, { ReportDateRange } from "@/components/reports/ReportShell";
+import { useState, useCallback } from "react";
+import ReportShell, { ReportDateRange, ExportColumn } from "@/components/reports/ReportShell";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 import { getOrders, Order } from "@/lib/api-orders";
 
-const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
+const TABLE_CLS = "glass-card overflow-hidden";
 
 const STATUS_CLS: Record<string, { label: string; cls: string }> = {
   open:        { label: "Due",         cls: "bg-warn-light text-warn" },
@@ -25,12 +25,23 @@ const columns: DataColumn<Order>[] = [
   { key: "amount", header: "Amount", align: "right", render: (o) => <span className="font-semibold text-foreground tabular-nums">₹{(o.amount ?? 0).toLocaleString("en-IN")}</span>, sortValue: (o) => o.amount ?? 0 },
 ];
 
+const exportCols: ExportColumn<Order>[] = [
+  { header: "Job Card", value: (o) => o.jobCard || "" },
+  { header: "Customer", value: (o) => o.customerName || "" },
+  { header: "Phone", value: (o) => o.phone || o.customerPhone || "" },
+  { header: "Vehicle", value: (o) => o.vehicle || "" },
+  { header: "Vehicle No", value: (o) => o.vehicleNumber || "" },
+  { header: "Date", value: (o) => o.date || "" },
+  { header: "Services", value: (o) => (o.services || []).join(", ") },
+  { header: "Amount", value: (o) => o.amount ?? 0 },
+];
+
 export default function ServiceReminderReport() {
   const [data, setData] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
 
-  async function generate(range: ReportDateRange) {
+  const generate = useCallback(async (range: ReportDateRange) => {
     setLoading(true);
     try {
       const orders = await getOrders();
@@ -39,10 +50,10 @@ export default function ServiceReminderReport() {
       setData(filtered);
       setGenerated(true);
     } finally { setLoading(false); }
-  }
+  }, []);
 
   return (
-    <ReportShell title="Service Reminder Report" loading={loading} generated={generated} onGenerate={generate}>
+    <ReportShell title="Service Reminder Report" loading={loading} generated={generated} onGenerate={generate} exportColumns={exportCols} exportData={data}>
       <DataTable columns={columns} data={data} keyExtractor={(o) => o.id} className={TABLE_CLS} />
     </ReportShell>
   );

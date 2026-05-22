@@ -12,6 +12,7 @@ import java.util.List;
 public class TagService {
 
     private final TagRepository tagRepository;
+    private final ActivityLogService activityLogService;
 
     public List<Tag> getTags(String garageId) {
         return tagRepository.findByGarageId(garageId);
@@ -23,7 +24,10 @@ public class TagService {
 
     public Tag createTag(Tag tag, String garageId) {
         tag.setGarageId(garageId);
-        return tagRepository.save(tag);
+        Tag saved = tagRepository.save(tag);
+        activityLogService.log("CREATE", "TAG", saved.getId(),
+                "created tag '" + saved.getName() + "'");
+        return saved;
     }
 
     public Tag updateTag(String id, Tag updates, String garageId) {
@@ -35,7 +39,10 @@ public class TagService {
         if (updates.getName() != null) existing.setName(updates.getName());
         if (updates.getType() != null) existing.setType(updates.getType());
         if (updates.getColor() != null) existing.setColor(updates.getColor());
-        return tagRepository.save(existing);
+        Tag saved = tagRepository.save(existing);
+        activityLogService.log("UPDATE", "TAG", saved.getId(),
+                "updated tag '" + saved.getName() + "'");
+        return saved;
     }
 
     public void deleteTag(String id, String garageId) {
@@ -45,5 +52,7 @@ public class TagService {
             throw new IllegalArgumentException("Tag does not belong to this garage");
         }
         tagRepository.deleteById(id);
+        activityLogService.log("DELETE", "TAG", id,
+                "deleted tag '" + existing.getName() + "'");
     }
 }

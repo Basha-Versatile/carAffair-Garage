@@ -4,6 +4,7 @@ import com.garrage.dto.request.CreateOrderRequest;
 import com.garrage.dto.request.UpdateOrderRequest;
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.Order;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.OrderService;
 import jakarta.validation.Valid;
@@ -26,7 +27,6 @@ public class OrderController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String dateFrom,
             @RequestParam(required = false) String dateTo) {
-
         String garageId = TenantContext.getGarageId();
         List<Order> orders;
 
@@ -53,6 +53,7 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Order>> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+        PermissionChecker.require("ORDERS:MANAGE");
         Order order = orderService.createOrder(request, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(order));
     }
@@ -67,6 +68,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<Order>> updateOrder(
             @PathVariable String id,
             @Valid @RequestBody UpdateOrderRequest request) {
+        PermissionChecker.require("ORDERS:MANAGE");
         Order order = orderService.updateOrder(id, request, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(order));
     }

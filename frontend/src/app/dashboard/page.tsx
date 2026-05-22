@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { tabs, TabKey, getOrders, getOrdersByStatus, getOrderCounts, Order } from "@/lib/api-orders";
 import { getCustomers } from "@/lib/api-customers";
 import { getParts, Part } from "@/lib/api-inventory";
+import { canManage } from "@/lib/auth";
 import {
   Plus, FileText, Phone, Car, Calendar, IndianRupee, LayoutGrid, List,
   TrendingUp, TrendingDown, Users, AlertTriangle, ClipboardList,
@@ -75,7 +76,7 @@ function OrderCard({ order, onClick }: { order: Order; onClick?: () => void }) {
   };
 
   return (
-    <div onClick={onClick} className="bg-background rounded-lg border border-edge p-4 hover:shadow-md transition-shadow cursor-pointer">
+    <div onClick={onClick} className="glass-card-light p-4 hover:shadow-theme-lg transition-shadow cursor-pointer">
       <div className="flex items-start justify-between mb-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground truncate">{order.customerName || "-"}</p>
@@ -256,6 +257,34 @@ export default function DashboardPage() {
 
   return (
     <div className="p-5 space-y-6">
+      {/* ═══ Quick Actions ═══ */}
+      {(canManage("ORDERS") || canManage("INVOICES")) && (
+        <div className="flex justify-center gap-4">
+          {canManage("ORDERS") && (
+            <button
+              onClick={() => router.push("/dashboard/create-order")}
+              className="flex-1 max-w-xs flex items-center justify-center gap-3 bg-brand-500/90 backdrop-blur-sm text-white py-3.5 rounded-xl hover:bg-brand-600 transition-colors shadow-theme-md border border-white/10"
+            >
+              <div className="bg-white/20 p-1.5 rounded">
+                <Plus className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-medium">Create Repair Order</span>
+            </button>
+          )}
+          {canManage("INVOICES") && (
+            <button
+              onClick={() => router.push("/dashboard/create-invoice")}
+              className="flex-1 max-w-xs flex items-center justify-center gap-3 bg-brand-500/90 backdrop-blur-sm text-white py-3.5 rounded-xl hover:bg-brand-600 transition-colors shadow-theme-md border border-white/10"
+            >
+              <div className="bg-white/20 p-1.5 rounded">
+                <FileText className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-medium">Create Invoice</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ═══ KPI Cards ═══ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard
@@ -402,28 +431,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ═══ Quick Actions ═══ */}
-      <div className="flex justify-center gap-4">
-        <button
-          onClick={() => router.push("/dashboard/create-order")}
-          className="flex-1 max-w-xs flex items-center justify-center gap-3 bg-brand-500 text-white py-3.5 rounded-xl hover:bg-brand-600 transition-colors shadow-theme-sm"
-        >
-          <div className="bg-white/15 p-1.5 rounded">
-            <Plus className="w-4 h-4" />
-          </div>
-          <span className="text-sm font-medium">Create Repair Order</span>
-        </button>
-        <button
-          onClick={() => router.push("/dashboard/create-invoice")}
-          className="flex-1 max-w-xs flex items-center justify-center gap-3 bg-brand-500 text-white py-3.5 rounded-xl hover:bg-brand-600 transition-colors shadow-theme-sm"
-        >
-          <div className="bg-white/15 p-1.5 rounded">
-            <FileText className="w-4 h-4" />
-          </div>
-          <span className="text-sm font-medium">Create Invoice</span>
-        </button>
-      </div>
-
       {/* ═══ Recent Orders ═══ */}
       <div>
         <div className="border-b border-edge mb-5">
@@ -524,7 +531,7 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-background rounded-lg border border-edge overflow-hidden">
+          <div className="glass-card overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-dim border-b border-edge">

@@ -15,6 +15,7 @@ import java.util.Optional;
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final ActivityLogService activityLogService;
 
     public Customer createCustomer(CreateCustomerRequest request, String garageId) {
         // Duplicate check: same phone in same garage
@@ -32,7 +33,10 @@ public class CustomerService {
                 .address(request.getAddress())
                 .gstin(request.getGstin())
                 .build();
-        return customerRepository.save(customer);
+        Customer saved = customerRepository.save(customer);
+        activityLogService.log("CREATE", "CUSTOMER", saved.getId(),
+                "created customer " + saved.getName());
+        return saved;
     }
 
     public List<Customer> getCustomers(String garageId) {
@@ -51,7 +55,10 @@ public class CustomerService {
         customer.setEmail(request.getEmail());
         customer.setAddress(request.getAddress());
         customer.setGstin(request.getGstin());
-        return customerRepository.save(customer);
+        Customer saved = customerRepository.save(customer);
+        activityLogService.log("UPDATE", "CUSTOMER", saved.getId(),
+                "updated customer " + saved.getName());
+        return saved;
     }
 
     public Optional<Customer> findByPhone(String phone, String garageId) {

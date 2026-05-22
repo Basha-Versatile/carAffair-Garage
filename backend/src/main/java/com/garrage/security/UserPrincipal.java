@@ -1,5 +1,6 @@
 package com.garrage.security;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -24,9 +25,14 @@ public class UserPrincipal implements UserDetails {
     private String garageId;
     private String garageName;
 
+    /** Module-level permissions. Only populated for garage_staff. */
+    private List<String> permissions;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+        return authorities;
     }
 
     @Override

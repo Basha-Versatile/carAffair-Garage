@@ -115,14 +115,14 @@ export default function PartnerPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background page-gradient">
       <Navbar />
 
       {/* Main Content */}
-      <main className="flex-1 pt-16">
+      <main className="relative z-10 flex-1 pt-16">
         <div className="flex flex-col lg:flex-row min-h-[calc(100vh-4rem)]">
           {/* Left Info Panel */}
-          <div className="relative lg:w-[45%] xl:w-[42%] bg-gradient-to-br from-primary to-green-800 text-white px-6 py-12 sm:px-10 sm:py-16 lg:px-12 lg:py-20 xl:px-16 flex flex-col justify-center overflow-hidden">
+          <div className="relative lg:w-[45%] xl:w-[42%] bg-gradient-to-br from-[#E63946] to-[#9B1B24] text-white px-6 py-12 sm:px-10 sm:py-16 lg:px-12 lg:py-20 xl:px-16 flex flex-col justify-center overflow-hidden">
             {/* Decorative circles */}
             <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/5 rounded-full" />
             <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-white/5 rounded-full" />
@@ -130,11 +130,11 @@ export default function PartnerPage() {
 
             <div className="relative z-10 max-w-lg mx-auto lg:mx-0">
               <h1 className="text-3xl sm:text-4xl lg:text-[2.5rem] xl:text-5xl font-bold leading-tight tracking-tight animate-slide-up">
-                Partner With
+                Become a Vendor With
                 <br />
                 Car Affair
               </h1>
-              <p className="mt-4 text-base sm:text-lg text-green-100 leading-relaxed animate-slide-up [animation-delay:100ms]">
+              <p className="mt-4 text-base sm:text-lg text-red-100 leading-relaxed animate-slide-up [animation-delay:100ms]">
                 Join our growing network of trusted garages and take your
                 business to the next level.
               </p>
@@ -143,8 +143,8 @@ export default function PartnerPage() {
               <ul className="mt-8 space-y-4 animate-slide-up [animation-delay:200ms]">
                 {benefits.map((benefit, idx) => (
                   <li key={idx} className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 mt-0.5 text-green-300 shrink-0" />
-                    <span className="text-sm sm:text-base text-green-50 leading-snug">
+                    <CheckCircle2 className="h-5 w-5 mt-0.5 text-red-300 shrink-0" />
+                    <span className="text-sm sm:text-base text-red-50 leading-snug">
                       {benefit}
                     </span>
                   </li>
@@ -152,37 +152,36 @@ export default function PartnerPage() {
               </ul>
 
               {/* Stats */}
-              <div className="mt-10 flex gap-8 animate-slide-up [animation-delay:300ms]">
-                <div>
+              <div className="mt-10 flex gap-4 animate-slide-up [animation-delay:300ms]">
+                <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl px-5 py-3">
                   <div className="text-2xl sm:text-3xl font-bold">500+</div>
-                  <div className="text-sm text-green-200 mt-1">
+                  <div className="text-sm text-red-200 mt-1">
                     Partner Garages
                   </div>
                 </div>
-                <div className="w-px bg-white/20" />
-                <div>
+                <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl px-5 py-3">
                   <div className="text-2xl sm:text-3xl font-bold">10,000+</div>
-                  <div className="text-sm text-green-200 mt-1">
+                  <div className="text-sm text-red-200 mt-1">
                     Monthly Bookings
                   </div>
                 </div>
               </div>
 
               {/* Testimonial */}
-              <div className="mt-10 border-l-2 border-green-300/50 pl-5 animate-slide-up [animation-delay:400ms]">
-                <p className="text-sm sm:text-base italic text-green-100 leading-relaxed">
+              <div className="mt-10 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-5 animate-slide-up [animation-delay:400ms]">
+                <p className="text-sm sm:text-base italic text-red-100 leading-relaxed">
                   &ldquo;Car Affair helped us grow our customer base by 3x in
                   just 6 months.&rdquo;
                 </p>
                 <div className="mt-3 flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-green-600 flex items-center justify-center text-sm font-semibold">
+                  <div className="h-9 w-9 rounded-full bg-red-600 flex items-center justify-center text-sm font-semibold">
                     RK
                   </div>
                   <div>
                     <div className="text-sm font-medium text-white">
                       Rajesh Kumar
                     </div>
-                    <div className="text-xs text-green-200">
+                    <div className="text-xs text-red-200">
                       AutoCare Garage
                     </div>
                   </div>
@@ -192,7 +191,7 @@ export default function PartnerPage() {
           </div>
 
           {/* Right Form Panel */}
-          <div className="flex-1 px-4 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16 xl:px-20 bg-background overflow-y-auto">
+          <div className="flex-1 px-4 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16 xl:px-20 bg-background/80 backdrop-blur-sm overflow-y-auto">
             <div className="max-w-xl mx-auto lg:mx-0">
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight animate-fade-in">
                 Register Your Garage
@@ -558,7 +557,7 @@ export default function PartnerPage() {
                         href="/partner-agreement"
                         className="text-primary underline underline-offset-2 hover:text-primary-hover"
                       >
-                        Partner Agreement
+                        Vendor Agreement
                       </Link>
                     </span>
                   </label>
@@ -600,7 +599,7 @@ export default function PartnerPage() {
 
                 {/* Login Link */}
                 <p className="text-center text-sm text-muted">
-                  Already a partner?{" "}
+                  Already a vendor?{" "}
                   <Link
                     href="/login"
                     className="text-primary font-medium hover:text-primary-hover underline underline-offset-2"
@@ -619,7 +618,7 @@ export default function PartnerPage() {
       {/* Success Overlay/Modal */}
       {submitted && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="relative mx-4 w-full max-w-md bg-background rounded-2xl shadow-2xl p-8 sm:p-10 text-center animate-scale-in">
+          <div className="relative mx-4 w-full max-w-md glass-card-premium rounded-2xl p-8 sm:p-10 text-center animate-scale-in">
             {/* Animated Checkmark */}
             <div className="mx-auto mb-6 flex items-center justify-center h-20 w-20 rounded-full bg-primary-light">
               <svg

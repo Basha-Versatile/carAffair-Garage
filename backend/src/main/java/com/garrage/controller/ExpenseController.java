@@ -2,6 +2,7 @@ package com.garrage.controller;
 
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.Expense;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.ExpenseService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class ExpenseController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Expense>> createExpense(@RequestBody Expense expense) {
+        PermissionChecker.require("ACCOUNTS:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("POST /api/expenses for garage {}", garageId);
         Expense created = expenseService.createExpense(expense, garageId);

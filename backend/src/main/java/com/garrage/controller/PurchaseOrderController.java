@@ -2,6 +2,7 @@ package com.garrage.controller;
 
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.PurchaseOrder;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.PurchaseOrderService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class PurchaseOrderController {
     @PostMapping
     public ResponseEntity<ApiResponse<PurchaseOrder>> createPurchaseOrder(
             @RequestBody PurchaseOrder purchaseOrder) {
+        PermissionChecker.require("INVENTORY:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("POST /api/purchase-orders for garage {}", garageId);
         PurchaseOrder created = purchaseOrderService.createPurchaseOrder(purchaseOrder, garageId);

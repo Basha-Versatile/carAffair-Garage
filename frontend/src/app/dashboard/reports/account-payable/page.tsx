@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import ReportShell, { ReportDateRange } from "@/components/reports/ReportShell";
+import { useState, useMemo, useCallback } from "react";
+import ReportShell, { ReportDateRange, ExportColumn } from "@/components/reports/ReportShell";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 import { getExpenses, Expense } from "@/lib/api-accounts";
 
-const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
+const TABLE_CLS = "glass-card overflow-hidden";
 
 const columns: DataColumn<Expense>[] = [
   { key: "voucherNo", header: "Voucher No.", render: (r) => <span className="font-semibold text-foreground">{r.voucherNo || "-"}</span>, sortValue: (r) => r.voucherNo || "" },
@@ -16,12 +16,21 @@ const columns: DataColumn<Expense>[] = [
   { key: "amount", header: "Amount", align: "right", render: (r) => <span className="font-semibold text-bad tabular-nums">₹{(r.amount ?? 0).toLocaleString("en-IN")}</span>, sortValue: (r) => r.amount ?? 0 },
 ];
 
+const exportCols: ExportColumn<Expense>[] = [
+  { header: "Voucher No", value: (r) => r.voucherNo || "" },
+  { header: "Date", value: (r) => r.date || "" },
+  { header: "Label", value: (r) => r.labelName || "" },
+  { header: "Vendor", value: (r) => r.vendorName || "" },
+  { header: "Channel", value: (r) => r.paymentChannel || "" },
+  { header: "Amount", value: (r) => r.amount ?? 0 },
+];
+
 export default function AccountPayableReport() {
   const [data, setData] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
 
-  async function generate(range: ReportDateRange) {
+  const generate = useCallback(async (range: ReportDateRange) => {
     setLoading(true);
     try {
       const expenses = await getExpenses();
@@ -30,12 +39,12 @@ export default function AccountPayableReport() {
       setData(filtered);
       setGenerated(true);
     } finally { setLoading(false); }
-  }
+  }, []);
 
   const total = useMemo(() => data.reduce((s, e) => s + (e.amount ?? 0), 0), [data]);
 
   return (
-    <ReportShell title="Account Payable" loading={loading} generated={generated} onGenerate={generate}>
+    <ReportShell title="Account Payable" loading={loading} generated={generated} onGenerate={generate} exportColumns={exportCols} exportData={data}>
       <div className="bg-bad-light rounded-lg p-4 mb-4 inline-block"><p className="text-xs text-bad font-medium">Total Payable</p><p className="text-lg font-bold text-bad mt-1">₹{total.toLocaleString("en-IN")}</p></div>
       <DataTable columns={columns} data={data} keyExtractor={(r) => r.id} className={TABLE_CLS} />
     </ReportShell>

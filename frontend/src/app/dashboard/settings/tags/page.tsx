@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { canManage } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -161,13 +162,15 @@ export default function TagsPage() {
 
           <div className="flex-1" />
 
-          <button
-            onClick={openAdd}
-            className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Create New Tag
-          </button>
+          {canManage("SETTINGS") && (
+            <button
+              onClick={openAdd}
+              className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create New Tag
+            </button>
+          )}
         </div>
 
         {/* Content */}
@@ -216,21 +219,25 @@ export default function TagsPage() {
                 <div className="flex-1" />
 
                 {/* Edit */}
-                <button
-                  onClick={() => openEdit(tag)}
-                  className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary-light px-2.5 py-1.5 rounded-md transition-colors"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Edit
-                </button>
+                {canManage("SETTINGS") && (
+                  <button
+                    onClick={() => openEdit(tag)}
+                    className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary-light px-2.5 py-1.5 rounded-md transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </button>
+                )}
 
                 {/* Delete */}
-                <button
-                  onClick={() => setDeleteId(tag.id)}
-                  className="p-1.5 rounded-md text-muted hover:text-bad hover:bg-bad-light transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                {canManage("SETTINGS") && (
+                  <button
+                    onClick={() => setDeleteId(tag.id)}
+                    className="p-1.5 rounded-md text-muted hover:text-bad hover:bg-bad-light transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             ))}
           </div>

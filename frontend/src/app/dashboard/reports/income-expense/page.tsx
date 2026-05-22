@@ -1,13 +1,22 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import ReportShell, { ReportDateRange } from "@/components/reports/ReportShell";
+import { useState, useMemo, useCallback } from "react";
+import ReportShell, { ReportDateRange, ExportColumn } from "@/components/reports/ReportShell";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 import { getAccountTransactions } from "@/lib/api-accounts";
 
 interface Row { id: string; date: string; type: string; comment: string; amount: number; channel: string; user: string; }
 
-const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
+const TABLE_CLS = "glass-card overflow-hidden";
+
+const exportCols: ExportColumn<Row>[] = [
+  { header: "Date", value: (r) => r.date },
+  { header: "Type", value: (r) => r.type === "income" ? "Income" : "Expense" },
+  { header: "Description", value: (r) => r.comment || "-" },
+  { header: "Channel", value: (r) => r.channel || "-" },
+  { header: "User", value: (r) => r.user || "-" },
+  { header: "Amount", value: (r) => r.amount },
+];
 
 const columns: DataColumn<Row>[] = [
   { key: "date", header: "Date", render: (r) => <span className="text-muted whitespace-nowrap">{r.date}</span>, sortValue: (r) => r.date },
@@ -23,7 +32,7 @@ export default function IncomeExpenseReport() {
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
 
-  async function generate(range: ReportDateRange) {
+  const generate = useCallback(async (range: ReportDateRange) => {
     setLoading(true);
     try {
       const [cash, bank] = await Promise.all([
@@ -38,7 +47,7 @@ export default function IncomeExpenseReport() {
       setRows(all);
       setGenerated(true);
     } finally { setLoading(false); }
-  }
+  }, []);
 
   const totals = useMemo(() => {
     const income = rows.filter((r) => r.type === "income").reduce((s, r) => s + r.amount, 0);
@@ -47,7 +56,7 @@ export default function IncomeExpenseReport() {
   }, [rows]);
 
   return (
-    <ReportShell title="Income / Expense Reports" loading={loading} generated={generated} onGenerate={generate}>
+    <ReportShell title="Income / Expense Reports" loading={loading} generated={generated} onGenerate={generate} exportColumns={exportCols} exportData={rows}>
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div className="bg-ok-light rounded-lg p-4"><p className="text-xs text-ok font-medium">Total Income</p><p className="text-lg font-bold text-ok mt-1">₹{totals.income.toLocaleString("en-IN")}</p></div>
         <div className="bg-bad-light rounded-lg p-4"><p className="text-xs text-bad font-medium">Total Expense</p><p className="text-lg font-bold text-bad mt-1">₹{totals.expense.toLocaleString("en-IN")}</p></div>

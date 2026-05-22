@@ -13,7 +13,7 @@ import {
   Filter, IndianRupee, MapPin, Hash, LayoutGrid, List, Upload,
   ChevronRight,
 } from "lucide-react";
-import { getAccessToken } from "@/lib/auth";
+import { getAccessToken, canManage } from "@/lib/auth";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 
 type ViewMode = "cards" | "table";
@@ -430,15 +430,19 @@ function PartsTab({ parts, onAddStock }: { parts: Part[]; onAddStock: () => void
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
-          <label className="flex items-center gap-1.5 border border-edge text-secondary px-4 py-2.5 rounded-md text-sm font-medium hover:bg-hover transition-colors cursor-pointer">
-            <Upload className="w-4 h-4" />
-            {uploading ? "Uploading..." : "Upload CSV"}
-            <input type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} disabled={uploading} />
-          </label>
-          <button onClick={onAddStock} className="flex items-center gap-1.5 bg-primary text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
-            <Plus className="w-4 h-4" />
-            Add Stock
-          </button>
+          {canManage("INVENTORY") && (
+            <label className="flex items-center gap-1.5 border border-edge text-secondary px-4 py-2.5 rounded-md text-sm font-medium hover:bg-hover transition-colors cursor-pointer">
+              <Upload className="w-4 h-4" />
+              {uploading ? "Uploading..." : "Upload CSV"}
+              <input type="file" accept=".csv" className="hidden" onChange={handleCsvUpload} disabled={uploading} />
+            </label>
+          )}
+          {canManage("INVENTORY") && (
+            <button onClick={onAddStock} className="flex items-center gap-1.5 bg-primary text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
+              <Plus className="w-4 h-4" />
+              Add Stock
+            </button>
+          )}
         </div>
       </div>
 
@@ -479,10 +483,12 @@ function PurchaseOrdersTab({ orders, onCreatePO, viewMode }: { orders: PurchaseO
         <h2 className="text-sm font-medium text-secondary">
           {safeOrders.length} purchase order{safeOrders.length !== 1 ? "s" : ""}
         </h2>
-        <button onClick={onCreatePO} className="flex items-center gap-1.5 bg-primary text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
-          <Plus className="w-4 h-4" />
-          Create PO
-        </button>
+        {canManage("INVENTORY") && (
+          <button onClick={onCreatePO} className="flex items-center gap-1.5 bg-primary text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
+            <Plus className="w-4 h-4" />
+            Create PO
+          </button>
+        )}
       </div>
 
       {safeOrders.length === 0 ? (
@@ -539,10 +545,12 @@ function StockInTab({ records, onNewStockIn, viewMode }: { records: StockInRecor
         <h2 className="text-sm font-medium text-secondary">
           {safeRecords.length} stock-in record{safeRecords.length !== 1 ? "s" : ""}
         </h2>
-        <button onClick={onNewStockIn} className="flex items-center gap-1.5 bg-primary text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
-          <Plus className="w-4 h-4" />
-          New Stock In
-        </button>
+        {canManage("INVENTORY") && (
+          <button onClick={onNewStockIn} className="flex items-center gap-1.5 bg-primary text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
+            <Plus className="w-4 h-4" />
+            New Stock In
+          </button>
+        )}
       </div>
 
       {safeRecords.length === 0 ? (
@@ -602,10 +610,12 @@ function CounterSaleTab({ sales, onNewSale, viewMode }: { sales: CounterSale[]; 
         <h2 className="text-sm font-medium text-secondary">
           {safeSales.length} counter sale{safeSales.length !== 1 ? "s" : ""}
         </h2>
-        <button onClick={onNewSale} className="flex items-center gap-1.5 bg-primary text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
-          <Plus className="w-4 h-4" />
-          New Sale
-        </button>
+        {canManage("INVENTORY") && (
+          <button onClick={onNewSale} className="flex items-center gap-1.5 bg-primary text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
+            <Plus className="w-4 h-4" />
+            New Sale
+          </button>
+        )}
       </div>
 
       {safeSales.length === 0 ? (

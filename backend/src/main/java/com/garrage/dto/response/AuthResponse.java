@@ -1,5 +1,7 @@
 package com.garrage.dto.response;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,4 +28,13 @@ public class AuthResponse {
     private String garageId;
 
     private String garageName;
+
+    /** Only populated for garage_staff users */
+    private List<String> permissions;
+
+    /** Only populated for garage_staff users */
+    private String garageRoleId;
+
+    /** Only populated for garage_staff users */
+    private String staffTitle;
 }

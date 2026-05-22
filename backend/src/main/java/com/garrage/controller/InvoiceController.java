@@ -5,6 +5,7 @@ import com.garrage.model.Garage;
 import com.garrage.model.Invoice;
 import com.garrage.repository.CustomerRepository;
 import com.garrage.repository.GarageRepository;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.EmailService;
 import com.garrage.service.InvoicePdfService;
@@ -41,6 +42,7 @@ public class InvoiceController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Invoice>> createInvoice(@RequestBody Invoice invoice) {
+        PermissionChecker.require("INVOICES:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("POST /api/invoices for garage {}", garageId);
         Invoice created = invoiceService.createInvoice(invoice, garageId);
@@ -59,6 +61,7 @@ public class InvoiceController {
     public ResponseEntity<ApiResponse<Invoice>> updateInvoiceStatus(
             @PathVariable String id,
             @RequestBody Map<String, String> body) {
+        PermissionChecker.require("INVOICES:MANAGE");
         String garageId = TenantContext.getGarageId();
         String status = body.get("status");
         log.info("PUT /api/invoices/{}/status to '{}' for garage {}", id, status, garageId);
@@ -81,6 +84,7 @@ public class InvoiceController {
 
     @PostMapping("/{id}/notify")
     public ResponseEntity<ApiResponse<String>> notifyCustomer(@PathVariable String id) {
+        PermissionChecker.require("INVOICES:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("POST /api/invoices/{}/notify for garage {}", id, garageId);
         Invoice invoice = invoiceService.getInvoiceById(id, garageId);

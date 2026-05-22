@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 
-const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
+const TABLE_CLS = "glass-card overflow-hidden";
 
 type ViewMode = "cards" | "table";
 
@@ -110,7 +110,7 @@ export default function GaragesPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="bg-background border-b border-edge px-6 py-3.5 flex items-center justify-between">
+      <div className="glass-card rounded-none border-x-0 border-t-0 px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-base font-semibold text-foreground">Garage Management</h1>
           <span className="bg-hover text-muted text-xs font-medium px-2 py-0.5 rounded-full">
@@ -181,7 +181,7 @@ export default function GaragesPage() {
               {filtered.map((garage) => (
                 <div
                   key={garage.id}
-                  className="bg-background rounded-lg border border-edge p-5 hover:shadow-md transition-shadow"
+                  className="glass-card p-5 hover:shadow-theme-lg transition-shadow"
                 >
                   {/* Name + Status */}
                   <div className="flex items-start justify-between mb-3">

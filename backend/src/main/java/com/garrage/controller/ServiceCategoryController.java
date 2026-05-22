@@ -2,6 +2,7 @@ package com.garrage.controller;
 
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.ServiceCategory;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.ServiceCategoryService;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class ServiceCategoryController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ServiceCategory>> createCategory(@RequestBody Map<String, String> body) {
+        PermissionChecker.require("SETTINGS:MANAGE");
         String name = body.get("name");
         ServiceCategory category = serviceCategoryService.createCategory(name, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(category));

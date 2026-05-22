@@ -101,7 +101,7 @@ const whyUs = [
     title: "Certified Garages",
     icon: ShieldCheck,
     description:
-      "All partner garages are verified and certified for quality",
+      "All vendor garages are verified and certified for quality",
   },
   {
     title: "Transparent Pricing",
@@ -141,7 +141,7 @@ export default function Home() {
       {/* ============================================================ */}
       {/*  HERO SECTION                                                 */}
       {/* ============================================================ */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-green-600 to-green-800">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#E63946] to-[#9B1B24]">
         {/* Decorative circles */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-white/5" />
@@ -159,7 +159,7 @@ export default function Home() {
             The Best Care
           </h1>
 
-          <p className="mt-6 max-w-2xl mx-auto text-lg sm:text-xl text-green-50/90 leading-relaxed animate-slide-up [animation-delay:0.15s]">
+          <p className="mt-6 max-w-2xl mx-auto text-lg sm:text-xl text-red-50/90 leading-relaxed animate-slide-up [animation-delay:0.15s]">
             Book trusted car service &amp; maintenance from certified garages
             near you. Transparent pricing, genuine parts, and hassle-free
             experience.
@@ -169,22 +169,10 @@ export default function Home() {
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up [animation-delay:0.3s]">
             <Link
               href="/book"
-              className="inline-flex items-center justify-center h-14 px-8 rounded-full bg-white text-green-700 font-semibold text-lg shadow-lg shadow-green-900/20 transition-all duration-200 hover:bg-green-50 hover:shadow-xl hover:scale-105 active:scale-[0.98]"
+              className="btn-glow inline-flex items-center justify-center h-14 px-8 rounded-full bg-white text-[#E63946] font-semibold text-lg shadow-lg shadow-red-900/20 transition-all duration-200 hover:bg-red-50 hover:shadow-xl hover:scale-105 active:scale-[0.98]"
             >
               Book a Service
               <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-            <Link
-              href="/register-garage"
-              className="inline-flex items-center justify-center h-14 px-8 rounded-full border-2 border-white/60 text-white font-semibold text-lg transition-all duration-200 hover:bg-white/10 hover:border-white hover:scale-105 active:scale-[0.98]"
-            >
-              Register Garage
-            </Link>
-            <Link
-              href="/partner"
-              className="inline-flex items-center justify-center h-14 px-8 rounded-full border-2 border-white/40 text-white/90 font-semibold text-lg transition-all duration-200 hover:bg-white/10 hover:border-white/70 hover:scale-105 active:scale-[0.98]"
-            >
-              Become a Partner
             </Link>
           </div>
 
@@ -195,7 +183,7 @@ export default function Home() {
               return (
                 <div
                   key={stat.label}
-                  className="flex flex-col items-center gap-2"
+                  className="flex flex-col items-center gap-2 rounded-xl p-4 bg-white/10 backdrop-blur-sm border border-white/10"
                 >
                   <div className="flex items-center justify-center h-12 w-12 rounded-full bg-white/15 mb-1">
                     <Icon className="h-6 w-6 text-white" />
@@ -203,7 +191,7 @@ export default function Home() {
                   <span className="text-2xl sm:text-3xl font-bold text-white">
                     {stat.value}
                   </span>
-                  <span className="text-sm text-green-100/80 font-medium">
+                  <span className="text-sm text-white/70 font-medium">
                     {stat.label}
                   </span>
                 </div>
@@ -230,7 +218,7 @@ export default function Home() {
       {/* ============================================================ */}
       {/*  SERVICES SECTION                                             */}
       {/* ============================================================ */}
-      <section id="services" className="py-20 lg:py-28 bg-white">
+      <section id="services" className="py-20 lg:py-28 bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
           <div className="text-center max-w-2xl mx-auto mb-14 animate-fade-in">
@@ -250,12 +238,12 @@ export default function Home() {
               return (
                 <div
                   key={service.title}
-                  className="group relative bg-white border border-edge rounded-xl p-6 lg:p-8 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-slide-up"
+                  className="group relative bg-card-bg glass-card-premium border border-edge rounded-xl p-6 lg:p-8 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 animate-slide-up border-revolve"
                   style={{ animationDelay: `${idx * 0.08}s` }}
                 >
                   {/* Icon */}
-                  <div className="flex items-center justify-center h-14 w-14 rounded-full bg-primary-light text-primary mb-5 transition-colors duration-300 group-hover:bg-primary group-hover:text-white">
-                    <Icon className="h-7 w-7" />
+                  <div className="flex items-center justify-center h-14 w-14 rounded-full bg-primary-light text-primary mb-5 transition-all duration-300 group-hover:bg-primary group-hover:text-white">
+                    <Icon className="h-7 w-7 icon-shift-up" />
                   </div>
 
                   {/* Title */}
@@ -286,7 +274,7 @@ export default function Home() {
       {/* ============================================================ */}
       {/*  HOW IT WORKS SECTION                                         */}
       {/* ============================================================ */}
-      <section className="py-20 lg:py-28 bg-dim">
+      <section className="py-20 lg:py-28 bg-dim section-gradient-top">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
           <div className="text-center max-w-2xl mx-auto mb-14 animate-fade-in">
@@ -312,7 +300,7 @@ export default function Home() {
               return (
                 <div
                   key={step.title}
-                  className="relative flex flex-col items-center text-center animate-slide-up"
+                  className="relative flex flex-col items-center text-center glass-card-premium rounded-xl p-6 animate-slide-up"
                   style={{ animationDelay: `${idx * 0.12}s` }}
                 >
                   {/* Number badge */}
@@ -320,7 +308,7 @@ export default function Home() {
                     {/* Outer ring */}
                     <div className="absolute inset-0 rounded-full bg-primary/10" />
                     {/* Inner circle */}
-                    <div className="relative flex items-center justify-center h-20 w-20 rounded-full bg-white border-2 border-primary shadow-sm">
+                    <div className="relative flex items-center justify-center h-20 w-20 rounded-full bg-background border-2 border-primary shadow-sm">
                       <Icon className="h-8 w-8 text-primary" />
                     </div>
                     {/* Step number */}
@@ -345,7 +333,7 @@ export default function Home() {
       {/* ============================================================ */}
       {/*  WHY CHOOSE US SECTION                                        */}
       {/* ============================================================ */}
-      <section className="py-20 lg:py-28 bg-white">
+      <section className="py-20 lg:py-28 bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
           <div className="text-center max-w-2xl mx-auto mb-14 animate-fade-in">
@@ -365,7 +353,7 @@ export default function Home() {
               return (
                 <div
                   key={feature.title}
-                  className="flex items-start gap-5 p-6 lg:p-8 rounded-xl bg-white border border-edge border-l-4 border-l-primary transition-all duration-300 hover:shadow-md animate-slide-up"
+                  className="flex items-start gap-5 p-6 lg:p-8 rounded-xl bg-card-bg glass-card-premium border border-edge border-l-4 border-l-primary transition-all duration-300 hover:shadow-md hover:-translate-y-1 animate-slide-up"
                   style={{ animationDelay: `${idx * 0.1}s` }}
                 >
                   {/* Icon */}
@@ -391,7 +379,7 @@ export default function Home() {
       {/* ============================================================ */}
       {/*  CTA BANNER SECTION                                           */}
       {/* ============================================================ */}
-      <section className="relative py-20 lg:py-24 overflow-hidden bg-gradient-to-br from-green-600 to-green-800">
+      <section className="relative py-20 lg:py-24 overflow-hidden bg-gradient-to-br from-[#E63946] to-[#9B1B24]">
         {/* Subtle pattern overlay */}
         <div className="pointer-events-none absolute inset-0 opacity-[0.04]"
           style={{
@@ -412,7 +400,7 @@ export default function Home() {
             <br className="hidden sm:block" /> the care it deserves?
           </h2>
 
-          <p className="mt-5 text-lg text-green-50/80 max-w-xl mx-auto animate-slide-up [animation-delay:0.15s]">
+          <p className="mt-5 text-lg text-white/70 max-w-xl mx-auto animate-slide-up [animation-delay:0.15s]">
             Join thousands of happy customers who trust Car Affair for their car
             care needs.
           </p>
@@ -420,7 +408,7 @@ export default function Home() {
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-6 animate-scale-in [animation-delay:0.3s]">
             <Link
               href="/book"
-              className="inline-flex items-center justify-center h-14 px-10 rounded-full bg-white text-green-700 font-semibold text-lg shadow-lg shadow-green-900/20 transition-all duration-200 hover:bg-green-50 hover:shadow-xl hover:scale-105 active:scale-[0.98]"
+              className="btn-glow inline-flex items-center justify-center h-14 px-10 rounded-full bg-white text-[#E63946] font-semibold text-lg shadow-lg shadow-red-900/20 transition-all duration-200 hover:bg-red-50 hover:shadow-xl hover:scale-105 active:scale-[0.98]"
             >
               Book Now
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -431,7 +419,7 @@ export default function Home() {
                 <Phone className="h-5 w-5 text-white" />
               </div>
               <div className="text-left">
-                <span className="block text-xs text-green-100/70 font-medium">
+                <span className="block text-xs text-white/60 font-medium">
                   Call Us
                 </span>
                 <a

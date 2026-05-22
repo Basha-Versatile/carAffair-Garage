@@ -10,6 +10,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -29,7 +31,7 @@ public class User {
 
     private String email;
 
-    /** "super_admin", "garage_admin", "customer", "vendor" */
+    /** "super_admin", "garage_admin", "garage_staff", "customer", "vendor" */
     private String role;
 
     /** null for super_admin and customer */
@@ -37,6 +39,13 @@ public class User {
 
     private String garageName;
 
+    /** Display label for staff, e.g. "Front Desk". Only used for garage_staff. */
+    private String staffTitle;
+
+    /** Reference to GarageRole.id. Only used for garage_staff. */
+    private String garageRoleId;
+
+    @JsonProperty("isActive")
     @Builder.Default
     private boolean isActive = true;
 

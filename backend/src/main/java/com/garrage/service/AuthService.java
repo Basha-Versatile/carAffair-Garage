@@ -1,6 +1,8 @@
 package com.garrage.service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 import org.springframework.stereotype.Service;
@@ -12,8 +14,10 @@ import com.garrage.dto.request.VerifyOtpRequest;
 import com.garrage.dto.response.AuthResponse;
 import com.garrage.exception.BadRequestException;
 import com.garrage.exception.UnauthorizedException;
+import com.garrage.model.GarageRole;
 import com.garrage.model.OtpLog;
 import com.garrage.model.User;
+import com.garrage.repository.GarageRoleRepository;
 import com.garrage.repository.OtpLogRepository;
 import com.garrage.repository.UserRepository;
 import com.garrage.security.JwtTokenProvider;
@@ -27,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final GarageRoleRepository garageRoleRepository;
     private final OtpLogRepository otpLogRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final OtpProperties otpProperties;
@@ -103,9 +108,13 @@ public class AuthService {
         // Find or create user based on role
         User user = findOrCreateUser(phone, role);
 
-        // Generate tokens
+        // Resolve permissions for garage_staff
+        List<String> permissions = resolvePermissions(user);
+
+        // Generate tokens (permissions embedded in JWT for garage_staff)
         String accessToken = jwtTokenProvider.generateAccessToken(
-                user.getId(), user.getRole(), user.getGarageId(), user.getGarageName(), user.getPhone());
+                user.getId(), user.getRole(), user.getGarageId(), user.getGarageName(),
+                user.getPhone(), permissions);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         return AuthResponse.builder()
@@ -117,6 +126,9 @@ public class AuthService {
                 .role(user.getRole())
                 .garageId(user.getGarageId())
                 .garageName(user.getGarageName())
+                .permissions(permissions)
+                .garageRoleId(user.getGarageRoleId())
+                .staffTitle(user.getStaffTitle())
                 .build();
     }
 
@@ -138,9 +150,13 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
 
+        // Resolve permissions for garage_staff (fresh from DB on refresh)
+        List<String> permissions = resolvePermissions(user);
+
         // Generate new access token
         String newAccessToken = jwtTokenProvider.generateAccessToken(
-                user.getId(), user.getRole(), user.getGarageId(), user.getGarageName(), user.getPhone());
+                user.getId(), user.getRole(), user.getGarageId(), user.getGarageName(),
+                user.getPhone(), permissions);
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
@@ -151,6 +167,9 @@ public class AuthService {
                 .role(user.getRole())
                 .garageId(user.getGarageId())
                 .garageName(user.getGarageName())
+                .permissions(permissions)
+                .garageRoleId(user.getGarageRoleId())
+                .staffTitle(user.getStaffTitle())
                 .build();
     }
 
@@ -159,16 +178,18 @@ public class AuthService {
     private User findOrCreateUser(String phone, String role) {
         switch (role) {
             case "garage_admin":
-                // Try garage_admin first, then fall back to super_admin
-                // (both roles login from the same admin panel)
+                // Try garage_admin first, then super_admin, then garage_staff
+                // (all admin roles login from the same admin panel)
                 return userRepository.findFirstByPhoneAndRole(phone, "garage_admin")
                         .or(() -> userRepository.findFirstByPhoneAndRole(phone, "super_admin"))
+                        .or(() -> userRepository.findFirstByPhoneAndRole(phone, "garage_staff"))
                         .orElseThrow(() -> new BadRequestException(
                                 "No admin account found for this number"));
 
             case "super_admin":
                 return userRepository.findFirstByPhoneAndRole(phone, "super_admin")
                         .or(() -> userRepository.findFirstByPhoneAndRole(phone, "garage_admin"))
+                        .or(() -> userRepository.findFirstByPhoneAndRole(phone, "garage_staff"))
                         .orElseThrow(() -> new BadRequestException(
                                 "No admin account found for this number"));
 
@@ -191,6 +212,19 @@ public class AuthService {
             default:
                 throw new BadRequestException("Invalid role: " + role);
         }
+    }
+
+    /**
+     * Resolves permissions for garage_staff users by looking up their GarageRole.
+     * Returns null for non-staff roles (super_admin, garage_admin, customer, vendor).
+     */
+    private List<String> resolvePermissions(User user) {
+        if (!"garage_staff".equals(user.getRole()) || user.getGarageRoleId() == null) {
+            return null;
+        }
+        return garageRoleRepository.findByIdAndGarageId(user.getGarageRoleId(), user.getGarageId())
+                .map(GarageRole::getPermissions)
+                .orElse(Collections.emptyList());
     }
 
     private String generateOtp() {

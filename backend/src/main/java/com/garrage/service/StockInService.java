@@ -22,6 +22,7 @@ public class StockInService {
     private final StockInRepository stockInRepository;
     private final PartRepository partRepository;
     private final StockHistoryRepository stockHistoryRepository;
+    private final ActivityLogService activityLogService;
 
     public StockInRecord createStockIn(StockInRecord record, String garageId) {
         log.info("Creating stock-in record for garage {}", garageId);
@@ -56,6 +57,11 @@ public class StockInService {
                 }
             }
         }
+
+        int totalItems = record.getItems() != null ? record.getItems().size() : 0;
+        activityLogService.log("CREATE", "STOCK_IN", saved.getId(),
+                "created stock-in (" + totalItems + " items) from " +
+                (record.getVendorName() != null ? record.getVendorName() : "vendor"));
 
         return saved;
     }

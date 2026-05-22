@@ -15,6 +15,7 @@ import java.util.List;
 public class PurchaseOrderService {
 
     private final PurchaseOrderRepository purchaseOrderRepository;
+    private final ActivityLogService activityLogService;
 
     public PurchaseOrder createPurchaseOrder(PurchaseOrder po, String garageId) {
         log.info("Creating purchase order for garage {}", garageId);
@@ -23,7 +24,10 @@ public class PurchaseOrderService {
         String poNumber = generatePoNumber(garageId);
         po.setPoNumber(poNumber);
 
-        return purchaseOrderRepository.save(po);
+        PurchaseOrder saved = purchaseOrderRepository.save(po);
+        activityLogService.log("CREATE", "PURCHASE_ORDER", saved.getId(),
+                "created purchase order " + saved.getPoNumber());
+        return saved;
     }
 
     public List<PurchaseOrder> getPurchaseOrders(String garageId) {

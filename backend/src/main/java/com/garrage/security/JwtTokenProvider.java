@@ -2,6 +2,7 @@ package com.garrage.security;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 
 import javax.crypto.SecretKey;
 
@@ -11,6 +12,7 @@ import com.garrage.config.JwtProperties;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -25,11 +27,17 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
+    /** Backward-compatible overload (no permissions). */
     public String generateAccessToken(String userId, String role, String garageId, String garageName, String phone) {
+        return generateAccessToken(userId, role, garageId, garageName, phone, null);
+    }
+
+    public String generateAccessToken(String userId, String role, String garageId,
+                                       String garageName, String phone, List<String> permissions) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getAccessTokenExpiry());
 
-        return Jwts.builder()
+        JwtBuilder builder = Jwts.builder()
                 .subject(userId)
                 .claim("role", role)
                 .claim("garageId", garageId)
@@ -37,8 +45,14 @@ public class JwtTokenProvider {
                 .claim("phone", phone)
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(getSigningKey())
-                .compact();
+                .signWith(getSigningKey());
+
+        // Only embed permissions in JWT for garage_staff (keeps token small for other roles)
+        if ("garage_staff".equals(role) && permissions != null && !permissions.isEmpty()) {
+            builder.claim("permissions", permissions);
+        }
+
+        return builder.compact();
     }
 
     public String generateRefreshToken(String userId) {

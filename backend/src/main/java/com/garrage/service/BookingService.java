@@ -15,6 +15,7 @@ import java.util.List;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
+    private final ActivityLogService activityLogService;
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String ALPHANUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -64,7 +65,10 @@ public class BookingService {
         if (booking.getGarageId() == null) {
             booking.setGarageId(garageId);
         }
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        activityLogService.log("UPDATE", "BOOKING", saved.getId(),
+                "updated booking " + saved.getBookingId() + " status to '" + status + "'");
+        return saved;
     }
 
     private String generateBookingId() {

@@ -4,6 +4,7 @@ import com.garrage.dto.request.CreateVendorRequest;
 import com.garrage.dto.request.RegisterVendorRequest;
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.Vendor;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.VendorService;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ public class VendorController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Vendor>> createVendor(@Valid @RequestBody CreateVendorRequest request) {
+        PermissionChecker.require("VENDORS:MANAGE");
         Vendor vendor = vendorService.createVendor(request, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(vendor));
     }
@@ -40,12 +42,14 @@ public class VendorController {
 
     @PutMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<Vendor>> approveVendor(@PathVariable String id) {
+        PermissionChecker.require("VENDORS:MANAGE");
         Vendor vendor = vendorService.approveVendor(id);
         return ResponseEntity.ok(ApiResponse.ok(vendor));
     }
 
     @PutMapping("/{id}/reject")
     public ResponseEntity<ApiResponse<Vendor>> rejectVendor(@PathVariable String id) {
+        PermissionChecker.require("VENDORS:MANAGE");
         Vendor vendor = vendorService.rejectVendor(id);
         return ResponseEntity.ok(ApiResponse.ok(vendor));
     }

@@ -7,6 +7,7 @@ import {
   VehicleModel, FuelType, VehicleCategory,
 } from "@/lib/api-vehicles";
 import { Search, Plus, Phone, MessageCircle, MoreVertical, X, User, Car, ChevronDown, MapPin, Loader2, LayoutGrid, List, Mail } from "lucide-react";
+import { canManage } from "@/lib/auth";
 import SelectModal from "@/components/modals/SelectModal";
 import AddModelModal from "@/components/modals/AddModelModal";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
@@ -213,10 +214,12 @@ export default function CustomersPage() {
               <List className="w-4 h-4" />
             </button>
           </div>
-          <button onClick={() => { setShowForm(true); setForm(emptyForm); setErrors({}); }}
-            className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
-            <Plus className="w-4 h-4" />Customer
-          </button>
+          {canManage("CUSTOMERS") && (
+            <button onClick={() => { setShowForm(true); setForm(emptyForm); setErrors({}); }}
+              className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors">
+              <Plus className="w-4 h-4" />Customer
+            </button>
+          )}
         </div>
       </div>
 

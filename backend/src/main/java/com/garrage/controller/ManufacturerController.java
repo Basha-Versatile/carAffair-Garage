@@ -2,6 +2,7 @@ package com.garrage.controller;
 
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.Manufacturer;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.service.ManufacturerService;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class ManufacturerController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Manufacturer>> createManufacturer(@RequestBody Map<String, String> body) {
+        PermissionChecker.require("INVENTORY:MANAGE");
         String name = body.get("name");
         Manufacturer manufacturer = manufacturerService.createManufacturer(name, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(manufacturer));

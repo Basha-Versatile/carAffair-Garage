@@ -233,12 +233,12 @@ export default function BookServicePage() {
     "w-full px-4 py-2.5 rounded-lg border border-edge bg-background text-foreground text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none cursor-pointer";
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background page-gradient">
       <Navbar />
 
-      <main className="flex-1 pt-16">
+      <main className="relative z-10 flex-1 pt-16">
         {/* Breadcrumb + Header */}
-        <div className="bg-dim border-b border-edge">
+        <div className="bg-dim/80 backdrop-blur-sm border-b border-edge">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             <nav className="flex items-center gap-2 text-sm text-muted mb-3">
               <Link href="/" className="hover:text-primary transition-colors">
@@ -254,7 +254,7 @@ export default function BookServicePage() {
         </div>
 
         {/* Step Indicator */}
-        <div className="bg-background border-b border-edge">
+        <div className="glass-bg border-b border-edge">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
             <div className="flex items-center justify-between">
               {stepLabels.map((label, idx) => {
@@ -319,7 +319,7 @@ export default function BookServicePage() {
                       key={service.id}
                       type="button"
                       onClick={() => setSelectedService(service.id)}
-                      className={`relative flex flex-col items-start p-5 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer group hover:shadow-md ${
+                      className={`relative flex flex-col items-start p-5 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer group hover:shadow-lg hover:-translate-y-1 glass-card-premium ${
                         isSelected
                           ? "border-primary bg-primary-light shadow-sm"
                           : "border-edge bg-background hover:border-primary/40"
@@ -493,11 +493,11 @@ export default function BookServicePage() {
                             : "border-edge bg-background text-foreground hover:border-primary/40 hover:bg-primary-light"
                         }`}
                       >
-                        <span className={`text-xs font-medium ${isSelected ? "text-green-100" : "text-muted"}`}>
+                        <span className={`text-xs font-medium ${isSelected ? "text-white/70" : "text-muted"}`}>
                           {day.dayName}
                         </span>
                         <span className="text-lg font-bold mt-0.5">{day.date.getDate()}</span>
-                        <span className={`text-xs ${isSelected ? "text-green-100" : "text-secondary"}`}>
+                        <span className={`text-xs ${isSelected ? "text-white/70" : "text-secondary"}`}>
                           {day.label.split(" ")[1]}
                         </span>
                       </button>
@@ -688,7 +688,7 @@ export default function BookServicePage() {
 
               <div className="max-w-2xl space-y-4">
                 {/* Service */}
-                <div className="rounded-xl border border-edge bg-dim p-5">
+                <div className="rounded-xl glass-card-premium p-5">
                   <h3 className="text-xs font-medium uppercase tracking-wider text-muted mb-3">
                     Service
                   </h3>
@@ -712,7 +712,7 @@ export default function BookServicePage() {
                 </div>
 
                 {/* Vehicle */}
-                <div className="rounded-xl border border-edge bg-dim p-5">
+                <div className="rounded-xl glass-card-premium p-5">
                   <h3 className="text-xs font-medium uppercase tracking-wider text-muted mb-3">
                     Vehicle
                   </h3>
@@ -739,7 +739,7 @@ export default function BookServicePage() {
                 </div>
 
                 {/* Date & Time */}
-                <div className="rounded-xl border border-edge bg-dim p-5">
+                <div className="rounded-xl glass-card-premium p-5">
                   <h3 className="text-xs font-medium uppercase tracking-wider text-muted mb-3">
                     Date & Time
                   </h3>
@@ -761,7 +761,7 @@ export default function BookServicePage() {
                 </div>
 
                 {/* Customer Details */}
-                <div className="rounded-xl border border-edge bg-dim p-5">
+                <div className="rounded-xl glass-card-premium p-5">
                   <h3 className="text-xs font-medium uppercase tracking-wider text-muted mb-3">
                     Customer Details
                   </h3>
@@ -904,7 +904,7 @@ export default function BookServicePage() {
       {/* Success Modal */}
       {confirmed && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="relative mx-4 w-full max-w-md bg-background rounded-2xl shadow-2xl p-8 sm:p-10 text-center animate-scale-in">
+          <div className="relative mx-4 w-full max-w-md glass-card-premium rounded-2xl p-8 sm:p-10 text-center animate-scale-in">
             {/* Animated Checkmark */}
             <div className="mx-auto mb-6 flex items-center justify-center h-20 w-20 rounded-full bg-primary-light">
               <svg

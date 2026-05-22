@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { canManage } from "@/lib/auth";
 import {
   Calendar as CalendarIcon,
   Plus,
@@ -108,7 +109,7 @@ export default function AppointmentsPage() {
     return (
       <div className="h-full flex flex-col">
         {/* Header */}
-        <div className="bg-background border-b border-edge px-6 py-3.5 flex items-center justify-between">
+        <div className="glass-card rounded-none border-x-0 border-t-0 px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowCalendar(false)}
@@ -124,7 +125,7 @@ export default function AppointmentsPage() {
 
         <div className="flex-1 overflow-y-auto p-6">
           {/* Calendar nav */}
-          <div className="bg-background rounded-lg border border-edge overflow-hidden">
+          <div className="glass-card overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3 border-b border-edge">
               <div className="flex items-center gap-2">
                 <button
@@ -204,7 +205,7 @@ export default function AppointmentsPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="bg-background border-b border-edge px-6 py-3.5 flex items-center justify-between">
+      <div className="glass-card rounded-none border-x-0 border-t-0 px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-base font-semibold text-foreground">
             Appointments
@@ -218,13 +219,15 @@ export default function AppointmentsPage() {
             <CalendarIcon className="w-4 h-4" />
             Calendar View
           </button>
-          <button
-            onClick={() => setShowBookForm(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Book Appointment
-          </button>
+          {canManage("APPOINTMENTS") && (
+            <button
+              onClick={() => setShowBookForm(true)}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Book Appointment
+            </button>
+          )}
         </div>
       </div>
 
@@ -620,7 +623,7 @@ function BookAppointmentForm({ onClose }: { onClose: () => void }) {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="bg-background border-b border-edge px-6 py-3.5 flex items-center justify-between">
+      <div className="glass-card rounded-none border-x-0 border-t-0 px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={onClose}
@@ -680,7 +683,7 @@ function BookAppointmentForm({ onClose }: { onClose: () => void }) {
 
         {/* Form */}
         <div className="px-6 pb-6 max-w-xl mx-auto w-full">
-          <div className="bg-background rounded-lg border border-edge p-6">
+          <div className="glass-card p-6">
             {step === 1 ? (
               <div className="space-y-4">
                 {/* Vehicle Registration */}

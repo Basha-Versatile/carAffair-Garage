@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import ReportShell, { ReportDateRange } from "@/components/reports/ReportShell";
+import { useState, useMemo, useCallback } from "react";
+import ReportShell, { ReportDateRange, ExportColumn } from "@/components/reports/ReportShell";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 import { getInvoices, Invoice } from "@/lib/api-invoices";
 
-const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
+const TABLE_CLS = "glass-card overflow-hidden";
 
 const columns: DataColumn<Invoice>[] = [
   { key: "invoiceNumber", header: "Invoice No.", render: (i) => <span className="font-semibold text-foreground">{i.invoiceNumber || "-"}</span>, sortValue: (i) => i.invoiceNumber || "" },
@@ -17,12 +17,23 @@ const columns: DataColumn<Invoice>[] = [
   { key: "total", header: "Grand Total", align: "right", render: (i) => <span className="font-semibold text-foreground tabular-nums">₹{(i.grandTotal ?? 0).toLocaleString("en-IN")}</span>, sortValue: (i) => i.grandTotal ?? 0 },
 ];
 
+const exportCols: ExportColumn<Invoice>[] = [
+  { header: "Invoice No", value: (i) => i.invoiceNumber || "" },
+  { header: "Type", value: (i) => i.type === "tax" ? "Tax" : "Proforma" },
+  { header: "Customer", value: (i) => i.customerName || "" },
+  { header: "Phone", value: (i) => i.customerPhone || "" },
+  { header: "Date", value: (i) => i.date || "" },
+  { header: "Status", value: (i) => i.status || "" },
+  { header: "GST", value: (i) => i.gstAmount ?? 0 },
+  { header: "Grand Total", value: (i) => i.grandTotal ?? 0 },
+];
+
 export default function InvoiceExportReport() {
   const [data, setData] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [generated, setGenerated] = useState(false);
 
-  async function generate(range: ReportDateRange) {
+  const generate = useCallback(async (range: ReportDateRange) => {
     setLoading(true);
     try {
       const invoices = await getInvoices();
@@ -31,12 +42,12 @@ export default function InvoiceExportReport() {
       setData(filtered);
       setGenerated(true);
     } finally { setLoading(false); }
-  }
+  }, []);
 
   const total = useMemo(() => data.reduce((s, i) => s + (i.grandTotal ?? 0), 0), [data]);
 
   return (
-    <ReportShell title="Invoice Export" loading={loading} generated={generated} onGenerate={generate}>
+    <ReportShell title="Invoice Export" loading={loading} generated={generated} onGenerate={generate} exportColumns={exportCols} exportData={data}>
       <div className="bg-primary-light rounded-lg p-4 mb-4 inline-block"><p className="text-xs text-primary font-medium">Total Invoiced</p><p className="text-lg font-bold text-primary mt-1">₹{total.toLocaleString("en-IN")}</p></div>
       <DataTable columns={columns} data={data} keyExtractor={(i) => i.id} className={TABLE_CLS} />
     </ReportShell>
