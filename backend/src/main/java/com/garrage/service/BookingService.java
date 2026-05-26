@@ -16,6 +16,7 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final ActivityLogService activityLogService;
+    private final NotificationService notificationService;
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String ALPHANUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -68,6 +69,17 @@ public class BookingService {
         Booking saved = bookingRepository.save(booking);
         activityLogService.log("UPDATE", "BOOKING", saved.getId(),
                 "updated booking " + saved.getBookingId() + " status to '" + status + "'");
+
+        // Notify garage about booking status changes
+        if ("pending".equals(status) && garageId != null) {
+            notificationService.notifyGarage(garageId,
+                    "BOOKING_NEW", "APPOINTMENTS", "normal",
+                    "New Booking",
+                    "Booking " + saved.getBookingId() + " from " + saved.getCustomerName(),
+                    "/dashboard/appointments",
+                    "BOOKING", saved.getId());
+        }
+
         return saved;
     }
 

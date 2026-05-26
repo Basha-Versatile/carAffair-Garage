@@ -20,6 +20,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ActivityLogService activityLogService;
+    private final NotificationService notificationService;
 
     public Order createOrder(CreateOrderRequest request, String garageId) {
         String jobCard = generateJobCard(garageId);
@@ -71,6 +72,25 @@ public class OrderService {
         Order saved = orderRepository.save(order);
         activityLogService.log("UPDATE", "ORDER", saved.getId(),
                 "updated order " + saved.getJobCard() + " (status: " + saved.getStatus() + ")");
+
+        // Notify on important status changes
+        String newStatus = saved.getStatus();
+        if ("ready".equals(newStatus)) {
+            notificationService.notifyAdmin(garageId,
+                    "SERVICE_READY", "APPOINTMENTS", "high",
+                    "Service Ready",
+                    "Order " + saved.getJobCard() + " for " + saved.getCustomerName() + " is ready",
+                    "/dashboard/orders/" + saved.getId(),
+                    "ORDER", saved.getId());
+        } else if ("completed".equals(newStatus)) {
+            notificationService.notifyAdmin(garageId,
+                    "ORDER_COMPLETED", "APPOINTMENTS", "normal",
+                    "Order Completed",
+                    "Order " + saved.getJobCard() + " has been completed",
+                    "/dashboard/orders/" + saved.getId(),
+                    "ORDER", saved.getId());
+        }
+
         return saved;
     }
 

@@ -26,6 +26,10 @@ app:
   otp:
     mock: ${OTP_MOCK:true}
     expiry-seconds: 300
+  web-push:
+    public-key: ${VAPID_PUBLIC_KEY:BHWazkfJuxcNrvJFMizmN7jEByZ1RhfgzbHjVHd1EQs2QFMONhhQJTeTBErpuDVCHOW30jOo179G6wB7X4PFR6I}
+    private-key: ${VAPID_PRIVATE_KEY:7jUKU93s-JBorNmG60yMT8OJHACoOGiFWd9gtZrXdeI}
+    subject: ${VAPID_SUBJECT:mailto:help@caraffair.co.uk}
   surepass:
     token: ${SUREPASS_TOKEN:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc2OTY4MTE3MCwianRpIjoiYzJmODVkZDgtZmNiNi00ZDI5LWJjYjktYzAxM2ZjNzA5MmVmIiwidHlwZSI6ImFjY2VzcyIsImlkZW50aXR5IjoiZGV2LmNhcmFmZmFpckBzdXJlcGFzcy5pbyIsIm5iZiI6MTc2OTY4MTE3MCwiZXhwIjoyNDAwNDAxMTcwLCJlbWFpbCI6ImNhcmFmZmFpckBzdXJlcGFzcy5pbyIsInRlbmFudF9pZCI6Im1haW4iLCJ1c2VyX2NsYWltcyI6eyJzY29wZXMiOlsidXNlciJdfX0.j5EZyr7_NuqWeGFmsnk6xNk_Kk_5crMBHkdBWN2VKfo}
     base-url: ${SUREPASS_BASE_URL:https://kyc-api.surepass.io}

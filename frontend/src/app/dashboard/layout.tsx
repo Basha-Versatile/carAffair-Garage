@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { isLoggedIn, isGarageStaff, canView, getFirstPermittedRoute } from "@/lib/auth";
 import { SidebarProvider, useSidebar } from "@/context/SidebarContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
+import NotificationToast from "@/components/NotificationToast";
 
 function Backdrop() {
   const { isMobileOpen, toggleMobileSidebar } = useSidebar();
@@ -137,7 +139,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <SidebarProvider>
-      <DashboardContent>{children}</DashboardContent>
+      <NotificationProvider>
+        <DashboardContent>{children}</DashboardContent>
+        <NotificationToast />
+      </NotificationProvider>
     </SidebarProvider>
   );
 }

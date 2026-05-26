@@ -90,6 +90,11 @@ public class SecurityConfig {
                         // Activity logs (owner only)
                         .requestMatchers("/api/activity-logs/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
 
+                        // Notifications (all authenticated roles)
+                        .requestMatchers("/api/notifications/stream").permitAll()  // Auth via query param token
+                        .requestMatchers("/api/notifications/vapid-public-key").permitAll()  // Public VAPID key
+                        .requestMatchers("/api/notifications/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
+
                         // Garage Admin, Staff, and Super Admin endpoints
                         .requestMatchers("/api/admin/bookings/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
                         .requestMatchers("/api/customers/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")

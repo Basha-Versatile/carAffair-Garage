@@ -23,6 +23,7 @@ public class StockInService {
     private final PartRepository partRepository;
     private final StockHistoryRepository stockHistoryRepository;
     private final ActivityLogService activityLogService;
+    private final NotificationService notificationService;
 
     public StockInRecord createStockIn(StockInRecord record, String garageId) {
         log.info("Creating stock-in record for garage {}", garageId);
@@ -59,9 +60,17 @@ public class StockInService {
         }
 
         int totalItems = record.getItems() != null ? record.getItems().size() : 0;
+        String vendorLabel = record.getVendorName() != null ? record.getVendorName() : "vendor";
         activityLogService.log("CREATE", "STOCK_IN", saved.getId(),
-                "created stock-in (" + totalItems + " items) from " +
-                (record.getVendorName() != null ? record.getVendorName() : "vendor"));
+                "created stock-in (" + totalItems + " items) from " + vendorLabel);
+
+        // Notify admin about stock received
+        notificationService.notifyAdmin(garageId,
+                "STOCK_IN", "INVENTORY", "normal",
+                "Stock Received",
+                totalItems + " item(s) received from " + vendorLabel,
+                "/dashboard/inventory/stock-in",
+                "STOCK_IN", saved.getId());
 
         return saved;
     }

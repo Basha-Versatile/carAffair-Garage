@@ -6,9 +6,10 @@ import { getUser, User } from "@/lib/auth";
 import { useSidebar } from "@/context/SidebarContext";
 import { useTheme } from "@/context/ThemeContext";
 import {
-  Search, Bell, Menu, X, Sun, Moon,
+  Search, Menu, X, Sun, Moon,
   Car, User as UserIcon, FileText, ShoppingCart, Loader2,
 } from "lucide-react";
+import NotificationDropdown from "@/components/NotificationDropdown";
 import { getCustomers, Customer } from "@/lib/api-vehicles";
 import { getVehicles, Vehicle } from "@/lib/api-vehicles";
 import { getOrders, Order } from "@/lib/api-orders";
@@ -347,9 +348,7 @@ export default function TopBar() {
             )}
           </button>
 
-          <button className="flex items-center justify-center w-10 h-10 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-            <Bell className="w-5 h-5" />
-          </button>
+          <NotificationDropdown />
 
           <div className="ml-1 w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center">
             <span className="text-xs font-semibold text-white">

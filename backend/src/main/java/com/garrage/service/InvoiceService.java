@@ -17,6 +17,7 @@ public class InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final ActivityLogService activityLogService;
+    private final NotificationService notificationService;
 
     public Invoice createInvoice(Invoice invoice, String garageId) {
         log.info("Creating invoice for garage {}", garageId);
@@ -29,6 +30,14 @@ public class InvoiceService {
         Invoice saved = invoiceRepository.save(invoice);
         activityLogService.log("CREATE", "INVOICE", saved.getId(),
                 "created invoice " + saved.getInvoiceNumber());
+
+        notificationService.notifyAdmin(garageId,
+                "INVOICE_CREATED", "PAYMENTS", "normal",
+                "Invoice Created",
+                "Invoice " + saved.getInvoiceNumber() + " for " + (saved.getCustomerName() != null ? saved.getCustomerName() : "customer"),
+                "/dashboard/invoices/" + saved.getId(),
+                "INVOICE", saved.getId());
+
         return saved;
     }
 
@@ -51,6 +60,16 @@ public class InvoiceService {
         Invoice saved = invoiceRepository.save(invoice);
         activityLogService.log("UPDATE", "INVOICE", saved.getId(),
                 "updated invoice " + saved.getInvoiceNumber() + " status to '" + status + "'");
+
+        if ("paid".equals(status)) {
+            notificationService.notifyAdmin(garageId,
+                    "PAYMENT_RECEIVED", "PAYMENTS", "high",
+                    "Payment Received",
+                    "Invoice " + saved.getInvoiceNumber() + " has been paid",
+                    "/dashboard/invoices/" + saved.getId(),
+                    "INVOICE", saved.getId());
+        }
+
         return saved;
     }
 

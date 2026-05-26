@@ -9,6 +9,7 @@ com\garrage\model\GarageRole.class
 com\garrage\repository\PartCategoryRepository.class
 com\garrage\dto\request\CreateOrderRequest.class
 com\garrage\model\ActivityLog$ActivityLogBuilder.class
+com\garrage\model\NotificationPreference.class
 com\garrage\repository\UserRepository.class
 com\garrage\controller\PurchaseOrderController.class
 com\garrage\service\CustomerService.class
@@ -24,6 +25,7 @@ com\garrage\repository\OrderRepository.class
 com\garrage\model\TaxProfile.class
 com\garrage\exception\ResourceNotFoundException.class
 com\garrage\model\ServiceCategory.class
+com\garrage\repository\PushSubscriptionRepository.class
 com\garrage\service\OrderService.class
 com\garrage\service\ManufacturerService.class
 com\garrage\model\ActivityLog.class
@@ -34,6 +36,7 @@ com\garrage\security\JwtAuthFilter.class
 com\garrage\controller\VehicleController.class
 com\garrage\controller\GarageRegistrationController.class
 com\garrage\model\Customer.class
+com\garrage\config\SchedulingConfig.class
 com\garrage\controller\BrandModelController.class
 com\garrage\dto\request\CreateVendorRequest.class
 com\garrage\service\InvoicePdfService.class
@@ -67,9 +70,11 @@ com\garrage\controller\GarageController.class
 com\garrage\model\Invoice$InvoiceItem.class
 com\garrage\model\ServiceFeedback$ServiceFeedbackBuilder.class
 com\garrage\model\User$UserBuilder.class
+com\garrage\service\PushNotificationService.class
 com\garrage\controller\RcLookupController.class
 com\garrage\service\PartService.class
 com\garrage\dto\request\CreateRoleRequest.class
+com\garrage\repository\NotificationRepository.class
 com\garrage\exception\UnauthorizedException.class
 com\garrage\dto\request\CreatePartRequest.class
 com\garrage\model\CounterSale$CSService.class
@@ -79,6 +84,7 @@ com\garrage\service\ExpenseService.class
 com\garrage\dto\request\RefreshTokenRequest.class
 com\garrage\model\PurchaseOrder$POItem$POItemBuilder.class
 com\garrage\model\TaxProfile$TaxProfileBuilder.class
+com\garrage\config\WebPushProperties.class
 com\garrage\service\ServiceCategoryService.class
 com\garrage\dto\response\RcLookupResponse$RcLookupResponseBuilder.class
 com\garrage\repository\ManufacturerRepository.class
@@ -106,6 +112,7 @@ com\garrage\service\GarageRegistrationService.class
 com\garrage\dto\response\ApiResponse.class
 com\garrage\controller\StockHistoryController.class
 com\garrage\repository\BrandRepository.class
+com\garrage\model\PushSubscription$PushSubscriptionBuilder.class
 com\garrage\service\PurchaseOrderService.class
 com\garrage\model\Vendor$VendorBuilder.class
 com\garrage\model\PurchaseOrder.class
@@ -133,7 +140,9 @@ com\garrage\model\CounterSale$CSService$CSServiceBuilder.class
 com\garrage\model\Part$ApplicableBrand$ApplicableBrandBuilder.class
 com\garrage\model\Vehicle$VehicleBuilder.class
 com\garrage\config\OtpProperties.class
+com\garrage\service\NotificationService.class
 com\garrage\model\ExpenseLabel$ExpenseLabelBuilder.class
+com\garrage\model\Notification$NotificationBuilder.class
 com\garrage\model\PartCategory$PartCategoryBuilder.class
 com\garrage\controller\GarageStaffController.class
 com\garrage\model\Garage.class
@@ -142,6 +151,7 @@ com\garrage\dto\request\CreateStaffRequest.class
 com\garrage\model\Vehicle.class
 com\garrage\model\ServiceReminder$ServiceReminderBuilder.class
 com\garrage\dto\request\CreateGarageRequest.class
+com\garrage\model\Notification.class
 com\garrage\model\ExpenseLabel.class
 com\garrage\repository\CustomerRepository.class
 com\garrage\controller\ManufacturerController.class
@@ -154,19 +164,24 @@ com\garrage\model\Booking.class
 com\garrage\model\Garage$GarageBuilder.class
 com\garrage\model\Customer$CustomerBuilder.class
 com\garrage\controller\TagController.class
+com\garrage\repository\NotificationPreferenceRepository.class
 com\garrage\model\StockInRecord$StockInItem$StockInItemBuilder.class
 com\garrage\repository\StockInRepository.class
 com\garrage\service\ServiceEntryService.class
 com\garrage\StreamLambdaHandler.class
 com\garrage\controller\PartPurchaseController.class
 com\garrage\dto\request\CreateVehicleRequest.class
+com\garrage\model\NotificationPreference$NotificationPreferenceBuilder.class
 com\garrage\service\CounterSaleService.class
+com\garrage\model\PushSubscription.class
 com\garrage\model\VehicleModel.class
+com\garrage\controller\NotificationController.class
 com\garrage\model\CounterSale$CSItem.class
 com\garrage\model\GarageRegistration.class
 com\garrage\security\PermissionChecker.class
 com\garrage\service\PartCategoryService.class
 com\garrage\model\VehicleModel$VehicleModelBuilder.class
+com\garrage\service\SseEmitterService.class
 com\garrage\controller\CounterSaleController.class
 com\garrage\repository\GarageRegistrationRepository.class
 com\garrage\model\Invoice$InvoiceItem$InvoiceItemBuilder.class

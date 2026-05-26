@@ -22,6 +22,7 @@ public class PartService {
     private final PartRepository partRepository;
     private final StockHistoryRepository stockHistoryRepository;
     private final ActivityLogService activityLogService;
+    private final NotificationService notificationService;
 
     public Part createPart(CreatePartRequest request, String garageId) {
         log.info("Creating part '{}' for garage {}", request.getName(), garageId);
@@ -173,6 +174,17 @@ public class PartService {
 
         activityLogService.log("UPDATE", "PART", saved.getId(),
                 "updated part " + saved.getName());
+
+        // Check for low stock and send notification
+        if (saved.getMinStockQty() > 0 && saved.getStockQty() <= saved.getMinStockQty()) {
+            notificationService.notifyGarage(garageId,
+                    "STOCK_LOW", "INVENTORY", "high",
+                    "Low Stock: " + saved.getName(),
+                    saved.getName() + " has only " + saved.getStockQty() + " units left (min: " + saved.getMinStockQty() + ")",
+                    "/dashboard/inventory",
+                    "PART", saved.getId());
+        }
+
         return saved;
     }
 

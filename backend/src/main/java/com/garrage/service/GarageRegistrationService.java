@@ -24,6 +24,7 @@ public class GarageRegistrationService {
     private final UserRepository userRepository;
     private final GarageService garageService;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     public GarageRegistration submitRegistration(GarageRegistrationRequest request) {
         // Check phone uniqueness across garages, users, and non-rejected registrations
@@ -62,6 +63,15 @@ public class GarageRegistrationService {
 
         registration = registrationRepository.save(registration);
         log.info("Garage registration submitted: {} (id: {})", registration.getName(), registration.getId());
+
+        // Notify super admin about new garage registration
+        notificationService.notifySuperAdmin(
+                "GARAGE_REQUEST", "SYSTEM", "high",
+                "New Garage Registration",
+                registration.getName() + " by " + registration.getOwnerName() + " is waiting for approval",
+                "/dashboard/super-admin/garage-requests",
+                "GARAGE_REGISTRATION", registration.getId());
+
         return registration;
     }
 
