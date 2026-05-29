@@ -292,4 +292,49 @@ public class EmailService {
             log.error("Failed to send thank you invoice email to {}: {}", toEmail, e.getMessage());
         }
     }
+
+    @Async
+    public void sendVehicleOnboardingEmail(String toEmail, String customerName,
+                                            String vehicleName, String vehicleNumber,
+                                            java.util.List<String> remarks, String garageName) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress);
+            helper.setTo(toEmail);
+            helper.setSubject("Your Vehicle Has Been Onboarded — " + garageName);
+
+            StringBuilder remarksHtml = new StringBuilder();
+            if (remarks != null && !remarks.isEmpty()) {
+                remarksHtml.append("<div style='background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0'>");
+                remarksHtml.append("<p style='margin:0 0 8px;font-weight:600'>Inspection Remarks:</p>");
+                remarksHtml.append("<ul style='margin:0;padding-left:20px'>");
+                for (String remark : remarks) {
+                    remarksHtml.append("<li>").append(remark).append("</li>");
+                }
+                remarksHtml.append("</ul></div>");
+            }
+
+            String html = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto'>"
+                    + "<div style='background:#2563eb;color:white;padding:24px;text-align:center;border-radius:8px 8px 0 0'>"
+                    + "<h1 style='margin:0;font-size:22px'>" + garageName + "</h1>"
+                    + "<p style='margin:4px 0 0;font-size:13px;opacity:0.9'>Vehicle Onboarded</p>"
+                    + "</div>"
+                    + "<div style='padding:24px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px'>"
+                    + "<p>Dear <b>" + customerName + "</b>,</p>"
+                    + "<p>We have onboarded your vehicle <b>" + vehicleName + "</b> (<b>" + vehicleNumber + "</b>) at our garage.</p>"
+                    + remarksHtml
+                    + "<p>Please confirm if these remarks are accurate. We will proceed with the service accordingly.</p>"
+                    + "<p style='color:#64748b;font-size:13px'>If you have any questions, please contact us directly.</p>"
+                    + "<p>Thank you,<br><b>" + garageName + "</b></p>"
+                    + "</div></div>";
+
+            helper.setText(html, true);
+            mailSender.send(message);
+            log.info("Vehicle onboarding email sent to {} for {}", toEmail, vehicleNumber);
+        } catch (Exception e) {
+            log.error("Failed to send vehicle onboarding email to {}: {}", toEmail, e.getMessage());
+        }
+    }
 }

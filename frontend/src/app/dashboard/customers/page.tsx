@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   getCustomers, addCustomer, addVehicle, getBrands, getBrandById,
   getModelsByBrand, getModelById, addModel, Customer, VehicleBrand,
@@ -83,6 +84,7 @@ const emptyForm: CustomerForm = {
 type ViewMode = "list" | "table";
 
 export default function CustomersPage() {
+  const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
@@ -255,7 +257,7 @@ export default function CustomersPage() {
         ) : viewMode === "list" ? (
           <div className="px-6 py-3">
             <div className="bg-background rounded-xl border border-edge divide-y divide-edge-light">
-              {filtered.map((customer) => <CustomerRow key={customer.id} customer={customer} />)}
+              {filtered.map((customer) => <CustomerRow key={customer.id} customer={customer} onClick={() => router.push(`/dashboard/customers/${customer.id}`)} />)}
             </div>
           </div>
         ) : (
@@ -265,6 +267,7 @@ export default function CustomersPage() {
               data={filtered}
               keyExtractor={(c) => c.id}
               className={TABLE_CLS}
+              onRowClick={(c) => router.push(`/dashboard/customers/${c.id}`)}
             />
           </div>
         )}
@@ -408,9 +411,9 @@ export default function CustomersPage() {
   );
 }
 
-function CustomerRow({ customer }: { customer: Customer }) {
+function CustomerRow({ customer, onClick }: { customer: Customer; onClick?: () => void }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3.5 hover:bg-hover transition-colors">
+    <div className="flex items-center justify-between px-5 py-3.5 hover:bg-hover transition-colors cursor-pointer" onClick={onClick}>
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-full bg-primary-light flex items-center justify-center">
           <span className="text-sm font-semibold text-primary">{(customer.name ?? "?").charAt(0).toUpperCase()}</span>

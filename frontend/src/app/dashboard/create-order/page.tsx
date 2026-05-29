@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Search, Car, User, ChevronDown, MapPin, Plus, Phone, Loader2, CloudDownload, CheckCircle2, Circle, AlertCircle, Gauge, Fuel, Upload, Camera, X, StickyNote } from "lucide-react";
+import { ArrowLeft, Search, Car, User, ChevronDown, MapPin, Plus, Phone, Loader2, CloudDownload, CheckCircle2, Circle, AlertCircle, Gauge, Fuel, Upload, Camera, X, StickyNote, Bell } from "lucide-react";
 import SelectModal from "@/components/modals/SelectModal";
 import AddModelModal from "@/components/modals/AddModelModal";
 import {
@@ -12,6 +12,7 @@ import {
   FuelType, VehicleCategory, VehicleBrand, VehicleModel,
 } from "@/lib/api-vehicles";
 import { addOrder, uploadOrderImages } from "@/lib/api-orders";
+import { submitBrandRequest } from "@/lib/api-brand-requests";
 
 type Step = "search" | "form" | "inspection";
 type RcPhase = "idle" | "fetching" | "gathered" | "filling" | "done" | "error";
@@ -41,9 +42,9 @@ const emptyForm: FormData = {
 
 const FUEL_LEVELS = [
   { value: "empty", label: "E", description: "Empty" },
-  { value: "quarter", label: "??", description: "Quarter" },
-  { value: "half", label: "??", description: "Half" },
-  { value: "three_quarter", label: "??", description: "Three Quarter" },
+  { value: "quarter", label: "\u00BC", description: "Quarter" },
+  { value: "half", label: "\u00BD", description: "Half" },
+  { value: "three_quarter", label: "\u00BE", description: "Three Quarter" },
   { value: "full", label: "F", description: "Full" },
 ];
 
@@ -79,7 +80,14 @@ export default function CreateOrderPage() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [customerRemarks, setCustomerRemarks] = useState<string[]>([""]);
   const [inspectionNotes, setInspectionNotes] = useState("");
+  const [notifyCustomer, setNotifyCustomer] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Add brand request
+  const [addBrandModalOpen, setAddBrandModalOpen] = useState(false);
+  const [customBrandName, setCustomBrandName] = useState("");
+  const [addBrandLoading, setAddBrandLoading] = useState(false);
+  const [addBrandError, setAddBrandError] = useState("");
 
   // preload brands
   useEffect(() => { getBrands().then((data) => setBrands(data || [])).catch(() => setBrands([])); }, []);
@@ -300,6 +308,34 @@ export default function CreateOrderPage() {
   function updateRemark(idx: number, value: string) { setCustomerRemarks((prev) => prev.map((r, i) => (i === idx ? value : r))); }
   function removeRemark(idx: number) { setCustomerRemarks((prev) => prev.filter((_, i) => i !== idx)); }
 
+  async function handleAddBrand() {
+    const name = customBrandName.trim();
+    if (!name) return;
+    setAddBrandLoading(true);
+    setAddBrandError("");
+    try {
+      const request = await submitBrandRequest(name);
+      // Use the pre-created brand's id
+      updateForm("brandId", request.approvedBrandId || "");
+      updateForm("modelId", "");
+      setAddBrandModalOpen(false);
+      setCustomBrandName("");
+      // Refresh brands list
+      const updatedBrands = await getBrands();
+      setBrands(updatedBrands || []);
+      const newBrand = updatedBrands.find((b) => b.id === request.approvedBrandId);
+      setSelectedBrand(newBrand || null);
+      setSelectedModel(null);
+      setModelsForBrand([]);
+      // Open model modal for the new brand
+      setTimeout(() => setModelModalOpen(true), 200);
+    } catch (err) {
+      setAddBrandError(err instanceof Error ? err.message : "Failed to request brand");
+    } finally {
+      setAddBrandLoading(false);
+    }
+  }
+
   function handleGoToInspection() {
     const e: Record<string, string> = {};
     if (!form.customerName.trim()) e.customerName = "Customer name is required";
@@ -351,6 +387,7 @@ export default function CreateOrderPage() {
         fuelLevel: form.fuelLevel || undefined,
         customerRemarks: filteredRemarks.length > 0 ? filteredRemarks : undefined,
         inspectionNotes: inspectionNotes || undefined,
+        notifyCustomer: notifyCustomer && !!form.email.trim(),
       });
 
       // Upload images to the created order
@@ -358,7 +395,7 @@ export default function CreateOrderPage() {
         await uploadOrderImages(order.id, imageFiles);
       }
 
-      router.push(`/dashboard/orders/${order.id}`);
+      router.push("/dashboard");
     } catch(err) { setErrors({ submit: err instanceof Error ? err.message : "Failed to create order" }); }
     finally { setSubmitting(false); }
   }
@@ -892,6 +929,28 @@ export default function CreateOrderPage() {
               </div>
             </div>
 
+            {/* Notify Customer Toggle */}
+            <div className="bg-background rounded-lg border border-edge overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <Bell className="w-4 h-4 text-muted" />
+                  <div>
+                    <p className="text-sm font-semibold text-secondary">Notify Customer</p>
+                    <p className="text-xs text-muted mt-0.5">Send onboarding email with vehicle info &amp; remarks</p>
+                  </div>
+                </div>
+                <button type="button" onClick={() => setNotifyCustomer(!notifyCustomer)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${notifyCustomer ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"}`}>
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${notifyCustomer ? "translate-x-5" : ""}`} />
+                </button>
+              </div>
+              {notifyCustomer && !form.email.trim() && (
+                <div className="px-5 pb-4 -mt-1">
+                  <p className="text-xs text-amber-600 dark:text-amber-400">Customer email is required to send notification</p>
+                </div>
+              )}
+            </div>
+
             {errors.submit && (
               <div className="bg-bad-light border border-bad/20 rounded-md px-4 py-3">
                 <p className="text-sm text-bad">{errors.submit}</p>
@@ -908,7 +967,31 @@ export default function CreateOrderPage() {
         )}
       </div>
 
-      <SelectModal open={brandModalOpen} title="Select Brand" items={(brands || []).map((b) => ({ id: b.id, label: b.name }))} selectedId={form.brandId} onSelect={handleBrandSelect} onClose={() => setBrandModalOpen(false)} />
+      <SelectModal open={brandModalOpen} title="Select Brand" items={(brands || []).map((b) => ({ id: b.id, label: b.name }))} selectedId={form.brandId} onSelect={handleBrandSelect} onClose={() => setBrandModalOpen(false)} actionButton={{ label: "Brand Not Listed? Request New", onClick: () => { setBrandModalOpen(false); setTimeout(() => { setCustomBrandName(""); setAddBrandError(""); setAddBrandModalOpen(true); }, 200); } }} />
+
+      {/* Add Brand Request Modal */}
+      {addBrandModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setAddBrandModalOpen(false)} />
+          <div className="relative bg-background rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-scale-in">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-foreground">Request New Brand</h3>
+              <button onClick={() => setAddBrandModalOpen(false)} className="p-1 text-muted hover:text-foreground transition-colors"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="text-sm text-muted mb-4">This brand will be available immediately. The logo will be added by the admin after approval.</p>
+            <input type="text" value={customBrandName} onChange={(e) => setCustomBrandName(e.target.value)} placeholder="Brand name (e.g. Toyota)" autoFocus
+              onKeyDown={(e) => { if (e.key === "Enter" && customBrandName.trim()) handleAddBrand(); }}
+              className="w-full px-3.5 py-2.5 border border-edge rounded-md text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent mb-3" />
+            {addBrandError && <p className="text-xs text-bad mb-3">{addBrandError}</p>}
+            <div className="flex gap-3">
+              <button onClick={() => setAddBrandModalOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-secondary border border-edge rounded-md hover:bg-hover transition-colors">Cancel</button>
+              <button onClick={handleAddBrand} disabled={!customBrandName.trim() || addBrandLoading} className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover transition-colors disabled:opacity-50">
+                {addBrandLoading ? "Requesting..." : "Request Brand"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <SelectModal open={modelModalOpen} title="Select Model" items={(modelsForBrand || []).map((m) => ({ id: m.id, label: `${m.name} ${m.fuelType}`, sublabel: m.category }))} selectedId={form.modelId} onSelect={handleModelSelect} onClose={() => setModelModalOpen(false)} actionButton={{ label: "Add New Model", onClick: () => { setModelModalOpen(false); setTimeout(() => setAddModelModalOpen(true), 200); } }} />
       <AddModelModal open={addModelModalOpen} brandName={selectedBrand?.name || ""} onSave={handleAddModel} onClose={() => setAddModelModalOpen(false)} />
     </div>

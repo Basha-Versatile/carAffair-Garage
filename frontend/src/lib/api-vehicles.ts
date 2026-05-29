@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 export interface VehicleBrand {
   id: string;
   name: string;
+  logoFileId?: string;
 }
 
 export interface VehicleModel {

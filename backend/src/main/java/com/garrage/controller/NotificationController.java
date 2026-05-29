@@ -15,11 +15,13 @@ import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
@@ -77,10 +79,8 @@ public class NotificationController {
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(@RequestParam("token") String token) {
         if (!jwtTokenProvider.validateToken(token)) {
-            log.warn("Invalid token for SSE stream");
-            SseEmitter emitter = new SseEmitter(0L);
-            emitter.completeWithError(new RuntimeException("Invalid token"));
-            return emitter;
+            log.warn("Invalid or expired token for SSE stream");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired token");
         }
 
         Claims claims = jwtTokenProvider.getClaimsFromToken(token);

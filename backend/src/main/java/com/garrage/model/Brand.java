@@ -18,4 +18,7 @@ public class Brand {
     private String id;
 
     private String name;
+
+    /** GridFS file ID for brand logo (null for brands without logos). */
+    private String logoFileId;
 }

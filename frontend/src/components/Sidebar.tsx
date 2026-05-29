@@ -103,6 +103,11 @@ const superAdminSection: Section = {
       icon: ClipboardList,
       href: "/dashboard/super-admin/garage-requests",
     },
+    {
+      label: "Brand Requests",
+      icon: Car,
+      href: "/dashboard/super-admin/brand-requests",
+    },
   ],
 };
 

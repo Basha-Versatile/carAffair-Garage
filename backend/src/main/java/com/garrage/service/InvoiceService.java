@@ -52,6 +52,11 @@ public class InvoiceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with id: " + id));
     }
 
+    public Invoice getInvoiceByOrderId(String orderId, String garageId) {
+        log.info("Fetching invoice for order {} in garage {}", orderId, garageId);
+        return invoiceRepository.findByRepairOrderIdAndGarageId(orderId, garageId).orElse(null);
+    }
+
     public Invoice updateInvoiceStatus(String id, String status, String garageId) {
         log.info("Updating invoice {} status to '{}' for garage {}", id, status, garageId);
         Invoice invoice = invoiceRepository.findByIdAndGarageId(id, garageId)

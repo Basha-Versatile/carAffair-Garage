@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface InvoiceRepository extends MongoRepository<Invoice, String> {
     List<Invoice> findByGarageIdOrderByCreatedAtDesc(String garageId);
     Optional<Invoice> findByIdAndGarageId(String id, String garageId);
+    Optional<Invoice> findByRepairOrderIdAndGarageId(String repairOrderId, String garageId);
+    List<Invoice> findByCustomerIdAndGarageIdOrderByCreatedAtDesc(String customerId, String garageId);
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import {
   Building2, Plus, Search, Phone, Mail, MapPin, CheckCircle, XCircle, LayoutGrid, List,
@@ -78,6 +79,7 @@ const garageColumns: DataColumn<Garage>[] = [
 ];
 
 export default function GaragesPage() {
+  const router = useRouter();
   const [garages, setGarages] = useState<Garage[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -181,7 +183,8 @@ export default function GaragesPage() {
               {filtered.map((garage) => (
                 <div
                   key={garage.id}
-                  className="glass-card p-5 hover:shadow-theme-lg transition-shadow"
+                  onClick={() => router.push(`/dashboard/super-admin/garages/${garage.id}`)}
+                  className="glass-card p-5 hover:shadow-theme-lg transition-shadow cursor-pointer"
                 >
                   {/* Name + Status */}
                   <div className="flex items-start justify-between mb-3">
@@ -241,6 +244,7 @@ export default function GaragesPage() {
               columns={garageColumns}
               data={filtered}
               keyExtractor={(g) => g.id}
+              onRowClick={(g) => router.push(`/dashboard/super-admin/garages/${g.id}`)}
               className={TABLE_CLS}
             />
           </div>

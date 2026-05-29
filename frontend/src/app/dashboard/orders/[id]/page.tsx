@@ -9,6 +9,7 @@ import {
   type Order, type OrderLineItem, type OrderStatus,
 } from "@/lib/api-orders";
 import { getStaffMembers, type StaffMember } from "@/lib/api-staff";
+import { getInvoiceByOrderId, type Invoice } from "@/lib/api-invoices";
 import { getPackages, type ServicePackage } from "@/lib/api-packages";
 import { getGarageServices, createGarageService, type GarageService } from "@/lib/api-garage-services";
 import { getServiceCategories, createServiceCategory, type ServiceCategory } from "@/lib/api-service-categories";
@@ -17,12 +18,12 @@ import { getParts, addPart, type Part } from "@/lib/api-inventory";
 import { getManufacturers, createManufacturer, type Manufacturer } from "@/lib/api-manufacturers";
 import { getPartCategories, createPartCategory, type PartCategoryItem } from "@/lib/api-part-categories";
 import { getBrands, getModelsByBrand, type VehicleBrand, type VehicleModel } from "@/lib/api-vehicles";
-import { isGarageOwner } from "@/lib/auth";
+import { isGarageOwner, getAccessToken } from "@/lib/auth";
 import {
   ArrowLeft, Phone, Car, IndianRupee, Camera, Upload,
   CheckCircle2, CircleDot, Loader2, Trash2, Plus,
   Send, Link2, Copy, X, Fuel, Gauge, StickyNote,
-  Wrench, Package, ChevronDown, ExternalLink, AlertCircle, Search, Check, Clock, UserPlus,
+  Wrench, Package, ChevronDown, ExternalLink, AlertCircle, Search, Check, Clock, UserPlus, Download, FileText,
 } from "lucide-react";
 
 // ─── Status Config ───
@@ -181,6 +182,9 @@ export default function OrderDetailPage() {
   const [assigning, setAssigning] = useState<string | null>(null);
   const [staffDropdownOpen, setStaffDropdownOpen] = useState<string | null>(null);
 
+  // Invoice
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+
   // Image upload
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -214,6 +218,7 @@ export default function OrderDetailPage() {
   }, [id]);
 
   useEffect(() => { loadOrder(); }, [loadOrder]);
+  useEffect(() => { if (id) getInvoiceByOrderId(id).then(setInvoice).catch(() => {}); }, [id]);
 
   useEffect(() => {
     getPackages().then(setPackages).catch(() => {});
@@ -1096,6 +1101,32 @@ export default function OrderDetailPage() {
             <div className="bg-ok-light rounded-xl border border-ok/20 p-5 text-center">
               <CheckCircle2 className="w-8 h-8 text-ok mx-auto mb-2" />
               <p className="text-sm font-semibold text-ok">Order Completed</p>
+            </div>
+          )}
+
+          {invoice && (
+            <div className="bg-background rounded-xl border border-edge p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{invoice.invoiceNumber}</p>
+                    <p className="text-xs text-muted">{invoice.type === "proforma" ? "Proforma Invoice" : "Tax Invoice"} &middot; {
+                      invoice.status === "paid" ? "Paid" : invoice.status === "sent" ? "Sent" : "Draft"
+                    }</p>
+                  </div>
+                </div>
+                <button onClick={() => {
+                  const token = getAccessToken();
+                  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+                  fetch(`${base}/api/invoices/${invoice.id}/pdf`, { headers: { Authorization: `Bearer ${token}` } })
+                    .then(r => r.blob())
+                    .then(blob => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${invoice.invoiceNumber}.pdf`; a.click(); URL.revokeObjectURL(a.href); });
+                }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary border border-primary/20 rounded-lg hover:bg-primary-light transition-colors">
+                  <Download className="w-3.5 h-3.5" /> Download PDF
+                </button>
+              </div>
             </div>
           )}
 

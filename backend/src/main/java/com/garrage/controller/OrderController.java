@@ -171,6 +171,15 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.ok(order));
     }
 
+    // ─── Orders by Customer ───
+
+    @GetMapping("/api/orders/by-customer/{customerId}")
+    public ResponseEntity<ApiResponse<List<Order>>> getOrdersByCustomer(@PathVariable String customerId) {
+        String garageId = TenantContext.getGarageId();
+        List<Order> orders = orderService.getOrdersByCustomer(customerId, garageId);
+        return ResponseEntity.ok(ApiResponse.ok(orders));
+    }
+
     // ─── Delivery Alerts ───
 
     @GetMapping("/api/orders/delivery-alerts")

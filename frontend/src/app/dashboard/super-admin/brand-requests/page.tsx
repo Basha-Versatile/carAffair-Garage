@@ -2,19 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
-  ClipboardList,
+  Car,
   Search,
   CheckCircle,
   XCircle,
   Clock,
   Eye,
 } from "lucide-react";
-import {
-  GarageRegistration,
-  getGarageRegistrations,
-} from "@/lib/api-garage-registration";
+import { BrandRequest, getBrandRequests } from "@/lib/api-brand-requests";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 
 type TabFilter = "ALL" | "PENDING" | "APPROVED" | "REJECTED";
@@ -67,35 +63,19 @@ function formatDate(dateStr: string) {
   }
 }
 
-const TABLE_CLS = "glass-card overflow-hidden";
-
-const columns: DataColumn<GarageRegistration>[] = [
+const columns: DataColumn<BrandRequest>[] = [
   {
     key: "name",
-    header: "Garage Name",
+    header: "Brand Name",
     render: (r) => (
       <span className="font-medium text-foreground">{r.name}</span>
     ),
     sortValue: (r) => r.name,
   },
   {
-    key: "owner",
-    header: "Owner",
-    render: (r) => <span className="text-secondary">{r.ownerName || "-"}</span>,
-  },
-  {
-    key: "phone",
-    header: "Phone",
-    render: (r) => <span className="text-muted">{r.phone || "-"}</span>,
-  },
-  {
-    key: "email",
-    header: "Email",
-    render: (r) => (
-      <span className="text-muted truncate max-w-[180px] block">
-        {r.email || "-"}
-      </span>
-    ),
+    key: "garage",
+    header: "Requested By",
+    render: (r) => <span className="text-secondary">{r.garageName || "-"}</span>,
   },
   {
     key: "submitted",
@@ -118,7 +98,7 @@ const columns: DataColumn<GarageRegistration>[] = [
     header: "Actions",
     render: (r) => (
       <Link
-        href={`/dashboard/super-admin/garage-requests/${r.id}`}
+        href={`/dashboard/super-admin/brand-requests/${r.id}`}
         className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
       >
         <Eye className="w-3.5 h-3.5" />
@@ -128,9 +108,8 @@ const columns: DataColumn<GarageRegistration>[] = [
   },
 ];
 
-export default function GarageRequestsPage() {
-  const router = useRouter();
-  const [registrations, setRegistrations] = useState<GarageRegistration[]>([]);
+export default function BrandRequestsPage() {
+  const [requests, setRequests] = useState<BrandRequest[]>([]);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<TabFilter>("PENDING");
   const [loading, setLoading] = useState(true);
@@ -139,11 +118,11 @@ export default function GarageRequestsPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const data = await getGarageRegistrations();
-        setRegistrations(data || []);
+        const data = await getBrandRequests();
+        setRequests(data || []);
       } catch (err: unknown) {
         setError(
-          err instanceof Error ? err.message : "Failed to load registrations"
+          err instanceof Error ? err.message : "Failed to load brand requests"
         );
       } finally {
         setLoading(false);
@@ -152,23 +131,19 @@ export default function GarageRequestsPage() {
     fetchData();
   }, []);
 
-  const filtered = registrations.filter((r) => {
+  const filtered = requests.filter((r) => {
     if (tab !== "ALL" && r.status !== tab) return false;
     if (search) {
       const q = search.toLowerCase();
       return (
         (r.name ?? "").toLowerCase().includes(q) ||
-        (r.phone ?? "").includes(q) ||
-        (r.email ?? "").toLowerCase().includes(q) ||
-        (r.ownerName ?? "").toLowerCase().includes(q)
+        (r.garageName ?? "").toLowerCase().includes(q)
       );
     }
     return true;
   });
 
-  const pendingCount = registrations.filter(
-    (r) => r.status === "PENDING"
-  ).length;
+  const pendingCount = requests.filter((r) => r.status === "PENDING").length;
 
   return (
     <div className="h-full flex flex-col">
@@ -176,7 +151,7 @@ export default function GarageRequestsPage() {
       <div className="glass-card rounded-none border-x-0 border-t-0 px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-base font-semibold text-foreground">
-            Garage Requests
+            Brand Requests
           </h1>
           {pendingCount > 0 && (
             <span className="bg-warn-light text-warn text-xs font-medium px-2 py-0.5 rounded-full">
@@ -189,7 +164,6 @@ export default function GarageRequestsPage() {
       <div className="flex-1 overflow-y-auto">
         {/* Tabs + Search */}
         <div className="px-6 pt-4 pb-2 flex flex-col sm:flex-row sm:items-center gap-3">
-          {/* Tabs */}
           <div className="flex items-center gap-1 border border-edge rounded-lg p-0.5">
             {tabs.map((t) => (
               <button
@@ -206,14 +180,13 @@ export default function GarageRequestsPage() {
             ))}
           </div>
 
-          {/* Search */}
           <div className="relative max-w-md flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, phone, email, or owner"
+              placeholder="Search by brand name or garage"
               className="w-full pl-10 pr-4 py-2.5 border border-edge rounded-lg text-sm text-foreground placeholder:text-muted bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
@@ -231,11 +204,11 @@ export default function GarageRequestsPage() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
             <div className="inline-flex items-center justify-center bg-hover p-4 rounded-full mb-4">
-              <ClipboardList className="w-8 h-8 text-muted" />
+              <Car className="w-8 h-8 text-muted" />
             </div>
             <p className="text-muted text-sm">
-              {registrations.length === 0
-                ? "No registration requests yet."
+              {requests.length === 0
+                ? "No brand requests yet."
                 : "No requests match your filter."}
             </p>
           </div>
@@ -245,8 +218,7 @@ export default function GarageRequestsPage() {
               columns={columns}
               data={filtered}
               keyExtractor={(r) => r.id}
-              onRowClick={(r) => router.push(`/dashboard/super-admin/garage-requests/${r.id}`)}
-              className={TABLE_CLS}
+              className="glass-card overflow-hidden"
             />
           </div>
         )}

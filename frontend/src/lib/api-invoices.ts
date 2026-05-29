@@ -63,3 +63,11 @@ export async function updateInvoiceStatus(
 export async function notifyCustomer(id: string): Promise<string> {
   return api.post<string>(`/api/invoices/${id}/notify`, {});
 }
+
+export async function getInvoiceByOrderId(orderId: string): Promise<Invoice | null> {
+  try {
+    return await api.get<Invoice>(`/api/invoices/by-order/${orderId}`);
+  } catch {
+    return null;
+  }
+}

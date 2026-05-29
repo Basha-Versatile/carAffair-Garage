@@ -80,6 +80,9 @@ export interface Order {
   paymentToken?: string;
   paymentSentAt?: string;
 
+  // Transient (request-only)
+  notifyCustomer?: boolean;
+
   createdAt?: string;
   updatedAt?: string;
 }
@@ -343,6 +346,12 @@ export async function getDeliveryAlerts(): Promise<Order[]> {
 
 export async function getVehicleAnalytics(): Promise<VehicleAnalytics[]> {
   return api.get<VehicleAnalytics[]>("/api/orders/vehicle-analytics");
+}
+
+// ── Orders by Customer ──
+
+export async function getOrdersByCustomer(customerId: string): Promise<Order[]> {
+  return api.get<Order[]>(`/api/orders/by-customer/${customerId}`);
 }
 
 // ── GST States ──

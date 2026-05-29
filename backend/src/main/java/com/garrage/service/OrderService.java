@@ -57,14 +57,35 @@ public class OrderService {
                 .odometerReading(request.getOdometerReading())
                 .fuelLevel(request.getFuelLevel())
                 .customerRemarks(request.getCustomerRemarks())
+                .inspectionNotes(request.getInspectionNotes())
                 .build();
 
         Order saved = orderRepository.save(order);
         activityLogService.log("CREATE", "ORDER", saved.getId(),
                 "created order " + saved.getJobCard());
 
+        // Notify admin about new order
+        notificationService.notifyAdmin(garageId,
+                "ORDER_CREATED", "APPOINTMENTS", "normal",
+                "New Order Created",
+                "Order " + saved.getJobCard() + " created for " + (saved.getCustomerName() != null ? saved.getCustomerName() : "customer"),
+                "/dashboard/orders/" + saved.getId(),
+                "ORDER", saved.getId());
+
         // Track vehicle analytics (brand count)
         trackVehicleAnalytics(garageId, request.getVehicleId());
+
+        // Send vehicle onboarding email if toggle is on
+        if (request.isNotifyCustomer()) {
+            String customerEmail = resolveCustomerEmail(saved);
+            if (customerEmail != null) {
+                Garage garage = garageRepository.findById(garageId).orElse(null);
+                String garageName = garage != null ? garage.getName() : "Car Affair";
+                emailService.sendVehicleOnboardingEmail(customerEmail, saved.getCustomerName(),
+                        saved.getVehicle(), saved.getVehicleNumber(),
+                        saved.getCustomerRemarks(), garageName);
+            }
+        }
 
         return saved;
     }
@@ -77,6 +98,10 @@ public class OrderService {
 
     public List<Order> getOrdersByStatus(String garageId, String status) {
         return orderRepository.findByGarageIdAndStatus(garageId, status);
+    }
+
+    public List<Order> getOrdersByCustomer(String customerId, String garageId) {
+        return orderRepository.findByCustomerIdAndGarageIdOrderByCreatedAtDesc(customerId, garageId);
     }
 
     public Order getOrderById(String id, String garageId) {
@@ -110,11 +135,11 @@ public class OrderService {
 
         // Notify on important status changes
         String newStatus = saved.getStatus();
-        if ("ready".equals(newStatus)) {
+        if ("wip".equals(newStatus)) {
             notificationService.notifyAdmin(garageId,
-                    "SERVICE_READY", "APPOINTMENTS", "high",
-                    "Service Ready",
-                    "Order " + saved.getJobCard() + " for " + saved.getCustomerName() + " is ready",
+                    "ORDER_IN_PROGRESS", "APPOINTMENTS", "normal",
+                    "Order In Progress",
+                    "Order " + saved.getJobCard() + " for " + saved.getCustomerName() + " is now in progress",
                     "/dashboard/orders/" + saved.getId(),
                     "ORDER", saved.getId());
         } else if ("completed".equals(newStatus)) {
@@ -122,6 +147,13 @@ public class OrderService {
                     "ORDER_COMPLETED", "APPOINTMENTS", "normal",
                     "Order Completed",
                     "Order " + saved.getJobCard() + " has been completed",
+                    "/dashboard/orders/" + saved.getId(),
+                    "ORDER", saved.getId());
+        } else if ("cancelled".equals(newStatus)) {
+            notificationService.notifyAdmin(garageId,
+                    "ORDER_CANCELLED", "APPOINTMENTS", "high",
+                    "Order Cancelled",
+                    "Order " + saved.getJobCard() + " for " + saved.getCustomerName() + " has been cancelled",
                     "/dashboard/orders/" + saved.getId(),
                     "ORDER", saved.getId());
         }

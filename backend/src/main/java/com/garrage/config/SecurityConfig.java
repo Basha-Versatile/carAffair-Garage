@@ -84,6 +84,10 @@ public class SecurityConfig {
                         // Image serving (authenticated via controller)
                         .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
 
+                        // Brand requests — submission by garage roles, management by super admin
+                        .requestMatchers(HttpMethod.POST, "/api/brand-requests").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
+                        .requestMatchers("/api/brand-requests/**").hasRole("SUPER_ADMIN")
+
                         // Super Admin only
                         .requestMatchers("/api/garages/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/garage-registrations/**").hasRole("SUPER_ADMIN")

@@ -22,6 +22,7 @@ com\garrage\repository\VehicleRepository.class
 com\garrage\service\EmailService.class
 com\garrage\service\GarageService.class
 com\garrage\controller\ReminderController.class
+com\garrage\dto\request\ChangePasswordRequest.class
 com\garrage\dto\request\GarageRegistrationRequest.class
 com\garrage\security\UserPrincipal.class
 com\garrage\repository\OrderRepository.class
@@ -96,6 +97,7 @@ com\garrage\model\PurchaseOrder$POItem$POItemBuilder.class
 com\garrage\model\TaxProfile$TaxProfileBuilder.class
 com\garrage\config\WebPushProperties.class
 com\garrage\service\ServiceCategoryService.class
+com\garrage\controller\ProfileController.class
 com\garrage\dto\response\RcLookupResponse$RcLookupResponseBuilder.class
 com\garrage\repository\ManufacturerRepository.class
 com\garrage\service\BookingService.class
@@ -124,6 +126,7 @@ com\garrage\service\GarageRegistrationService.class
 com\garrage\dto\response\ApiResponse.class
 com\garrage\controller\StockHistoryController.class
 com\garrage\repository\BrandRepository.class
+com\garrage\model\BrandRequest.class
 com\garrage\model\PushSubscription$PushSubscriptionBuilder.class
 com\garrage\service\PurchaseOrderService.class
 com\garrage\model\Vendor$VendorBuilder.class
@@ -140,6 +143,7 @@ com\garrage\exception\BadRequestException.class
 com\garrage\controller\InvoiceController.class
 com\garrage\model\GarageRegistration$GarageRegistrationBuilder.class
 com\garrage\service\VehicleService.class
+com\garrage\model\BrandRequest$BrandRequestBuilder.class
 com\garrage\model\OtpLog.class
 com\garrage\model\PartPurchase$PartPurchaseBuilder.class
 com\garrage\repository\VendorRepository.class
@@ -164,6 +168,7 @@ com\garrage\model\PartCategory$PartCategoryBuilder.class
 com\garrage\controller\GarageStaffController.class
 com\garrage\model\Garage.class
 com\garrage\model\ServicePackage$PackageServiceItem$PackageServiceItemBuilder.class
+com\garrage\service\BrandRequestService.class
 com\garrage\model\Vendor.class
 com\garrage\dto\request\CreateStaffRequest.class
 com\garrage\model\Vehicle.class
@@ -213,6 +218,7 @@ com\garrage\config\JwtProperties.class
 com\garrage\model\ServiceEntry$ServiceEntryBuilder.class
 com\garrage\model\Order$OrderLineItem.class
 com\garrage\model\ServiceReminder.class
+com\garrage\repository\BrandRequestRepository.class
 com\garrage\model\Brand.class
 com\garrage\dto\response\GarageResponse.class
 com\garrage\repository\OtpLogRepository.class
@@ -227,6 +233,7 @@ com\garrage\service\AuthService.class
 com\garrage\GarrageApplication.class
 com\garrage\model\Expense.class
 com\garrage\dto\request\InspectionRequest.class
+com\garrage\controller\BrandRequestController.class
 com\garrage\service\ReminderService.class
 com\garrage\dto\response\AuthResponse$AuthResponseBuilder.class
 com\garrage\service\PartPurchaseService.class
@@ -236,6 +243,7 @@ com\garrage\repository\GarageRepository.class
 com\garrage\repository\BookingRepository.class
 com\garrage\config\SecurityConfig.class
 com\garrage\model\StockHistory.class
+com\garrage\service\NotificationDeliveryService.class
 com\garrage\repository\VehicleAnalyticsRepository.class
 com\garrage\controller\BookingController.class
 com\garrage\model\CounterSale$CSItem$CSItemBuilder.class

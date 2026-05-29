@@ -33,4 +33,8 @@ public class CreateOrderRequest {
     private String fuelLevel;
 
     private List<String> customerRemarks;
+
+    private String inspectionNotes;
+
+    private boolean notifyCustomer;
 }

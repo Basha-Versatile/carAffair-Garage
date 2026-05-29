@@ -69,6 +69,14 @@ public class InvoiceController {
         return ResponseEntity.ok(ApiResponse.ok(updated));
     }
 
+    @GetMapping("/by-order/{orderId}")
+    public ResponseEntity<ApiResponse<Invoice>> getInvoiceByOrder(@PathVariable String orderId) {
+        String garageId = TenantContext.getGarageId();
+        log.info("GET /api/invoices/by-order/{} for garage {}", orderId, garageId);
+        Invoice invoice = invoiceService.getInvoiceByOrderId(orderId, garageId);
+        return ResponseEntity.ok(ApiResponse.ok(invoice));
+    }
+
     @GetMapping("/{id}/pdf")
     public ResponseEntity<byte[]> downloadInvoicePdf(@PathVariable String id) {
         String garageId = TenantContext.getGarageId();

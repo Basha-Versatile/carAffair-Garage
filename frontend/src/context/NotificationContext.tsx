@@ -63,8 +63,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const count = await getUnreadCount();
       setUnreadCount(count);
-    } catch {
-      // Silently fail — don't disrupt UI
+    } catch (err) {
+      console.error("[Notifications] Failed to fetch unread count:", err);
     }
   }, []);
 
@@ -80,8 +80,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         setHasMore(!data.last);
         setPage(pageNum);
-      } catch {
-        // Silently fail
+      } catch (err) {
+        console.error("[Notifications] Failed to fetch notifications:", err);
       } finally {
         setLoading(false);
       }
@@ -130,6 +130,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     // Clean up existing connection
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
+      eventSourceRef.current = null;
     }
 
     const es = createNotificationStream();
@@ -173,12 +174,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // Clear the toast after 5 seconds
         setTimeout(() => setLatestNotification(null), 5000);
-      } catch {
-        // Silently fail on parse error
+      } catch (err) {
+        console.error("[Notifications] Failed to parse SSE notification:", err);
       }
     });
 
     es.addEventListener("connected", () => {
+      console.log("[Notifications] SSE connected");
       reconnectAttemptsRef.current = 0;
     });
 
@@ -186,9 +188,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       es.close();
       eventSourceRef.current = null;
 
-      // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
+      // Exponential backoff: 2s, 4s, 8s, 16s, max 30s
       const delay = Math.min(
-        1000 * Math.pow(2, reconnectAttemptsRef.current),
+        2000 * Math.pow(2, reconnectAttemptsRef.current),
         30000
       );
       reconnectAttemptsRef.current++;
@@ -205,10 +207,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (!isLoggedIn()) return;
 
-    fetchUnreadCount();
-    fetchNotifications(0);
-    connectSSE();
-
     // Request notification permission for OS-level desktop alerts
     if (
       typeof window !== "undefined" &&
@@ -217,6 +215,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     ) {
       window.Notification.requestPermission();
     }
+
+    // Fetch data first — this goes through apiFetch which auto-refreshes
+    // expired tokens. Only THEN connect SSE with a guaranteed-fresh token.
+    const init = async () => {
+      await Promise.allSettled([
+        fetchUnreadCount(),
+        fetchNotifications(0),
+      ]);
+      connectSSE();
+    };
+    init();
 
     return () => {
       if (eventSourceRef.current) {
