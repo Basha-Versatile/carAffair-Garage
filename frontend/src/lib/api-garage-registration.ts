@@ -8,6 +8,9 @@ export interface GarageRegistration {
   phone: string;
   gstNumber?: string;
   address?: string;
+  state?: string;
+  city?: string;
+  streetAddress?: string;
   latitude?: number;
   longitude?: number;
   status: "PENDING" | "APPROVED" | "REJECTED";

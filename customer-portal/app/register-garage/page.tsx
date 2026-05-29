@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, useRef, FormEvent } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { publicPost } from "@/lib/api";
+import { publicPost, publicGet } from "@/lib/api";
 import {
   Building2,
   User,
@@ -14,6 +14,9 @@ import {
   MapPin,
   CheckCircle2,
   ChevronRight,
+  ChevronDown,
+  Search,
+  Check,
 } from "lucide-react";
 
 const benefits = [
@@ -35,7 +38,33 @@ export default function RegisterGaragePage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [gstNumber, setGstNumber] = useState("");
-  const [address, setAddress] = useState("");
+  const [state, setState] = useState("");
+  const [city, setCity] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
+
+  // State dropdown
+  const [states, setStates] = useState<string[]>([]);
+  const [stateOpen, setStateOpen] = useState(false);
+  const [stateFilter, setStateFilter] = useState("");
+  const stateRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    publicGet<string[]>("/api/gst/states").then(setStates).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (stateRef.current && !stateRef.current.contains(e.target as Node)) {
+        setStateOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const filteredStates = states.filter((s) =>
+    s.toLowerCase().includes(stateFilter.toLowerCase())
+  );
 
   const isFieldInvalid = (value: string) => {
     if (!attempted) return false;
@@ -63,13 +92,18 @@ export default function RegisterGaragePage() {
 
     setSubmitting(true);
     try {
+      const addressParts = [streetAddress, city, state].filter(Boolean);
+      const fullAddress = addressParts.join(", ");
       await publicPost("/api/garage-registrations", {
         name: garageName.trim(),
         ownerName: ownerName.trim(),
         phone: phone.trim(),
         email: email.trim(),
         gstNumber: gstNumber.trim() || undefined,
-        address: address.trim() || undefined,
+        address: fullAddress || undefined,
+        state: state || undefined,
+        city: city.trim() || undefined,
+        streetAddress: streetAddress.trim() || undefined,
       });
       setSubmitted(true);
     } catch (err) {
@@ -306,22 +340,84 @@ export default function RegisterGaragePage() {
                   />
                 </div>
 
-                {/* Address */}
+                {/* State + City */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div ref={stateRef} className="relative">
+                    <label className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
+                      <MapPin className="h-4 w-4 text-muted" />
+                      State
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => { setStateOpen(!stateOpen); setStateFilter(""); }}
+                      className="w-full px-4 py-2.5 rounded-lg border border-edge bg-background text-sm text-left flex items-center justify-between transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    >
+                      <span className={state ? "text-foreground" : "text-muted"}>
+                        {state || "Select state..."}
+                      </span>
+                      <ChevronDown className="w-4 h-4 text-muted" />
+                    </button>
+                    {stateOpen && (
+                      <div className="absolute z-30 top-full left-0 mt-1 w-full bg-background border border-edge rounded-lg shadow-lg max-h-60 flex flex-col">
+                        <div className="p-2 border-b border-edge">
+                          <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
+                            <input
+                              type="text"
+                              value={stateFilter}
+                              onChange={(e) => setStateFilter(e.target.value)}
+                              placeholder="Search state..."
+                              autoFocus
+                              className="w-full pl-8 pr-3 py-1.5 text-sm border border-edge rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                          {filteredStates.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => { setState(s); setStateOpen(false); }}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-hover flex items-center justify-between ${
+                                state === s ? "bg-primary-light text-primary font-medium" : "text-foreground"
+                              }`}
+                            >
+                              {s}
+                              {state === s && <Check className="w-3.5 h-3.5" />}
+                            </button>
+                          ))}
+                          {filteredStates.length === 0 && (
+                            <p className="text-sm text-muted text-center py-4">No states found</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Enter city name"
+                      className="w-full px-4 py-2.5 rounded-lg border border-edge bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                {/* Street Address */}
                 <div>
-                  <label
-                    htmlFor="address"
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5"
-                  >
-                    <MapPin className="h-4 w-4 text-muted" />
-                    Address
+                  <label className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
+                    Street Address
                   </label>
-                  <textarea
-                    id="address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Complete garage address"
-                    rows={3}
-                    className="w-full px-4 py-2.5 rounded-lg border border-edge bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                  <input
+                    type="text"
+                    value={streetAddress}
+                    onChange={(e) => setStreetAddress(e.target.value)}
+                    placeholder="Road, area, locality"
+                    className="w-full px-4 py-2.5 rounded-lg border border-edge bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   />
                 </div>
 

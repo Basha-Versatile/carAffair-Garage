@@ -23,7 +23,7 @@ import {
   ArrowLeft, Phone, Car, IndianRupee, Camera, Upload,
   CheckCircle2, CircleDot, Loader2, Trash2, Plus,
   Send, Link2, Copy, X, Fuel, Gauge, StickyNote,
-  Wrench, Package, ChevronDown, ExternalLink, AlertCircle, Search, Check, Clock, UserPlus, Download, FileText,
+  Wrench, Package, ChevronDown, ExternalLink, AlertCircle, Search, Check, Clock, UserPlus, Download, FileText, Share2,
 } from "lucide-react";
 
 // ─── Status Config ───
@@ -96,6 +96,85 @@ const emptyPartForm: CreatePartForm = {
 const inputCls = "w-full px-3 py-2 border border-edge rounded-md text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background";
 const labelCls = "block text-xs font-medium text-secondary mb-1";
 const smallInputCls = "w-full px-2 py-1.5 border border-edge rounded text-sm text-foreground text-right focus:outline-none focus:ring-1 focus:ring-primary bg-background";
+
+// ─── Order Journey Step Bar ───
+
+const JOURNEY_STEPS = [
+  { key: "open", label: "Created" },
+  { key: "wip", label: "In Progress" },
+  { key: "payment_due", label: "Payment Due" },
+  { key: "completed", label: "Payment Done" },
+] as const;
+
+function OrderJourney({ status }: { status: string }) {
+  if (status === "cancelled") {
+    return (
+      <div className="bg-background rounded-xl border border-edge px-5 py-3 flex items-center gap-3">
+        <div className="w-7 h-7 rounded-full bg-bad flex items-center justify-center">
+          <X className="w-4 h-4 text-white" />
+        </div>
+        <span className="text-sm font-semibold text-bad">Order Cancelled</span>
+      </div>
+    );
+  }
+
+  const statusOrder = ["open", "wip", "payment_due", "completed"];
+  const currentIdx = statusOrder.indexOf(status);
+
+  return (
+    <div className="bg-background rounded-xl border border-edge px-5 py-4">
+      <div className="flex items-center">
+        {JOURNEY_STEPS.map((step, idx) => {
+          const isDone = idx < currentIdx || status === "completed";
+          const isCurrent = idx === currentIdx;
+          const isLast = idx === JOURNEY_STEPS.length - 1;
+
+          return (
+            <div key={step.key} className={`flex items-center ${isLast ? "" : "flex-1"}`}>
+              {/* Circle + label */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
+                    isDone
+                      ? "bg-ok border-ok text-white"
+                      : isCurrent
+                        ? "bg-primary border-primary text-white"
+                        : "bg-background border-edge text-muted"
+                  }`}
+                >
+                  {isDone ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    idx + 1
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] mt-1.5 text-center font-medium whitespace-nowrap ${
+                    isDone
+                      ? "text-ok"
+                      : isCurrent
+                        ? "text-primary"
+                        : "text-muted"
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </div>
+              {/* Connector line */}
+              {!isLast && (
+                <div
+                  className={`flex-1 h-0.5 mx-2 mt-[-18px] ${
+                    idx < currentIdx ? "bg-ok" : "bg-edge"
+                  }`}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -181,6 +260,7 @@ export default function OrderDetailPage() {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [assigning, setAssigning] = useState<string | null>(null);
   const [staffDropdownOpen, setStaffDropdownOpen] = useState<string | null>(null);
+  const [assignConfirm, setAssignConfirm] = useState<{ lineItemId: string; serviceName: string; staff: StaffMember } | null>(null);
 
   // Invoice
   const [invoice, setInvoice] = useState<Invoice | null>(null);
@@ -541,9 +621,9 @@ export default function OrderDetailPage() {
   }
 
   const statusCfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.open;
-  const canEdit = order.status === "open";
+  const canEdit = order.status === "open" || order.status === "cancelled";
   const hasItems = serviceRows.length > 0 || partRows.length > 0;
-  const canSend = hasItems && order.status === "open";
+  const canSend = hasItems && (order.status === "open" || order.status === "cancelled");
   const isOwner = isGarageOwner();
 
   return (
@@ -575,6 +655,9 @@ export default function OrderDetailPage() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-5">
         <div className="max-w-5xl mx-auto space-y-5">
+
+          {/* ─── Order Journey Step Bar ─── */}
+          <OrderJourney status={order.status} />
 
           {/* ─── Order Info Card ─── */}
           <div className="bg-background rounded-xl border border-edge p-5">
@@ -619,20 +702,44 @@ export default function OrderDetailPage() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <Camera className="w-4 h-4 text-primary" /> Inspection Images
+                {(order.imageIds || []).length > 0 && <span className="text-xs bg-primary-light text-primary px-1.5 py-0.5 rounded-full">{(order.imageIds || []).length}</span>}
               </h3>
+              {(order.imageIds || []).length > 0 && (order.customerPhone || order.phone) && (
+                <button onClick={() => {
+                  const phone = (order.customerPhone || order.phone || "").replace(/\D/g, "");
+                  const countryPhone = phone.startsWith("91") ? phone : `91${phone}`;
+                  const imageLinks = (order.imageIds || []).map(id => getImageUrl(id)).join("\n");
+                  const message = `Hi ${order.customerName || ""},\n\nHere are the inspection images for your vehicle (${order.vehicle || ""}) - Job Card: ${order.jobCard || ""}:\n\n${imageLinks}\n\nRegards`;
+                  window.open(`https://wa.me/${countryPhone}?text=${encodeURIComponent(message)}`, "_blank");
+                }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors">
+                  <Share2 className="w-3.5 h-3.5" /> WhatsApp
+                </button>
+              )}
             </div>
             <div className="flex flex-wrap gap-3">
-              {(order.imageIds || []).map((fileId) => (
-                <div key={fileId} className="relative group w-24 h-24 rounded-lg overflow-hidden border border-edge">
-                  <img src={getImageUrl(fileId)} alt="Inspection" className="w-full h-full object-cover" />
-                  {canEdit && (
-                    <button onClick={() => handleDeleteImage(fileId)}
-                      className="absolute top-1 right-1 w-5 h-5 bg-bad/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              ))}
+              {(order.imageIds || []).map((fileId) => {
+                const ts = order.imageTimestamps?.[fileId];
+                return (
+                  <div key={fileId} className="relative group">
+                    <div className="w-24 h-24 rounded-lg overflow-hidden border border-edge">
+                      <img src={getImageUrl(fileId)} alt="Inspection" className="w-full h-full object-cover" />
+                      {canEdit && (
+                        <button onClick={() => handleDeleteImage(fileId)}
+                          className="absolute top-1 right-1 w-5 h-5 bg-bad/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                    {ts && (
+                      <p className="text-[10px] text-muted text-center mt-1 leading-tight">
+                        {new Date(ts).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}{" "}
+                        {new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
               {canEdit && (
                 <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
                   className="w-24 h-24 rounded-lg border-2 border-dashed border-edge hover:border-primary flex flex-col items-center justify-center gap-1 text-muted hover:text-primary transition-colors">
@@ -858,67 +965,6 @@ export default function OrderDetailPage() {
                         <div><label className={labelCls}>GST Amt</label><div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{c.gstAmount.toLocaleString("en-IN")}</div></div>
                       </div>
 
-                      {/* Staff assignment — inline on each service row when WIP */}
-                      {order.status === "wip" && isOwner && (() => {
-                        const existing = (order.serviceAssignments || []).find(a => a.lineItemId === s.key);
-                        const isAssigningThis = assigning === s.key;
-                        const isDropdownOpen = staffDropdownOpen === s.key;
-                        return (
-                          <div className="flex items-center gap-3 pt-3 border-t border-edge-light">
-                            <UserPlus className="w-3.5 h-3.5 text-muted shrink-0" />
-                            <div className="relative flex-1">
-                              <button
-                                onClick={() => setStaffDropdownOpen(isDropdownOpen ? null : s.key)}
-                                disabled={isAssigningThis}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors min-w-[140px] justify-between ${
-                                  existing
-                                    ? "border-edge text-foreground bg-background hover:bg-hover"
-                                    : "border-primary/30 text-primary bg-primary-light hover:bg-primary/10"
-                                } disabled:opacity-50`}
-                              >
-                                {isAssigningThis ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : existing ? (
-                                  <span className="truncate">{existing.assignedUserName}</span>
-                                ) : (
-                                  <span>Assign Staff</span>
-                                )}
-                                <ChevronDown className="w-3 h-3 shrink-0" />
-                              </button>
-                              {isDropdownOpen && staffMembers.length > 0 && (
-                                <div className="absolute left-0 top-full mt-1 z-30 bg-background border border-edge rounded-lg shadow-lg py-1 min-w-[200px] max-h-48 overflow-y-auto">
-                                  {staffMembers.filter(m => m.isActive).map((staff) => (
-                                    <button key={staff.id}
-                                      onClick={() => handleAssignService(s.key, staff)}
-                                      className={`w-full text-left px-3 py-2 text-xs hover:bg-hover transition-colors flex items-center justify-between ${
-                                        existing?.assignedUserId === staff.id ? "bg-primary-light text-primary font-medium" : "text-foreground"
-                                      }`}>
-                                      <div>
-                                        <p className="font-medium">{staff.name}</p>
-                                        {staff.staffTitle && <p className="text-muted mt-0.5">{staff.staffTitle}</p>}
-                                      </div>
-                                      {existing?.assignedUserId === staff.id && <Check className="w-3.5 h-3.5 text-primary" />}
-                                    </button>
-                                  ))}
-                                  {staffMembers.filter(m => m.isActive).length === 0 && (
-                                    <p className="px-3 py-2 text-xs text-muted">No staff members added yet</p>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                            {existing && (
-                              <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${
-                                existing.status === "completed" ? "bg-ok/10 text-ok" :
-                                existing.status === "in_progress" ? "bg-warn/10 text-warn" :
-                                "bg-dim text-muted"
-                              }`}>
-                                {existing.status === "in_progress" ? "In Progress" :
-                                 existing.status === "completed" ? "Completed" : "Pending"}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()}
                     </div>
                   );
                 })}
@@ -1002,6 +1048,92 @@ export default function OrderDetailPage() {
             </div>
           )}
 
+          {/* ─── Staff Assignment Section ─── */}
+          {order.status === "wip" && isOwner && serviceRows.length > 0 && (
+            <div className="bg-background rounded-lg border border-edge">
+              <div className="flex items-center justify-between px-5 py-3 bg-dim border-b border-edge rounded-t-lg">
+                <div className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-secondary">Staff Assignment</h3>
+                  {(() => {
+                    const assigned = (order.serviceAssignments || []).length;
+                    return assigned > 0 ? <span className="text-xs bg-primary-light text-primary px-1.5 py-0.5 rounded-full">{assigned}/{serviceRows.length}</span> : null;
+                  })()}
+                </div>
+              </div>
+              <div className="p-4 space-y-3">
+                {serviceRows.map((s) => {
+                  const existing = (order.serviceAssignments || []).find(a => a.lineItemId === s.key);
+                  const isAssigningThis = assigning === s.key;
+                  const isDropdownOpen = staffDropdownOpen === s.key;
+                  return (
+                    <div key={s.key} className="border border-edge-light rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{s.description}</p>
+                        </div>
+                        <div className="flex items-center gap-3 ml-3">
+                          <div className="relative">
+                            <button
+                              onClick={() => existing?.status !== "completed" && setStaffDropdownOpen(isDropdownOpen ? null : s.key)}
+                              disabled={isAssigningThis || existing?.status === "completed"}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors min-w-[160px] justify-between ${
+                                existing?.status === "completed"
+                                  ? "border-ok/30 text-ok bg-ok/5 cursor-not-allowed"
+                                  : existing
+                                    ? "border-edge text-foreground bg-background hover:bg-hover"
+                                    : "border-primary/30 text-primary bg-primary-light hover:bg-primary/10"
+                              } disabled:opacity-50`}
+                            >
+                              {isAssigningThis ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : existing ? (
+                                <span className="truncate">{existing.assignedUserName}</span>
+                              ) : (
+                                <span>Assign Staff</span>
+                              )}
+                              {existing?.status === "completed" ? <Check className="w-3 h-3 shrink-0" /> : <ChevronDown className="w-3 h-3 shrink-0" />}
+                            </button>
+                            {isDropdownOpen && staffMembers.length > 0 && (
+                              <div className="absolute right-0 top-full mt-1 z-30 bg-background border border-edge rounded-lg shadow-lg py-1 min-w-[220px] max-h-48 overflow-y-auto">
+                                {staffMembers.filter(m => m.isActive).map((staff) => (
+                                  <button key={staff.id}
+                                    onClick={() => { setStaffDropdownOpen(null); setAssignConfirm({ lineItemId: s.key, serviceName: s.description, staff }); }}
+                                    className={`w-full text-left px-3 py-2 text-xs hover:bg-hover transition-colors flex items-center justify-between ${
+                                      existing?.assignedUserId === staff.id ? "bg-primary-light text-primary font-medium" : "text-foreground"
+                                    }`}>
+                                    <div>
+                                      <p className="font-medium">{staff.name}</p>
+                                      {staff.staffTitle && <p className="text-muted mt-0.5">{staff.staffTitle}</p>}
+                                    </div>
+                                    {existing?.assignedUserId === staff.id && <Check className="w-3.5 h-3.5 text-primary" />}
+                                  </button>
+                                ))}
+                                {staffMembers.filter(m => m.isActive).length === 0 && (
+                                  <p className="px-3 py-2 text-xs text-muted">No staff members added yet</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          {existing && (
+                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${
+                              existing.status === "completed" ? "bg-ok/10 text-ok" :
+                              existing.status === "in_progress" ? "bg-warn/10 text-warn" :
+                              "bg-dim text-muted"
+                            }`}>
+                              {existing.status === "in_progress" ? "In Progress" :
+                               existing.status === "completed" ? "Completed" : "Pending"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* ─── Summary + Actions ─── */}
           {hasItems && (
             <div className="bg-background rounded-lg border border-edge p-5">
@@ -1046,12 +1178,35 @@ export default function OrderDetailPage() {
             </div>
           )}
 
+          {/* Customer rejection info banner */}
+          {order.customerApproved === false && order.customerRejectionNote && (
+            <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
+              <p className="text-sm text-amber-800">
+                <span className="font-semibold">Customer rejected estimate</span>
+                {order.customerRejectionNote && <>: {order.customerRejectionNote}</>}
+              </p>
+              {order.customerRequestedProforma && (
+                <p className="text-sm text-amber-700 mt-1 font-medium">
+                  Customer requested proforma (no GST) billing.
+                </p>
+              )}
+            </div>
+          )}
+          {order.customerApproved === false && !order.customerRejectionNote && order.customerRequestedProforma && (
+            <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
+              <p className="text-sm text-amber-800 font-semibold">Customer rejected estimate</p>
+              <p className="text-sm text-amber-700 mt-1 font-medium">
+                Customer requested proforma (no GST) billing.
+              </p>
+            </div>
+          )}
+
           {/* ─── Status Actions ─── */}
           {order.status !== "completed" && order.status !== "cancelled" && order.status !== "payment_due" && isOwner && (
             <div className="bg-background rounded-xl border border-edge p-5">
               <p className="text-xs font-medium text-muted uppercase mb-3">Actions</p>
               <div className="flex flex-wrap gap-2">
-                {order.status === "open" && order.customerApproved === false && (
+                {order.customerApproved === false && (
                   <button onClick={async () => {
                     setUpdating(true);
                     try { const updated = await resendEstimate(order.id); setOrder(updated); showSuccess("Estimate resent"); }
@@ -1061,20 +1216,33 @@ export default function OrderDetailPage() {
                     Revise & Resend Estimate
                   </button>
                 )}
-                {order.status === "wip" && (
-                  <button onClick={async () => {
-                    setUpdating(true);
-                    try {
-                      const updated = await markPaymentDue(order.id);
-                      setOrder(updated);
-                      showSuccess("Payment link sent to customer");
-                    } catch {} finally { setUpdating(false); }
-                  }} disabled={updating}
-                    className="px-4 py-2.5 bg-orange-500 text-white rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5">
-                    <IndianRupee className="w-4 h-4" />
-                    {updating ? "Sending..." : "Mark Completed & Send Payment"}
-                  </button>
-                )}
+                {order.status === "wip" && (() => {
+                  const assignments = order.serviceAssignments || [];
+                  const allCompleted = assignments.length > 0 && assignments.every(a => a.status === "completed");
+                  return allCompleted ? (
+                    <button onClick={async () => {
+                      setUpdating(true);
+                      try {
+                        const updated = await markPaymentDue(order.id);
+                        setOrder(updated);
+                        showSuccess("Payment link sent to customer");
+                      } catch {} finally { setUpdating(false); }
+                    }} disabled={updating}
+                      className="px-4 py-2.5 bg-orange-500 text-white rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5">
+                      <IndianRupee className="w-4 h-4" />
+                      {updating ? "Sending..." : "Mark Completed & Send Payment"}
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-dim rounded-lg border border-edge">
+                      <AlertCircle className="w-4 h-4 text-muted" />
+                      <span className="text-sm text-muted">
+                        {assignments.length === 0
+                          ? "Assign staff to services before sending payment link"
+                          : "Complete all assigned services before sending payment link"}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -1135,12 +1303,48 @@ export default function OrderDetailPage() {
               <AlertCircle className="w-8 h-8 text-bad mx-auto mb-2" />
               <p className="text-sm font-semibold text-bad">Order Cancelled</p>
               {order.customerRejectionNote && <p className="text-sm text-secondary mt-1">Reason: {order.customerRejectionNote}</p>}
+              {isOwner && <p className="text-xs text-muted mt-2">You can edit the estimate above and click &quot;Send for Approval&quot; to reopen this order.</p>}
             </div>
           )}
         </div>
       </div>
 
       {/* ════════ MODALS ════════ */}
+
+      {/* ── Staff Assignment Confirmation ── */}
+      {assignConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setAssignConfirm(null)} />
+          <div className="relative bg-background rounded-xl shadow-2xl w-full max-w-sm mx-4 animate-scale-in">
+            <div className="px-5 py-4 border-b border-edge">
+              <h3 className="text-base font-semibold text-foreground">Confirm Assignment</h3>
+            </div>
+            <div className="px-5 py-5">
+              <p className="text-sm text-secondary">
+                Assign <span className="font-semibold text-foreground">{assignConfirm.staff.name}</span> to{" "}
+                <span className="font-semibold text-foreground">{assignConfirm.serviceName}</span>?
+              </p>
+              {assignConfirm.staff.staffTitle && (
+                <p className="text-xs text-muted mt-1">Role: {assignConfirm.staff.staffTitle}</p>
+              )}
+            </div>
+            <div className="flex gap-3 px-5 py-4 border-t border-edge">
+              <button onClick={() => setAssignConfirm(null)}
+                className="flex-1 py-2.5 border border-edge rounded-lg text-sm font-medium text-foreground hover:bg-hover">
+                Cancel
+              </button>
+              <button onClick={async () => {
+                const { lineItemId, staff } = assignConfirm;
+                setAssignConfirm(null);
+                await handleAssignService(lineItemId, staff);
+              }}
+                className="flex-1 py-2.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-hover">
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Choose Services Modal ── */}
       {chooseServicesOpen && (

@@ -22,7 +22,6 @@ com\garrage\repository\VehicleRepository.class
 com\garrage\service\EmailService.class
 com\garrage\service\GarageService.class
 com\garrage\controller\ReminderController.class
-com\garrage\dto\request\ChangePasswordRequest.class
 com\garrage\dto\request\GarageRegistrationRequest.class
 com\garrage\security\UserPrincipal.class
 com\garrage\repository\OrderRepository.class
@@ -97,7 +96,6 @@ com\garrage\model\PurchaseOrder$POItem$POItemBuilder.class
 com\garrage\model\TaxProfile$TaxProfileBuilder.class
 com\garrage\config\WebPushProperties.class
 com\garrage\service\ServiceCategoryService.class
-com\garrage\controller\ProfileController.class
 com\garrage\dto\response\RcLookupResponse$RcLookupResponseBuilder.class
 com\garrage\repository\ManufacturerRepository.class
 com\garrage\service\BookingService.class

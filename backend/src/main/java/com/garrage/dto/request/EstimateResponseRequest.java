@@ -6,4 +6,5 @@ import lombok.Data;
 public class EstimateResponseRequest {
     private boolean approved;
     private String rejectionNote;
+    private boolean requestedProforma;
 }

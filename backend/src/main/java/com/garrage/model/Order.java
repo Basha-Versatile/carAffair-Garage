@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -71,6 +72,9 @@ public class Order {
     /** GridFS file IDs for inspection images */
     private List<String> imageIds;
 
+    /** fileId -> upload ISO timestamp */
+    private Map<String, String> imageTimestamps;
+
     private LocalDateTime inspectionCompletedAt;
 
     // ─── Estimate fields ───
@@ -101,6 +105,10 @@ public class Order {
     /** Format: "YYYY-MM-DD" */
     private String estimatedDeliveryDate;
 
+    /** UUID for public onboarding/inspection link */
+    @Indexed(unique = true, sparse = true)
+    private String onboardingToken;
+
     /** UUID for public estimate link */
     @Indexed(unique = true, sparse = true)
     private String estimateToken;
@@ -118,6 +126,8 @@ public class Order {
     private Boolean customerApproved;
 
     private String customerRejectionNote;
+
+    private Boolean customerRequestedProforma;
 
     private LocalDateTime customerRespondedAt;
 

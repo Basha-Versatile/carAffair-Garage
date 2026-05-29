@@ -11,6 +11,7 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     List<Order> findByGarageIdAndStatus(String garageId, String status);
     Optional<Order> findByIdAndGarageId(String id, String garageId);
     long countByGarageIdAndStatus(String garageId, String status);
+    Optional<Order> findByOnboardingToken(String onboardingToken);
     Optional<Order> findByEstimateToken(String estimateToken);
     Optional<Order> findByPaymentToken(String paymentToken);
     List<Order> findByGarageIdAndEstimatedDeliveryDateAndStatusIn(

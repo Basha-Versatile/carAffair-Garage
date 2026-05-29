@@ -77,13 +77,17 @@ public class OrderService {
 
         // Send vehicle onboarding email if toggle is on
         if (request.isNotifyCustomer()) {
+            // Generate onboarding token for public inspection link
+            saved.setOnboardingToken(UUID.randomUUID().toString());
+            saved = orderRepository.save(saved);
+
             String customerEmail = resolveCustomerEmail(saved);
             if (customerEmail != null) {
                 Garage garage = garageRepository.findById(garageId).orElse(null);
                 String garageName = garage != null ? garage.getName() : "Car Affair";
                 emailService.sendVehicleOnboardingEmail(customerEmail, saved.getCustomerName(),
                         saved.getVehicle(), saved.getVehicleNumber(),
-                        saved.getCustomerRemarks(), garageName);
+                        saved.getCustomerRemarks(), garageName, saved.getOnboardingToken());
             }
         }
 
@@ -112,6 +116,11 @@ public class OrderService {
     public Order getOrderByEstimateToken(String token) {
         return orderRepository.findByEstimateToken(token)
                 .orElseThrow(() -> new ResourceNotFoundException("Estimate not found"));
+    }
+
+    public Order getOrderByOnboardingToken(String token) {
+        return orderRepository.findByOnboardingToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Onboarding link not found or expired"));
     }
 
     // ─── Update ───
@@ -192,6 +201,18 @@ public class OrderService {
         }
         existing.addAll(newImageIds);
         order.setImageIds(existing);
+
+        // Record upload timestamps
+        Map<String, String> timestamps = order.getImageTimestamps();
+        if (timestamps == null) {
+            timestamps = new LinkedHashMap<>();
+        }
+        String now = LocalDateTime.now().toString();
+        for (String imageId : newImageIds) {
+            timestamps.put(imageId, now);
+        }
+        order.setImageTimestamps(timestamps);
+
         orderRepository.save(order);
     }
 
@@ -199,8 +220,11 @@ public class OrderService {
         Order order = getOrderById(orderId, garageId);
         if (order.getImageIds() != null) {
             order.getImageIds().remove(fileId);
-            orderRepository.save(order);
         }
+        if (order.getImageTimestamps() != null) {
+            order.getImageTimestamps().remove(fileId);
+        }
+        orderRepository.save(order);
     }
 
     // ─── Estimate ───
@@ -235,6 +259,17 @@ public class OrderService {
 
     public Order sendEstimate(String id, String garageId) {
         Order order = getOrderById(id, garageId);
+
+        // If the order was cancelled (e.g. customer rejected via old flow), reopen it
+        if ("cancelled".equals(order.getStatus())) {
+            order.setStatus("open");
+        }
+
+        // Always clear previous customer response so the new estimate is fresh
+        order.setCustomerApproved(null);
+        order.setCustomerRejectionNote(null);
+        order.setCustomerRequestedProforma(null);
+        order.setCustomerRespondedAt(null);
 
         // Generate unique token for public estimate link
         String token = UUID.randomUUID().toString();
@@ -272,7 +307,8 @@ public class OrderService {
 
     // ─── Customer response (public) ───
 
-    public Order respondToEstimate(String token, boolean approved, String rejectionNote) {
+    public Order respondToEstimate(String token, boolean approved, String rejectionNote,
+                                    boolean requestedProforma) {
         Order order = getOrderByEstimateToken(token);
 
         if (order.getCustomerApproved() != null) {
@@ -285,8 +321,9 @@ public class OrderService {
         if (approved) {
             order.setStatus("wip");
         } else {
-            order.setStatus("cancelled");
+            // Keep current status so admin can revise and resend
             order.setCustomerRejectionNote(rejectionNote);
+            order.setCustomerRequestedProforma(requestedProforma);
         }
 
         Order saved = orderRepository.save(order);
@@ -318,10 +355,15 @@ public class OrderService {
      */
     public Order resendEstimate(String id, String garageId) {
         Order order = getOrderById(id, garageId);
+        // If the order was cancelled (e.g. by old rejection flow), reopen it
+        if ("cancelled".equals(order.getStatus())) {
+            order.setStatus("open");
+        }
         order.setEstimateToken(UUID.randomUUID().toString());
         order.setEstimateSentAt(LocalDateTime.now());
         order.setCustomerApproved(null);
         order.setCustomerRejectionNote(null);
+        order.setCustomerRequestedProforma(null);
         order.setCustomerRespondedAt(null);
 
         Order saved = orderRepository.save(order);

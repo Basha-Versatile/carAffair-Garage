@@ -24,6 +24,15 @@ public class GstCalculationService {
      */
     public GstBreakdown calculateGst(List<Order.OrderLineItem> items, String estimateType,
                                       String garageGstNumber, String placeOfSupply) {
+        return calculateGst(items, estimateType, garageGstNumber, placeOfSupply, null);
+    }
+
+    /**
+     * Calculate GST breakdown with optional garage state fallback.
+     */
+    public GstBreakdown calculateGst(List<Order.OrderLineItem> items, String estimateType,
+                                      String garageGstNumber, String placeOfSupply,
+                                      String garageState) {
 
         double subtotal = 0;
         double totalDiscount = 0;
@@ -32,7 +41,13 @@ public class GstCalculationService {
         double totalIgst = 0;
 
         boolean isProforma = "proforma".equalsIgnoreCase(estimateType);
-        boolean sameState = isSameState(garageGstNumber, placeOfSupply);
+        // Use GSTIN if available, else fall back to garage state name comparison
+        boolean sameState;
+        if (garageGstNumber != null && garageGstNumber.length() >= 2) {
+            sameState = isSameState(garageGstNumber, placeOfSupply);
+        } else {
+            sameState = isSameStateByName(garageState, placeOfSupply);
+        }
 
         for (Order.OrderLineItem item : items) {
             double lineAmount = item.getQty() * item.getRate();
@@ -95,6 +110,17 @@ public class GstCalculationService {
         }
 
         return garageStateCode.equals(supplyStateCode);
+    }
+
+    /**
+     * Determine if the garage and customer are in the same state using state names.
+     * Used as fallback when GSTIN is not available.
+     */
+    public boolean isSameStateByName(String garageState, String placeOfSupply) {
+        if (garageState == null || garageState.isBlank() || placeOfSupply == null || placeOfSupply.isBlank()) {
+            return true; // Default to same state if unknown
+        }
+        return garageState.trim().equalsIgnoreCase(placeOfSupply.trim());
     }
 
     private double round(double value) {

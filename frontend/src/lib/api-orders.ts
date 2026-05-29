@@ -51,6 +51,7 @@ export interface Order {
   inspectionNotes?: string;
   customerRemarks?: string[];
   imageIds?: string[];
+  imageTimestamps?: Record<string, string>;
   inspectionCompletedAt?: string;
 
   // Estimate
@@ -65,12 +66,14 @@ export interface Order {
   totalGst?: number;
   grandTotal?: number;
   estimatedDeliveryDate?: string;
+  onboardingToken?: string;
   estimateToken?: string;
   estimateSentAt?: string;
 
   // Customer response
   customerApproved?: boolean;
   customerRejectionNote?: string;
+  customerRequestedProforma?: boolean;
   customerRespondedAt?: string;
 
   // Assignments
@@ -264,17 +267,32 @@ export async function getPublicEstimate(token: string): Promise<Order> {
 export async function respondToEstimate(
   token: string,
   approved: boolean,
-  rejectionNote?: string
+  rejectionNote?: string,
+  requestedProforma?: boolean
 ): Promise<Order> {
   const url = `${API_BASE_URL}/api/public/estimate/${token}/respond`;
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ approved, rejectionNote }),
+    body: JSON.stringify({ approved, rejectionNote, requestedProforma: requestedProforma || false }),
   });
   if (!response.ok) throw new Error("Failed to submit response");
   const json = await response.json();
   return json.data;
+}
+
+// ── Public onboarding (no auth) ──
+
+export async function getPublicOnboarding(token: string): Promise<Order> {
+  const url = `${API_BASE_URL}/api/public/onboarding/${token}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Onboarding link not found");
+  const json = await response.json();
+  return json.data;
+}
+
+export function getPublicOnboardingImageUrl(token: string, fileId: string): string {
+  return `${API_BASE_URL}/api/public/onboarding/${token}/images/${fileId}`;
 }
 
 // ── Service Assignment ──

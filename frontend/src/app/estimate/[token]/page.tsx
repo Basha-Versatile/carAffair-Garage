@@ -21,6 +21,7 @@ export default function PublicEstimatePage() {
   const [responding, setResponding] = useState(false);
   const [showReject, setShowReject] = useState(false);
   const [rejectionNote, setRejectionNote] = useState("");
+  const [requestProforma, setRequestProforma] = useState(false);
   const [responded, setResponded] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -53,7 +54,7 @@ export default function PublicEstimatePage() {
   async function handleReject() {
     setResponding(true);
     try {
-      const updated = await respondToEstimate(token, false, rejectionNote);
+      const updated = await respondToEstimate(token, false, rejectionNote, requestProforma);
       setOrder(updated);
       setResponded(true);
     } catch {
@@ -271,6 +272,12 @@ export default function PublicEstimatePage() {
                   placeholder="Tell us why you're declining..."
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-300 focus:border-transparent resize-none mb-3" />
+                <label className="flex items-center gap-2.5 mb-4 cursor-pointer">
+                  <input type="checkbox" checked={requestProforma}
+                    onChange={(e) => setRequestProforma(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <span className="text-sm text-gray-700">I prefer billing without GST (Proforma)</span>
+                </label>
                 <div className="flex gap-2">
                   <button onClick={handleReject} disabled={responding}
                     className="flex-1 py-3 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50">

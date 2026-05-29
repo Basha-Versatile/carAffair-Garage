@@ -82,6 +82,26 @@ public class ImageController {
     }
 
     /**
+     * Public image access for onboarding page (token-verified).
+     */
+    @GetMapping("/api/public/onboarding/{token}/images/{fileId}")
+    public ResponseEntity<InputStreamResource> getPublicOnboardingImage(
+            @PathVariable String token,
+            @PathVariable String fileId) throws IOException {
+        orderService.getOrderByOnboardingToken(token);
+
+        GridFsResource resource = imageStorageService.getImage(fileId);
+        if (resource == null || !resource.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(resource.getContentType()))
+                .header(HttpHeaders.CACHE_CONTROL, "max-age=86400")
+                .body(new InputStreamResource(resource.getInputStream()));
+    }
+
+    /**
      * Public image access for estimate page (token-verified).
      */
     @GetMapping("/api/public/estimate/{token}/images/{fileId}")

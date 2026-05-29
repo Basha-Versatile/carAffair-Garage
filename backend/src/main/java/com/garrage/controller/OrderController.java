@@ -205,6 +205,12 @@ public class OrderController {
 
     // ─── Public endpoints (no auth) ───
 
+    @GetMapping("/api/public/onboarding/{token}")
+    public ResponseEntity<ApiResponse<Order>> getPublicOnboarding(@PathVariable String token) {
+        Order order = orderService.getOrderByOnboardingToken(token);
+        return ResponseEntity.ok(ApiResponse.ok(order));
+    }
+
     @GetMapping("/api/public/estimate/{token}")
     public ResponseEntity<ApiResponse<Order>> getPublicEstimate(@PathVariable String token) {
         Order order = orderService.getOrderByEstimateToken(token);
@@ -215,7 +221,8 @@ public class OrderController {
     public ResponseEntity<ApiResponse<Order>> respondToEstimate(
             @PathVariable String token,
             @RequestBody EstimateResponseRequest request) {
-        Order order = orderService.respondToEstimate(token, request.isApproved(), request.getRejectionNote());
+        Order order = orderService.respondToEstimate(token, request.isApproved(),
+                request.getRejectionNote(), request.isRequestedProforma());
         return ResponseEntity.ok(ApiResponse.ok(order));
     }
 }

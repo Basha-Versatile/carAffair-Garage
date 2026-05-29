@@ -56,6 +56,9 @@ public class GarageRegistrationService {
                 .phone(request.getPhone())
                 .gstNumber(request.getGstNumber())
                 .address(request.getAddress())
+                .state(request.getState())
+                .city(request.getCity())
+                .streetAddress(request.getStreetAddress())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
                 .status("PENDING")
@@ -69,7 +72,7 @@ public class GarageRegistrationService {
                 "GARAGE_REQUEST", "SYSTEM", "high",
                 "New Garage Registration",
                 registration.getName() + " by " + registration.getOwnerName() + " is waiting for approval",
-                "/dashboard/super-admin/garage-requests",
+                "/dashboard/super-admin/garage-requests/" + registration.getId(),
                 "GARAGE_REGISTRATION", registration.getId());
 
         return registration;
@@ -100,6 +103,9 @@ public class GarageRegistrationService {
         garageRequest.setPhone(registration.getPhone());
         garageRequest.setGstNumber(registration.getGstNumber());
         garageRequest.setAddress(registration.getAddress());
+        garageRequest.setState(registration.getState());
+        garageRequest.setCity(registration.getCity());
+        garageRequest.setStreetAddress(registration.getStreetAddress());
         garageRequest.setLatitude(registration.getLatitude());
         garageRequest.setLongitude(registration.getLongitude());
 

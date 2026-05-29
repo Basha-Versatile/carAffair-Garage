@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { ArrowLeft, Building2 } from "lucide-react";
+import { getIndianStates } from "@/lib/api-orders";
+import { ArrowLeft, Building2, ChevronDown, Search, Check } from "lucide-react";
 
 interface GarageForm {
   name: string;
@@ -11,7 +12,9 @@ interface GarageForm {
   phone: string;
   email: string;
   gstNumber: string;
-  address: string;
+  state: string;
+  city: string;
+  streetAddress: string;
   latitude: string;
   longitude: string;
 }
@@ -22,7 +25,9 @@ const emptyForm: GarageForm = {
   phone: "",
   email: "",
   gstNumber: "",
-  address: "",
+  state: "",
+  city: "",
+  streetAddress: "",
   latitude: "",
   longitude: "",
 };
@@ -33,6 +38,26 @@ export default function CreateGaragePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
+
+  // State dropdown
+  const [states, setStates] = useState<string[]>([]);
+  const [stateOpen, setStateOpen] = useState(false);
+  const [stateFilter, setStateFilter] = useState("");
+  const stateRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getIndianStates().then(setStates).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (stateRef.current && !stateRef.current.contains(e.target as Node)) {
+        setStateOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   function updateForm(field: keyof GarageForm, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -48,7 +73,7 @@ export default function CreateGaragePage() {
     if (!form.ownerName.trim()) errs.ownerName = "Owner name is required";
     if (!form.phone.trim() || form.phone.length < 10)
       errs.phone = "Valid 10-digit phone number is required";
-    if (!form.address.trim()) errs.address = "Address is required";
+    if (!form.state) errs.state = "State is required";
 
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
@@ -58,6 +83,10 @@ export default function CreateGaragePage() {
     setSubmitting(true);
     setApiError("");
 
+    // Build address string from structured fields
+    const addressParts = [form.streetAddress, form.city, form.state].filter(Boolean);
+    const address = addressParts.join(", ");
+
     try {
       await api.post("/api/garages", {
         name: form.name.trim(),
@@ -65,7 +94,10 @@ export default function CreateGaragePage() {
         phone: form.phone.trim(),
         email: form.email.trim() || undefined,
         gstNumber: form.gstNumber.trim() || undefined,
-        address: form.address.trim(),
+        address: address || undefined,
+        state: form.state || undefined,
+        city: form.city.trim() || undefined,
+        streetAddress: form.streetAddress.trim() || undefined,
         latitude: form.latitude ? parseFloat(form.latitude) : undefined,
         longitude: form.longitude ? parseFloat(form.longitude) : undefined,
       });
@@ -76,6 +108,10 @@ export default function CreateGaragePage() {
       setSubmitting(false);
     }
   }
+
+  const filteredStates = states.filter((s) =>
+    s.toLowerCase().includes(stateFilter.toLowerCase())
+  );
 
   const inputCls =
     "w-full px-3.5 py-2.5 border border-edge rounded-md text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
@@ -181,21 +217,81 @@ export default function CreateGaragePage() {
                   />
                 </div>
 
-                {/* Address */}
+                {/* State + City */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div ref={stateRef} className="relative">
+                    <label className={labelCls}>
+                      State <span className="text-bad">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => { setStateOpen(!stateOpen); setStateFilter(""); }}
+                      className={`${inputCls} text-left flex items-center justify-between`}
+                    >
+                      <span className={form.state ? "text-foreground" : "text-muted"}>
+                        {form.state || "Select state..."}
+                      </span>
+                      <ChevronDown className="w-4 h-4 text-muted" />
+                    </button>
+                    {stateOpen && (
+                      <div className="absolute z-30 top-full left-0 mt-1 w-full bg-background border border-edge rounded-md shadow-lg max-h-60 flex flex-col">
+                        <div className="p-2 border-b border-edge">
+                          <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
+                            <input
+                              type="text"
+                              value={stateFilter}
+                              onChange={(e) => setStateFilter(e.target.value)}
+                              placeholder="Search state..."
+                              autoFocus
+                              className="w-full pl-8 pr-3 py-1.5 text-sm border border-edge rounded focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                          {filteredStates.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => { updateForm("state", s); setStateOpen(false); }}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-hover flex items-center justify-between ${
+                                form.state === s ? "bg-primary-light text-primary font-medium" : "text-foreground"
+                              }`}
+                            >
+                              {s}
+                              {form.state === s && <Check className="w-3.5 h-3.5" />}
+                            </button>
+                          ))}
+                          {filteredStates.length === 0 && (
+                            <p className="text-sm text-muted text-center py-4">No states found</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {errors.state && <p className="text-xs text-bad mt-1">{errors.state}</p>}
+                  </div>
+                  <div>
+                    <label className={labelCls}>City</label>
+                    <input
+                      type="text"
+                      value={form.city}
+                      onChange={(e) => updateForm("city", e.target.value)}
+                      placeholder="Enter city name"
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+
+                {/* Street Address */}
                 <div>
-                  <label className={labelCls}>
-                    Address <span className="text-bad">*</span>
-                  </label>
+                  <label className={labelCls}>Street Address</label>
                   <input
                     type="text"
-                    value={form.address}
-                    onChange={(e) => updateForm("address", e.target.value)}
-                    placeholder="Enter full address"
+                    value={form.streetAddress}
+                    onChange={(e) => updateForm("streetAddress", e.target.value)}
+                    placeholder="Road, area, locality"
                     className={inputCls}
                   />
-                  {errors.address && (
-                    <p className="text-xs text-bad mt-1">{errors.address}</p>
-                  )}
                 </div>
 
                 {/* Lat + Lng */}

@@ -30,7 +30,6 @@ C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\OrderControl
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\PartCategoryController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\PartController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\PartPurchaseController.java
-C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\ProfileController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\PurchaseOrderController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\RcLookupController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\ReminderController.java
@@ -44,7 +43,6 @@ C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\TaxProfileCo
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\VehicleController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\controller\VendorController.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\AssignServiceRequest.java
-C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\ChangePasswordRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\CreateBookingRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\CreateCustomerRequest.java
 C:\Users\korat\Garrage\backend\src\main\java\com\garrage\dto\request\CreateGarageRequest.java

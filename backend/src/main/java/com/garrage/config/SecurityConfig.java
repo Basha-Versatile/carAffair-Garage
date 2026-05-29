@@ -74,6 +74,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/brands").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/models").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/garage-registrations").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/gst/states").permitAll()
+
+                        // Public onboarding endpoints (token-based, no auth)
+                        .requestMatchers("/api/public/onboarding/**").permitAll()
 
                         // Public estimate endpoints (token-based, no auth)
                         .requestMatchers("/api/public/estimate/**").permitAll()

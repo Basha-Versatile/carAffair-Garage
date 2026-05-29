@@ -79,6 +79,9 @@ public class GarageService {
                 .email(request.getEmail())
                 .phone(request.getPhone())
                 .address(request.getAddress())
+                .state(request.getState())
+                .city(request.getCity())
+                .streetAddress(request.getStreetAddress())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
                 .isActive(true)
@@ -133,6 +136,9 @@ public class GarageService {
         garage.setEmail(request.getEmail());
         garage.setPhone(request.getPhone());
         garage.setAddress(request.getAddress());
+        garage.setState(request.getState());
+        garage.setCity(request.getCity());
+        garage.setStreetAddress(request.getStreetAddress());
         garage.setLatitude(request.getLatitude());
         garage.setLongitude(request.getLongitude());
 
@@ -203,6 +209,9 @@ public class GarageService {
                 .email(garage.getEmail())
                 .phone(garage.getPhone())
                 .address(garage.getAddress())
+                .state(garage.getState())
+                .city(garage.getCity())
+                .streetAddress(garage.getStreetAddress())
                 .latitude(garage.getLatitude())
                 .longitude(garage.getLongitude())
                 .isActive(garage.isActive())

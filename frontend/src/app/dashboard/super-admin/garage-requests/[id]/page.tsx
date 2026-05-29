@@ -296,15 +296,38 @@ export default function GarageRequestDetailPage() {
                   {reg.gstNumber || "-"}
                 </p>
               </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-muted" />
-                  <p className="text-xs text-muted">Address</p>
+              {reg.state && (
+                <div>
+                  <p className="text-xs text-muted mb-0.5">State</p>
+                  <p className="text-sm text-foreground">{reg.state}</p>
                 </div>
-                <p className="text-sm text-foreground mt-0.5">
-                  {reg.address || "-"}
-                </p>
-              </div>
+              )}
+              {reg.city && (
+                <div>
+                  <p className="text-xs text-muted mb-0.5">City</p>
+                  <p className="text-sm text-foreground">{reg.city}</p>
+                </div>
+              )}
+              {reg.streetAddress && (
+                <div className="md:col-span-2">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-muted" />
+                    <p className="text-xs text-muted">Street Address</p>
+                  </div>
+                  <p className="text-sm text-foreground mt-0.5">{reg.streetAddress}</p>
+                </div>
+              )}
+              {!reg.state && !reg.streetAddress && reg.address && (
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-muted" />
+                    <p className="text-xs text-muted">Address</p>
+                  </div>
+                  <p className="text-sm text-foreground mt-0.5">
+                    {reg.address}
+                  </p>
+                </div>
+              )}
               <div>
                 <div className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-muted" />

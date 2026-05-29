@@ -296,7 +296,8 @@ public class EmailService {
     @Async
     public void sendVehicleOnboardingEmail(String toEmail, String customerName,
                                             String vehicleName, String vehicleNumber,
-                                            java.util.List<String> remarks, String garageName) {
+                                            java.util.List<String> remarks, String garageName,
+                                            String onboardingToken) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -316,6 +317,15 @@ public class EmailService {
                 remarksHtml.append("</ul></div>");
             }
 
+            String onboardingButton = "";
+            if (onboardingToken != null) {
+                String onboardingUrl = "http://localhost:3000/onboarding/" + onboardingToken;
+                onboardingButton = "<div style='text-align:center;margin:24px 0'>"
+                        + "<a href='" + onboardingUrl + "' style='display:inline-block;padding:14px 40px;background:#2563eb;color:white;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px'>View Vehicle Details</a>"
+                        + "</div>"
+                        + "<p style='color:#64748b;font-size:13px;text-align:center'>Click above to view inspection details and photos of your vehicle.</p>";
+            }
+
             String html = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto'>"
                     + "<div style='background:#2563eb;color:white;padding:24px;text-align:center;border-radius:8px 8px 0 0'>"
                     + "<h1 style='margin:0;font-size:22px'>" + garageName + "</h1>"
@@ -325,6 +335,7 @@ public class EmailService {
                     + "<p>Dear <b>" + customerName + "</b>,</p>"
                     + "<p>We have onboarded your vehicle <b>" + vehicleName + "</b> (<b>" + vehicleNumber + "</b>) at our garage.</p>"
                     + remarksHtml
+                    + onboardingButton
                     + "<p>Please confirm if these remarks are accurate. We will proceed with the service accordingly.</p>"
                     + "<p style='color:#64748b;font-size:13px'>If you have any questions, please contact us directly.</p>"
                     + "<p>Thank you,<br><b>" + garageName + "</b></p>"

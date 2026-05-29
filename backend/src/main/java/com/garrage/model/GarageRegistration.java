@@ -33,6 +33,12 @@ public class GarageRegistration {
 
     private String address;
 
+    private String state;
+
+    private String city;
+
+    private String streetAddress;
+
     private Double latitude;
 
     private Double longitude;
