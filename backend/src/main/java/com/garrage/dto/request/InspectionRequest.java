@@ -5,11 +5,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class UpdateOrderRequest {
-
-    private String status;
-
-    private Double amount;
-
+public class InspectionRequest {
     private List<String> customerRemarks;
+    private String inspectionNotes;
 }

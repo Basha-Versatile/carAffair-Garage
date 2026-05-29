@@ -29,17 +29,16 @@ const TAB_CONFIG: Record<TabKey, { label: string; badgeBg: string; badgeText: st
 };
 
 const ORDER_STATUS_STYLES: Record<string, { label: string; cls: string }> = {
-  open:        { label: "Open",        cls: "bg-primary-light text-primary" },
-  wip:         { label: "WIP",         cls: "bg-warn-light text-warn" },
-  ready:       { label: "Ready",       cls: "bg-ok-light text-ok" },
-  payment_due: { label: "Payment Due", cls: "bg-bad-light text-bad" },
-  completed:   { label: "Completed",   cls: "bg-dim text-muted" },
+  open:      { label: "Open",      cls: "bg-primary-light text-primary" },
+  wip:       { label: "WIP",       cls: "bg-warn-light text-warn" },
+  completed: { label: "Completed", cls: "bg-ok-light text-ok" },
+  cancelled: { label: "Cancelled", cls: "bg-bad-light text-bad" },
 };
 
 /** Map order status → reminder tab */
 function getTabForOrder(o: Order): TabKey {
   if (o.status === "completed") return "done";
-  if (o.status === "ready" || o.status === "payment_due") return "overdue";
+  if (o.status === "cancelled") return "done";
   return "due"; // open, wip
 }
 
@@ -324,7 +323,7 @@ function OrderReminderCard({ order, tab }: { order: Order; tab: TabKey }) {
       {/* Services */}
       {(order.services || []).length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3">
-          {order.services.map((s) => (
+          {(order.services || []).map((s) => (
             <span key={s} className="text-xs bg-accent-light text-accent px-2 py-0.5 rounded">{s}</span>
           ))}
         </div>

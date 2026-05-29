@@ -55,6 +55,6 @@ public class GarageRoleController {
     public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable String id) {
         String garageId = TenantContext.getGarageId();
         garageRoleService.deleteRole(id, garageId);
-        return ResponseEntity.ok(ApiResponse.ok("Role deleted successfully"));
+        return ResponseEntity.ok(ApiResponse.okMessage("Role deleted successfully"));
     }
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Search, Car, User, ChevronDown, MapPin, Plus, Phone, Loader2, CloudDownload, CheckCircle2, Circle, AlertCircle } from "lucide-react";
+import { ArrowLeft, Search, Car, User, ChevronDown, MapPin, Plus, Phone, Loader2, CloudDownload, CheckCircle2, Circle, AlertCircle, Gauge, Fuel, Upload, Camera, X, StickyNote } from "lucide-react";
 import SelectModal from "@/components/modals/SelectModal";
 import AddModelModal from "@/components/modals/AddModelModal";
 import {
@@ -11,9 +11,9 @@ import {
   getVehicles, Vehicle, lookupRC, RcLookupResult,
   FuelType, VehicleCategory, VehicleBrand, VehicleModel,
 } from "@/lib/api-vehicles";
-import { addOrder } from "@/lib/api-orders";
+import { addOrder, uploadOrderImages } from "@/lib/api-orders";
 
-type Step = "search" | "form";
+type Step = "search" | "form" | "inspection";
 type RcPhase = "idle" | "fetching" | "gathered" | "filling" | "done" | "error";
 
 interface VehicleResult extends Vehicle {
@@ -28,6 +28,7 @@ interface FormData {
   regNumber: string; brandId: string; modelId: string; purchaseDate: string;
   engineNumber: string; vinNumber: string; insuranceProvider: string;
   insurerGstin: string; insurerAddress: string; policyNumber: string; insuranceExpiry: string;
+  odometerReading: string; fuelLevel: string;
 }
 
 const emptyForm: FormData = {
@@ -35,7 +36,16 @@ const emptyForm: FormData = {
   regNumber: "", brandId: "", modelId: "", purchaseDate: "",
   engineNumber: "", vinNumber: "", insuranceProvider: "",
   insurerGstin: "", insurerAddress: "", policyNumber: "", insuranceExpiry: "",
+  odometerReading: "", fuelLevel: "",
 };
+
+const FUEL_LEVELS = [
+  { value: "empty", label: "E", description: "Empty" },
+  { value: "quarter", label: "??", description: "Quarter" },
+  { value: "half", label: "??", description: "Half" },
+  { value: "three_quarter", label: "??", description: "Three Quarter" },
+  { value: "full", label: "F", description: "Full" },
+];
 
 export default function CreateOrderPage() {
   const router = useRouter();
@@ -63,6 +73,13 @@ export default function CreateOrderPage() {
   const [allVehicles, setAllVehicles] = useState<VehicleResult[]>([]);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Inspection step state (step 3)
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [customerRemarks, setCustomerRemarks] = useState<string[]>([""]);
+  const [inspectionNotes, setInspectionNotes] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // preload brands
   useEffect(() => { getBrands().then((data) => setBrands(data || [])).catch(() => setBrands([])); }, []);
@@ -265,13 +282,39 @@ export default function CreateOrderPage() {
     } catch { /* modal stays open for retry */ }
   }
 
-  async function handleSubmit() {
+  function handleAddImages(files: FileList | null) {
+    if (!files) return;
+    const newFiles = Array.from(files);
+    setImageFiles((prev) => [...prev, ...newFiles]);
+    const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
+  }
+
+  function handleRemoveImage(idx: number) {
+    URL.revokeObjectURL(imagePreviews[idx]);
+    setImageFiles((prev) => prev.filter((_, i) => i !== idx));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function addRemark() { setCustomerRemarks((prev) => [...prev, ""]); }
+  function updateRemark(idx: number, value: string) { setCustomerRemarks((prev) => prev.map((r, i) => (i === idx ? value : r))); }
+  function removeRemark(idx: number) { setCustomerRemarks((prev) => prev.filter((_, i) => i !== idx)); }
+
+  function handleGoToInspection() {
     const e: Record<string, string> = {};
     if (!form.customerName.trim()) e.customerName = "Customer name is required";
     if (!form.mobile.trim() || form.mobile.length < 10) e.mobile = "Valid mobile number is required";
     if (!form.brandId) e.brandId = "Please select a make";
     if (!form.modelId) e.modelId = "Please select a model";
     if (Object.keys(e).length > 0) { setErrors(e); return; }
+    setStep("inspection");
+  }
+
+  async function handleSubmit() {
+    if (imageFiles.length === 0) {
+      setErrors({ submit: "Please upload at least one image" });
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -280,7 +323,7 @@ export default function CreateOrderPage() {
         email: form.email.trim() || undefined, address: form.address.trim() || undefined,
         gstin: form.gstin.trim() || undefined,
       });
-      await addVehicle({
+      const vehicle = await addVehicle({
         registrationNumber: form.regNumber, brandId: form.brandId, modelId: form.modelId,
         customerId: customer.id, purchaseDate: form.purchaseDate || undefined,
         engineNumber: form.engineNumber || undefined, vinNumber: form.vinNumber || undefined,
@@ -292,17 +335,30 @@ export default function CreateOrderPage() {
       const brand = await getBrandById(form.brandId);
       const model = await getModelById(form.modelId);
       const vehicleName = `${brand?.name || ""} ${model?.name || ""}`.trim();
-      await addOrder({
+      const filteredRemarks = customerRemarks.filter((r) => r.trim() !== "");
+      const order = await addOrder({
         customerName: form.customerName.trim(),
         phone: form.mobile.trim(),
         vehicle: vehicleName,
         vehicleNumber: form.regNumber,
+        customerId: customer.id,
+        vehicleId: vehicle.id,
         status: "open",
         amount: 0,
         date: new Date().toISOString().split("T")[0],
-        services: ["Repair Order"],
+        services: [],
+        odometerReading: form.odometerReading ? Number(form.odometerReading) : undefined,
+        fuelLevel: form.fuelLevel || undefined,
+        customerRemarks: filteredRemarks.length > 0 ? filteredRemarks : undefined,
+        inspectionNotes: inspectionNotes || undefined,
       });
-      router.push("/dashboard");
+
+      // Upload images to the created order
+      if (imageFiles.length > 0) {
+        await uploadOrderImages(order.id, imageFiles);
+      }
+
+      router.push(`/dashboard/orders/${order.id}`);
     } catch(err) { setErrors({ submit: err instanceof Error ? err.message : "Failed to create order" }); }
     finally { setSubmitting(false); }
   }
@@ -315,12 +371,16 @@ export default function CreateOrderPage() {
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="bg-background border-b border-edge px-6 py-3.5 flex items-center gap-4">
-        <button onClick={() => { if (step === "form") { setStep("search"); resetRcState(); } else { router.push("/dashboard"); } }}
+        <button onClick={() => {
+          if (step === "inspection") { setStep("form"); }
+          else if (step === "form") { setStep("search"); resetRcState(); }
+          else { router.push("/dashboard"); }
+        }}
           className="p-1.5 text-muted hover:text-foreground hover:bg-hover rounded-md transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-base font-semibold text-foreground">
-          {step === "search" ? "Customer (Repair Order)" : "Add Vehicle & Customer"}
+          {step === "search" ? "Customer (Repair Order)" : step === "form" ? "Add Vehicle & Customer" : "Inspection & Remarks"}
         </h1>
       </div>
 
@@ -696,6 +756,32 @@ export default function CreateOrderPage() {
                 </div>
                 <div><label className={labelCls}>VIN (Chassis Number)</label><input type="text" value={form.vinNumber} onChange={(e) => updateForm("vinNumber", e.target.value)} placeholder="Enter VIN / chassis number" className={inputCls} /></div>
 
+                {/* Odometer & Fuel Level */}
+                <div className="pt-2 border-t border-edge-light">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Vehicle Condition</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}><span className="inline-flex items-center gap-1.5"><Gauge className="w-3.5 h-3.5" /> Odometer (KMs)</span></label>
+                      <input type="number" value={form.odometerReading} onChange={(e) => updateForm("odometerReading", e.target.value)} placeholder="e.g. 45000" className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}><span className="inline-flex items-center gap-1.5"><Fuel className="w-3.5 h-3.5" /> Fuel Level</span></label>
+                      <div className="flex gap-1.5">
+                        {FUEL_LEVELS.map((fl) => (
+                          <button key={fl.value} type="button" onClick={() => updateForm("fuelLevel", form.fuelLevel === fl.value ? "" : fl.value)}
+                            title={fl.description}
+                            className={`flex-1 py-2.5 text-xs font-semibold rounded-md border transition-colors ${
+                              form.fuelLevel === fl.value
+                                ? "bg-primary text-white border-primary"
+                                : "bg-background text-muted border-edge hover:border-primary hover:text-foreground"
+                            }`}
+                          >{fl.label}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="pt-2 border-t border-edge-light">
                   <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Insurance Details</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -717,6 +803,103 @@ export default function CreateOrderPage() {
 
             <div className="flex justify-end gap-3 pb-6">
               <button onClick={() => { setStep("search"); resetRcState(); }} className="px-5 py-2.5 text-sm font-medium text-secondary bg-background border border-edge rounded-md hover:bg-hover transition-colors">Cancel</button>
+              <button onClick={handleGoToInspection} className="px-6 py-2.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover transition-colors">
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Inspection Step ── */}
+        {step === "inspection" && (
+          <div className="max-w-3xl mx-auto px-6 py-6 space-y-5">
+            {/* Reg badge */}
+            <div className="inline-flex items-center gap-2 bg-primary-light text-primary px-4 py-2 rounded-lg text-sm font-medium">
+              <Car className="w-4 h-4" />{form.regNumber}
+              <span className="mx-1 text-primary/40">|</span>
+              <User className="w-3.5 h-3.5" />{form.customerName}
+            </div>
+
+            {/* Image Upload */}
+            <div className="bg-background rounded-lg border border-edge overflow-hidden">
+              <div className="flex items-center gap-2 px-5 py-3 bg-dim border-b border-edge">
+                <Camera className="w-4 h-4 text-muted" />
+                <h3 className="text-sm font-semibold text-secondary">Inspection Images <span className="text-bad">*</span></h3>
+              </div>
+              <div className="p-5">
+                <div className="flex flex-wrap gap-3 mb-3">
+                  {imagePreviews.map((src, idx) => (
+                    <div key={idx} className="relative group w-24 h-24 rounded-lg overflow-hidden border border-edge">
+                      <img src={src} alt={`Image ${idx + 1}`} className="w-full h-full object-cover" />
+                      <button onClick={() => handleRemoveImage(idx)}
+                        className="absolute top-1 right-1 w-5 h-5 bg-bad/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <button onClick={() => fileInputRef.current?.click()}
+                    className="w-24 h-24 rounded-lg border-2 border-dashed border-edge hover:border-primary flex flex-col items-center justify-center gap-1 text-muted hover:text-primary transition-colors">
+                    <Upload className="w-5 h-5" />
+                    <span className="text-[10px]">Upload</span>
+                  </button>
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
+                  onChange={(e) => { handleAddImages(e.target.files); e.target.value = ""; }} />
+                <p className="text-xs text-muted">Upload at least one inspection image. You can add more later.</p>
+              </div>
+            </div>
+
+            {/* Customer Remarks */}
+            <div className="bg-background rounded-lg border border-edge overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3 bg-dim border-b border-edge">
+                <div className="flex items-center gap-2">
+                  <StickyNote className="w-4 h-4 text-muted" />
+                  <h3 className="text-sm font-semibold text-secondary">Customer Remarks</h3>
+                </div>
+                <button onClick={addRemark} className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary-hover">
+                  <Plus className="w-3.5 h-3.5" /> Add
+                </button>
+              </div>
+              <div className="p-5 space-y-2">
+                {customerRemarks.map((remark, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input type="text" value={remark}
+                      onChange={(e) => updateRemark(idx, e.target.value)}
+                      placeholder={`Remark ${idx + 1}`}
+                      className="flex-1 px-3.5 py-2.5 border border-edge rounded-md text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" />
+                    {customerRemarks.length > 1 && (
+                      <button onClick={() => removeRemark(idx)} className="p-1.5 text-muted hover:text-bad transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Inspection Notes */}
+            <div className="bg-background rounded-lg border border-edge overflow-hidden">
+              <div className="flex items-center gap-2 px-5 py-3 bg-dim border-b border-edge">
+                <StickyNote className="w-4 h-4 text-muted" />
+                <h3 className="text-sm font-semibold text-secondary">Inspection Notes</h3>
+              </div>
+              <div className="p-5">
+                <textarea value={inspectionNotes}
+                  onChange={(e) => setInspectionNotes(e.target.value)}
+                  placeholder="Scratches, dents, other observations..."
+                  rows={3}
+                  className="w-full px-3.5 py-2.5 border border-edge rounded-md text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none" />
+              </div>
+            </div>
+
+            {errors.submit && (
+              <div className="bg-bad-light border border-bad/20 rounded-md px-4 py-3">
+                <p className="text-sm text-bad">{errors.submit}</p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pb-6">
+              <button onClick={() => setStep("form")} className="px-5 py-2.5 text-sm font-medium text-secondary bg-background border border-edge rounded-md hover:bg-hover transition-colors">Back</button>
               <button onClick={handleSubmit} disabled={submitting} className="px-6 py-2.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover transition-colors disabled:opacity-50">
                 {submitting ? "Creating..." : "Create Order"}
               </button>

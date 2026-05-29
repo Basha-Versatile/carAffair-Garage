@@ -27,4 +27,10 @@ public class CreateOrderRequest {
     private double amount;
 
     private List<String> services;
+
+    private Long odometerReading;
+
+    private String fuelLevel;
+
+    private List<String> customerRemarks;
 }

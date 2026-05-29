@@ -41,7 +41,7 @@ public class GarageRegistrationController {
     @PostMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<String>> approveRegistration(@PathVariable String id) {
         registrationService.approveRegistration(id);
-        return ResponseEntity.ok(ApiResponse.ok("Registration approved successfully."));
+        return ResponseEntity.ok(ApiResponse.okMessage("Registration approved successfully."));
     }
 
     @PostMapping("/{id}/reject")
@@ -49,6 +49,6 @@ public class GarageRegistrationController {
             @PathVariable String id, @RequestBody Map<String, String> body) {
         String reason = body.getOrDefault("reason", "");
         registrationService.rejectRegistration(id, reason);
-        return ResponseEntity.ok(ApiResponse.ok("Registration rejected."));
+        return ResponseEntity.ok(ApiResponse.okMessage("Registration rejected."));
     }
 }

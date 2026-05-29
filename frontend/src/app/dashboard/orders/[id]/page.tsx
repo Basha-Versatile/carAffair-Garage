@@ -1,22 +1,100 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getOrderById, updateOrder, Order, TabKey } from "@/lib/api-orders";
 import {
-  ArrowLeft, Phone, Car, FileText, Calendar, IndianRupee,
-  Wrench, CheckCircle2, CreditCard, CircleDot,
+  getOrderById, updateOrder, uploadOrderImages,
+  getImageUrl, deleteOrderImage, saveEstimate, sendEstimate, resendEstimate,
+  getEstimateLink, getIndianStates, assignService, markPaymentDue,
+  type Order, type OrderLineItem, type OrderStatus,
+} from "@/lib/api-orders";
+import { getStaffMembers, type StaffMember } from "@/lib/api-staff";
+import { getPackages, type ServicePackage } from "@/lib/api-packages";
+import { getGarageServices, createGarageService, type GarageService } from "@/lib/api-garage-services";
+import { getServiceCategories, createServiceCategory, type ServiceCategory } from "@/lib/api-service-categories";
+import { getTaxProfiles, createTaxProfile, type TaxProfile } from "@/lib/api-tax-profiles";
+import { getParts, addPart, type Part } from "@/lib/api-inventory";
+import { getManufacturers, createManufacturer, type Manufacturer } from "@/lib/api-manufacturers";
+import { getPartCategories, createPartCategory, type PartCategoryItem } from "@/lib/api-part-categories";
+import { getBrands, getModelsByBrand, type VehicleBrand, type VehicleModel } from "@/lib/api-vehicles";
+import { isGarageOwner } from "@/lib/auth";
+import {
+  ArrowLeft, Phone, Car, IndianRupee, Camera, Upload,
+  CheckCircle2, CircleDot, Loader2, Trash2, Plus,
+  Send, Link2, Copy, X, Fuel, Gauge, StickyNote,
+  Wrench, Package, ChevronDown, ExternalLink, AlertCircle, Search, Check, Clock, UserPlus,
 } from "lucide-react";
 
-const STATUS_FLOW: TabKey[] = ["open", "wip", "ready", "payment_due", "completed"];
+// ─── Status Config ───
 
-const STATUS_CONFIG: Record<TabKey, { label: string; description: string; color: string; bgColor: string }> = {
-  open: { label: "Open", description: "Vehicle received", color: "text-primary", bgColor: "bg-primary" },
-  wip: { label: "WIP", description: "Work in progress", color: "text-warn", bgColor: "bg-warn" },
-  ready: { label: "Ready", description: "Vehicle is ready", color: "text-ok", bgColor: "bg-ok" },
-  payment_due: { label: "Payment Due", description: "Pending payment", color: "text-bad", bgColor: "bg-bad" },
-  completed: { label: "Completed", description: "Payment done", color: "text-muted", bgColor: "bg-muted" },
+type StatusConfig = { label: string; color: string; bgColor: string };
+
+const STATUS_CONFIG: Record<string, StatusConfig> = {
+  open: { label: "Open", color: "text-primary", bgColor: "bg-primary" },
+  wip: { label: "WIP", color: "text-warn", bgColor: "bg-warn" },
+  payment_due: { label: "Payment Due", color: "text-orange-600", bgColor: "bg-orange-500" },
+  completed: { label: "Completed", color: "text-ok", bgColor: "bg-ok" },
+  cancelled: { label: "Cancelled", color: "text-bad", bgColor: "bg-bad" },
 };
+
+// ─── Row types (same as invoice) ───
+
+interface ServiceRow {
+  key: string; serviceId: string; description: string; hsnSac: string;
+  qty: number; rate: number; gstRate: number; discount: number; gstInclusive: boolean;
+}
+interface PartRow {
+  key: string; partId: string; description: string; hsnSac: string;
+  qty: number; rate: number; gstRate: number; discount: number; gstInclusive: boolean;
+}
+
+function uid() { return Math.random().toString(36).slice(2, 10); }
+
+function calcRow(qty: number, rate: number, discount: number, gstRate: number, gstInclusive: boolean) {
+  const lineAmount = qty * rate;
+  const discAmount = lineAmount * discount / 100;
+  const afterDisc = lineAmount - discAmount;
+  if (gstInclusive) {
+    const base = afterDisc / (1 + gstRate / 100);
+    const gst = afterDisc - base;
+    return { amount: Math.round(base * 100) / 100, gstAmount: Math.round(gst * 100) / 100, total: afterDisc };
+  }
+  const gst = afterDisc * gstRate / 100;
+  return { amount: Math.round(afterDisc * 100) / 100, gstAmount: Math.round(gst * 100) / 100, total: Math.round((afterDisc + gst) * 100) / 100 };
+}
+
+// ─── Create form types ───
+interface CreateServiceForm {
+  name: string; price: string; serviceNumber: string; categoryId: string; categoryName: string;
+  isGeneric: boolean; selectedBrands: { id: string; name: string }[];
+  selectedModels: { brandId: string; modelId: string; modelName: string }[];
+  hasGst: boolean; taxProfileId: string; sacNumber: string; gstRate: string;
+}
+const emptyServiceForm: CreateServiceForm = {
+  name: "", price: "", serviceNumber: "", categoryId: "", categoryName: "",
+  isGeneric: true, selectedBrands: [], selectedModels: [],
+  hasGst: false, taxProfileId: "", sacNumber: "", gstRate: "",
+};
+
+interface CreatePartForm {
+  name: string; partNumber: string; mrp: string; sellingPrice: string; purchasePrice: string;
+  manufacturerId: string; manufacturerName: string; categoryId: string; categoryName: string;
+  taxProfileId: string; hsnCode: string; gstRate: string;
+  isGeneric: boolean; selectedBrands: { id: string; name: string }[];
+  selectedModels: { brandId: string; modelId: string; modelName: string }[];
+  manualInventory: boolean; stockQty: string; minStockQty: string; rackNumber: string; unit: string;
+}
+const emptyPartForm: CreatePartForm = {
+  name: "", partNumber: "", mrp: "", sellingPrice: "", purchasePrice: "",
+  manufacturerId: "", manufacturerName: "", categoryId: "", categoryName: "",
+  taxProfileId: "", hsnCode: "", gstRate: "",
+  isGeneric: true, selectedBrands: [], selectedModels: [],
+  manualInventory: false, stockQty: "", minStockQty: "", rackNumber: "", unit: "pcs",
+};
+
+const inputCls = "w-full px-3 py-2 border border-edge rounded-md text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background";
+const labelCls = "block text-xs font-medium text-secondary mb-1";
+const smallInputCls = "w-full px-2 py-1.5 border border-edge rounded text-sm text-foreground text-right focus:outline-none focus:ring-1 focus:ring-primary bg-background";
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -27,41 +105,421 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
-  useEffect(() => {
+  // Estimate controls
+  const [estimateType, setEstimateType] = useState("gst");
+  const [placeOfSupply, setPlaceOfSupply] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [estimateLink, setEstimateLink] = useState("");
+  const [states, setStates] = useState<string[]>([]);
+  const [posOpen, setPosOpen] = useState(false);
+  const [posFilter, setPosFilter] = useState("");
+
+  // Services state
+  const [serviceRows, setServiceRows] = useState<ServiceRow[]>([]);
+  const [allServices, setAllServices] = useState<GarageService[]>([]);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [serviceTaxProfiles, setServiceTaxProfiles] = useState<TaxProfile[]>([]);
+  const [chooseServicesOpen, setChooseServicesOpen] = useState(false);
+  const [chooseServicesFilter, setChooseServicesFilter] = useState("");
+  const [chooseServicesSelected, setChooseServicesSelected] = useState<Set<string>>(new Set());
+  const [createServiceOpen, setCreateServiceOpen] = useState(false);
+  const [svcForm, setSvcForm] = useState<CreateServiceForm>(emptyServiceForm);
+  const [svcSaving, setSvcSaving] = useState(false);
+  const [svcCategoryPickerOpen, setSvcCategoryPickerOpen] = useState(false);
+  const [svcCategoryPickerFilter, setSvcCategoryPickerFilter] = useState("");
+  const [svcCategoryCreating, setSvcCategoryCreating] = useState(false);
+  const [svcCategoryNewName, setSvcCategoryNewName] = useState("");
+  const [svcTaxPickerOpen, setSvcTaxPickerOpen] = useState(false);
+  const [svcTaxPickerFilter, setSvcTaxPickerFilter] = useState("");
+  const [gstDropdownKey, setGstDropdownKey] = useState<string | null>(null);
+  const [brands, setBrands] = useState<VehicleBrand[]>([]);
+  const [modelsByBrand, setModelsByBrand] = useState<Record<string, VehicleModel[]>>({});
+  const [svcBrandPickerOpen, setSvcBrandPickerOpen] = useState(false);
+  const [svcModelPickerBrandId, setSvcModelPickerBrandId] = useState<string | null>(null);
+
+  // Parts state
+  const [partRows, setPartRows] = useState<PartRow[]>([]);
+  const [allParts, setAllParts] = useState<Part[]>([]);
+  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
+  const [partCategories, setPartCategories] = useState<PartCategoryItem[]>([]);
+  const [goodsTaxProfiles, setGoodsTaxProfiles] = useState<TaxProfile[]>([]);
+  const [choosePartsOpen, setChoosePartsOpen] = useState(false);
+  const [choosePartsFilter, setChoosePartsFilter] = useState("");
+  const [choosePartsSelected, setChoosePartsSelected] = useState<Set<string>>(new Set());
+  const [createPartOpen, setCreatePartOpen] = useState(false);
+  const [partForm, setPartForm] = useState<CreatePartForm>(emptyPartForm);
+  const [partSaving, setPartSaving] = useState(false);
+  const [partGstDropdownKey, setPartGstDropdownKey] = useState<string | null>(null);
+  const [partMfgPickerOpen, setPartMfgPickerOpen] = useState(false);
+  const [partMfgPickerFilter, setPartMfgPickerFilter] = useState("");
+  const [partMfgCreating, setPartMfgCreating] = useState(false);
+  const [partMfgNewName, setPartMfgNewName] = useState("");
+  const [partCatPickerOpen, setPartCatPickerOpen] = useState(false);
+  const [partCatPickerFilter, setPartCatPickerFilter] = useState("");
+  const [partCatCreating, setPartCatCreating] = useState(false);
+  const [partCatNewName, setPartCatNewName] = useState("");
+  const [partTaxPickerOpen, setPartTaxPickerOpen] = useState(false);
+  const [partTaxPickerFilter, setPartTaxPickerFilter] = useState("");
+  const [partModelsByBrand, setPartModelsByBrand] = useState<Record<string, VehicleModel[]>>({});
+  const [partBrandPickerOpen, setPartBrandPickerOpen] = useState(false);
+  const [partModelPickerBrandId, setPartModelPickerBrandId] = useState<string | null>(null);
+
+  // Shared modals
+  const [createTaxOpen, setCreateTaxOpen] = useState(false);
+  const [taxForm, setTaxForm] = useState({ name: "", taxPercent: "", sacNumber: "", taxType: "service" as "service" | "goods" });
+  const [taxSaving, setTaxSaving] = useState(false);
+
+  // Packages
+  const [packages, setPackages] = useState<ServicePackage[]>([]);
+
+  // Staff assignment
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [assigning, setAssigning] = useState<string | null>(null);
+  const [staffDropdownOpen, setStaffDropdownOpen] = useState<string | null>(null);
+
+  // Image upload
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ─── Load order ───
+  const loadOrder = useCallback(async () => {
     if (!id) return;
-    setLoading(true);
-    getOrderById(id)
-      .then(setOrder)
-      .catch(() => setError("Failed to load order"))
-      .finally(() => setLoading(false));
+    try {
+      const data = await getOrderById(id);
+      setOrder(data);
+      setEstimateType(data.estimateType || "gst");
+      setPlaceOfSupply(data.placeOfSupply || "");
+      setDeliveryDate(data.estimatedDeliveryDate || "");
+      // Convert existing lineItems → service/part rows
+      const sRows: ServiceRow[] = [];
+      const pRows: PartRow[] = [];
+      (data.lineItems || []).forEach((li) => {
+        if (li.itemType === "part") {
+          pRows.push({ key: li.id || uid(), partId: li.partId || "", description: li.description, hsnSac: li.hsnSac || "", qty: li.qty, rate: li.rate, gstRate: li.gstRate, discount: li.discountPercent, gstInclusive: false });
+        } else {
+          sRows.push({ key: li.id || uid(), serviceId: li.serviceId || "", description: li.description, hsnSac: li.hsnSac || "", qty: li.qty, rate: li.rate, gstRate: li.gstRate, discount: li.discountPercent, gstInclusive: false });
+        }
+      });
+      setServiceRows(sRows);
+      setPartRows(pRows);
+    } catch {
+      setError("Failed to load order");
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
-  async function handleStatusChange(newStatus: TabKey) {
-    if (!order || updating) return;
+  useEffect(() => { loadOrder(); }, [loadOrder]);
+
+  useEffect(() => {
+    getPackages().then(setPackages).catch(() => {});
+    getIndianStates().then(setStates).catch(() => {});
+    getGarageServices().then(setAllServices).catch(() => {});
+    getServiceCategories().then(setCategories).catch(() => {});
+    getTaxProfiles("service").then(setServiceTaxProfiles).catch(() => {});
+    getTaxProfiles("goods").then(setGoodsTaxProfiles).catch(() => {});
+    getBrands().then(setBrands).catch(() => {});
+    getParts().then(setAllParts).catch(() => {});
+    getManufacturers().then(setManufacturers).catch(() => {});
+    getPartCategories().then(setPartCategories).catch(() => {});
+    getStaffMembers().then(setStaffMembers).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    svcForm.selectedBrands.forEach(b => {
+      if (!modelsByBrand[b.id]) {
+        getModelsByBrand(b.id).then(models => setModelsByBrand(prev => ({ ...prev, [b.id]: models }))).catch(() => {});
+      }
+    });
+  }, [svcForm.selectedBrands, modelsByBrand]);
+
+  useEffect(() => {
+    partForm.selectedBrands.forEach(b => {
+      if (!partModelsByBrand[b.id]) {
+        getModelsByBrand(b.id).then(models => setPartModelsByBrand(prev => ({ ...prev, [b.id]: models }))).catch(() => {});
+      }
+    });
+  }, [partForm.selectedBrands, partModelsByBrand]);
+
+  function showSuccess(msg: string) {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(""), 3000);
+  }
+
+  // Close staff dropdown on outside click
+  useEffect(() => {
+    if (!staffDropdownOpen) return;
+    const handle = () => setStaffDropdownOpen(null);
+    const timer = setTimeout(() => document.addEventListener("click", handle), 0);
+    return () => { clearTimeout(timer); document.removeEventListener("click", handle); };
+  }, [staffDropdownOpen]);
+
+  // ─── Image handling ───
+  async function handleImageUpload(files: FileList | null) {
+    if (!files || files.length === 0 || !order) return;
+    setUploading(true);
+    try {
+      await uploadOrderImages(order.id, Array.from(files));
+      const updated = await getOrderById(order.id);
+      setOrder(updated);
+      showSuccess("Images uploaded");
+    } catch { /* ignore */ }
+    finally { setUploading(false); }
+  }
+
+  async function handleDeleteImage(fileId: string) {
+    if (!order) return;
+    try {
+      await deleteOrderImage(order.id, fileId);
+      const updated = await getOrderById(order.id);
+      setOrder(updated);
+    } catch { /* ignore */ }
+  }
+
+  // ─── Service row handlers ───
+  const updateServiceRow = useCallback((key: string, field: keyof ServiceRow, value: string | number | boolean) => {
+    setServiceRows(prev => prev.map(s => s.key === key ? { ...s, [field]: value } : s));
+  }, []);
+
+  function handleAddSelectedServices() {
+    const newRows: ServiceRow[] = [];
+    chooseServicesSelected.forEach(svcId => {
+      const svc = allServices.find(s => s.id === svcId);
+      if (svc && !serviceRows.some(r => r.serviceId === svc.id)) {
+        newRows.push({ key: uid(), serviceId: svc.id, description: svc.name, hsnSac: svc.sacNumber || "", qty: 1, rate: svc.price, gstRate: svc.hasGst ? svc.gstRate : 0, discount: 0, gstInclusive: false });
+      }
+    });
+    setServiceRows(prev => [...prev, ...newRows]);
+    setChooseServicesSelected(new Set());
+    setChooseServicesOpen(false);
+  }
+
+  async function handleCreateService() {
+    if (!svcForm.name.trim() || !svcForm.price) return;
+    setSvcSaving(true);
+    try {
+      const newSvc = await createGarageService({
+        name: svcForm.name.trim(), price: parseFloat(svcForm.price) || 0,
+        serviceNumber: svcForm.serviceNumber.trim() || undefined,
+        categoryId: svcForm.categoryId || undefined, categoryName: svcForm.categoryName || undefined,
+        isGeneric: svcForm.isGeneric,
+        applicableBrands: svcForm.isGeneric ? undefined : svcForm.selectedBrands.map(b => ({
+          brandId: b.id, brandName: b.name,
+          modelIds: svcForm.selectedModels.filter(m => m.brandId === b.id).map(m => m.modelId),
+          modelNames: svcForm.selectedModels.filter(m => m.brandId === b.id).map(m => m.modelName),
+        })),
+        hasGst: svcForm.hasGst,
+        taxProfileId: svcForm.hasGst ? svcForm.taxProfileId || undefined : undefined,
+        sacNumber: svcForm.hasGst ? svcForm.sacNumber || undefined : undefined,
+        gstRate: svcForm.hasGst ? parseFloat(svcForm.gstRate) || 0 : 0,
+      });
+      setAllServices(prev => [...prev, newSvc]);
+      setServiceRows(prev => [...prev, { key: uid(), serviceId: newSvc.id, description: newSvc.name, hsnSac: newSvc.sacNumber || "", qty: 1, rate: newSvc.price, gstRate: newSvc.hasGst ? newSvc.gstRate : 0, discount: 0, gstInclusive: false }]);
+      setCreateServiceOpen(false); setChooseServicesOpen(false); setSvcForm(emptyServiceForm);
+    } catch { /* ignore */ } finally { setSvcSaving(false); }
+  }
+
+  async function handleCreateServiceCategory() {
+    if (!svcCategoryNewName.trim()) return;
+    setSvcCategoryCreating(true);
+    try {
+      const cat = await createServiceCategory(svcCategoryNewName.trim());
+      setCategories(prev => [...prev, cat]);
+      setSvcForm(prev => ({ ...prev, categoryId: cat.id, categoryName: cat.name }));
+      setSvcCategoryPickerOpen(false); setSvcCategoryNewName("");
+    } catch { /* ignore */ } finally { setSvcCategoryCreating(false); }
+  }
+
+  // ─── Part row handlers ───
+  const updatePartRow = useCallback((key: string, field: keyof PartRow, value: string | number | boolean) => {
+    setPartRows(prev => prev.map(p => p.key === key ? { ...p, [field]: value } : p));
+  }, []);
+
+  function handleAddSelectedParts() {
+    const newRows: PartRow[] = [];
+    choosePartsSelected.forEach(partId => {
+      const part = allParts.find(p => p.id === partId);
+      if (part && !partRows.some(r => r.partId === part.id)) {
+        newRows.push({ key: uid(), partId: part.id, description: part.name, hsnSac: part.hsnCode || "", qty: 1, rate: part.sellingPrice, gstRate: part.gstRate || 0, discount: 0, gstInclusive: false });
+      }
+    });
+    setPartRows(prev => [...prev, ...newRows]);
+    setChoosePartsSelected(new Set());
+    setChoosePartsOpen(false);
+  }
+
+  async function handleCreatePart() {
+    if (!partForm.name.trim() || !partForm.sellingPrice) return;
+    setPartSaving(true);
+    try {
+      const newPart = await addPart({
+        name: partForm.name.trim(), partNumber: partForm.partNumber.trim(),
+        brand: partForm.manufacturerName || "", category: partForm.categoryName || "",
+        categoryId: partForm.categoryId || undefined, manufacturerId: partForm.manufacturerId || undefined,
+        manufacturerName: partForm.manufacturerName || undefined, taxProfileId: partForm.taxProfileId || undefined,
+        mrp: parseFloat(partForm.mrp) || 0, sellingPrice: parseFloat(partForm.sellingPrice) || 0,
+        purchasePrice: parseFloat(partForm.purchasePrice) || 0,
+        stockQty: partForm.manualInventory ? (parseInt(partForm.stockQty) || 0) : 0,
+        minStockQty: partForm.manualInventory ? (parseInt(partForm.minStockQty) || 0) : 0,
+        rackNumber: partForm.manualInventory ? partForm.rackNumber.trim() : "",
+        hsnCode: partForm.hsnCode.trim(), gstRate: parseFloat(partForm.gstRate) || 0,
+        unit: partForm.manualInventory ? partForm.unit.trim() || "pcs" : "pcs",
+        isGeneric: partForm.isGeneric,
+        applicableBrands: partForm.isGeneric ? undefined : partForm.selectedBrands.map(b => ({
+          brandId: b.id, brandName: b.name,
+          modelIds: partForm.selectedModels.filter(m => m.brandId === b.id).map(m => m.modelId),
+          modelNames: partForm.selectedModels.filter(m => m.brandId === b.id).map(m => m.modelName),
+        })),
+      });
+      setAllParts(prev => [...prev, newPart]);
+      setPartRows(prev => [...prev, { key: uid(), partId: newPart.id, description: newPart.name, hsnSac: newPart.hsnCode || "", qty: 1, rate: newPart.sellingPrice, gstRate: newPart.gstRate || 0, discount: 0, gstInclusive: false }]);
+      setCreatePartOpen(false); setChoosePartsOpen(false); setPartForm(emptyPartForm);
+    } catch { /* ignore */ } finally { setPartSaving(false); }
+  }
+
+  async function handleCreateManufacturer() {
+    if (!partMfgNewName.trim()) return;
+    setPartMfgCreating(true);
+    try {
+      const mfg = await createManufacturer(partMfgNewName.trim());
+      setManufacturers(prev => [...prev, mfg]);
+      setPartForm(prev => ({ ...prev, manufacturerId: mfg.id, manufacturerName: mfg.name }));
+      setPartMfgPickerOpen(false); setPartMfgNewName("");
+    } catch { /* ignore */ } finally { setPartMfgCreating(false); }
+  }
+
+  async function handleCreatePartCategory() {
+    if (!partCatNewName.trim()) return;
+    setPartCatCreating(true);
+    try {
+      const cat = await createPartCategory(partCatNewName.trim());
+      setPartCategories(prev => [...prev, cat]);
+      setPartForm(prev => ({ ...prev, categoryId: cat.id, categoryName: cat.name }));
+      setPartCatPickerOpen(false); setPartCatNewName("");
+    } catch { /* ignore */ } finally { setPartCatCreating(false); }
+  }
+
+  async function handleCreateTaxProfile() {
+    if (!taxForm.name.trim() || !taxForm.taxPercent) return;
+    setTaxSaving(true);
+    try {
+      const profile = await createTaxProfile({ name: taxForm.name.trim(), taxPercent: parseFloat(taxForm.taxPercent) || 0, sacNumber: taxForm.sacNumber.trim() || undefined, taxType: taxForm.taxType });
+      if (taxForm.taxType === "service") {
+        setServiceTaxProfiles(prev => [...prev, profile]);
+        setSvcForm(prev => ({ ...prev, taxProfileId: profile.id, sacNumber: profile.sacNumber || prev.sacNumber, gstRate: String(profile.taxPercent) }));
+      } else {
+        setGoodsTaxProfiles(prev => [...prev, profile]);
+        setPartForm(prev => ({ ...prev, taxProfileId: profile.id, hsnCode: profile.sacNumber || prev.hsnCode, gstRate: String(profile.taxPercent) }));
+      }
+      setCreateTaxOpen(false); setTaxForm({ name: "", taxPercent: "", sacNumber: "", taxType: "service" });
+    } catch { /* ignore */ } finally { setTaxSaving(false); }
+  }
+
+  // ─── Calculations ───
+  const serviceCalcs = serviceRows.map(s => calcRow(s.qty, s.rate, s.discount, s.gstRate, s.gstInclusive));
+  const serviceSubtotal = serviceCalcs.reduce((sum, c) => sum + c.amount, 0);
+  const serviceGstTotal = serviceCalcs.reduce((sum, c) => sum + c.gstAmount, 0);
+  const partCalcs = partRows.map(p => calcRow(p.qty, p.rate, p.discount, p.gstRate, p.gstInclusive));
+  const partSubtotal = partCalcs.reduce((sum, c) => sum + c.amount, 0);
+  const partGstTotal = partCalcs.reduce((sum, c) => sum + c.gstAmount, 0);
+  const isProforma = estimateType === "proforma";
+  const grandTotal = Math.round((serviceSubtotal + (isProforma ? 0 : serviceGstTotal) + partSubtotal + (isProforma ? 0 : partGstTotal)) * 100) / 100;
+
+  // ─── Save & Send ───
+  async function handleSave() {
+    if (!order) return;
+    setSaving(true);
+    try {
+      const lineItems: OrderLineItem[] = [
+        ...serviceRows.map((s, i) => ({ id: s.key, itemType: "service" as const, serviceId: s.serviceId, description: s.description, hsnSac: s.hsnSac, qty: s.qty, rate: s.rate, discountPercent: s.discount, amount: serviceCalcs[i].amount, gstRate: s.gstRate, gstAmount: isProforma ? 0 : serviceCalcs[i].gstAmount })),
+        ...partRows.map((p, i) => ({ id: p.key, itemType: "part" as const, partId: p.partId, description: p.description, hsnSac: p.hsnSac, qty: p.qty, rate: p.rate, discountPercent: p.discount, amount: partCalcs[i].amount, gstRate: p.gstRate, gstAmount: isProforma ? 0 : partCalcs[i].gstAmount })),
+      ];
+      const subtotal = serviceSubtotal + partSubtotal;
+      const totalGst = isProforma ? 0 : serviceGstTotal + partGstTotal;
+      const updated = await saveEstimate(order.id, {
+        lineItems, estimateType, placeOfSupply, estimatedDeliveryDate: deliveryDate,
+        subtotal, discountAmount: 0, cgstAmount: isProforma ? 0 : totalGst / 2,
+        sgstAmount: isProforma ? 0 : totalGst / 2, igstAmount: 0, totalGst, grandTotal,
+      });
+      setOrder(updated);
+      showSuccess("Estimate saved");
+    } catch { /* ignore */ }
+    finally { setSaving(false); }
+  }
+
+  async function handleSendForApproval() {
+    if (!order) return;
+    setSending(true);
+    try {
+      await handleSave();
+      const updated = await sendEstimate(order.id);
+      setOrder(updated);
+      const link = await getEstimateLink(order.id);
+      setEstimateLink(`${window.location.origin}/estimate/${link}`);
+      showSuccess("Estimate sent for approval");
+    } catch { /* ignore */ }
+    finally { setSending(false); }
+  }
+
+  function handleApplyPackage(pkg: ServicePackage) {
+    const newSvcRows: ServiceRow[] = (pkg.serviceItems || []).map(si => ({
+      key: uid(), serviceId: si.serviceId, description: si.serviceName,
+      hsnSac: si.hsnSac || "", qty: si.defaultQty, rate: si.defaultRate,
+      gstRate: si.gstRate || 0, discount: 0, gstInclusive: false,
+    }));
+    const newPartRows: PartRow[] = (pkg.partItems || []).map(pi => ({
+      key: uid(), partId: pi.partId, description: pi.partName,
+      hsnSac: pi.hsnSac || "", qty: pi.defaultQty, rate: pi.defaultRate,
+      gstRate: pi.gstRate || 0, discount: 0, gstInclusive: false,
+    }));
+    setServiceRows(prev => [...prev, ...newSvcRows]);
+    setPartRows(prev => [...prev, ...newPartRows]);
+    showSuccess(`Package "${pkg.name}" applied`);
+  }
+
+  async function handleCopyLink() {
+    let link = estimateLink;
+    if (!link && order?.estimateToken) {
+      link = `${window.location.origin}/estimate/${order.estimateToken}`;
+    }
+    if (link) { await navigator.clipboard.writeText(link); showSuccess("Link copied"); }
+  }
+
+  async function handleAssignService(lineItemId: string, staff: StaffMember) {
+    if (!order) return;
+    setAssigning(lineItemId);
+    setStaffDropdownOpen(null);
+    try {
+      const updated = await assignService(order.id, lineItemId, staff.id, staff.name);
+      setOrder(updated);
+      showSuccess(`Assigned to ${staff.name}`);
+    } catch { /* ignore */ }
+    finally { setAssigning(null); }
+  }
+
+  async function handleStatusChange(newStatus: OrderStatus) {
+    if (!order) return;
     setUpdating(true);
     try {
       const updated = await updateOrder(order.id, { status: newStatus });
       setOrder(updated);
-    } catch {
-      setError("Failed to update status");
-    } finally {
-      setUpdating(false);
-    }
+      showSuccess(`Status updated to ${STATUS_CONFIG[newStatus]?.label || newStatus}`);
+    } catch { /* ignore */ }
+    finally { setUpdating(false); }
   }
+
+  const filteredPosStates = states.filter(s => s.toLowerCase().includes(posFilter.toLowerCase()));
+
+  // ─── Render ───
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full py-20">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center bg-hover p-4 rounded-full mb-3 animate-spin">
-            <svg className="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          </div>
-          <p className="text-sm text-muted">Loading order...</p>
-        </div>
+        <Loader2 className="w-7 h-7 text-primary animate-spin" />
       </div>
     );
   }
@@ -77,181 +535,849 @@ export default function OrderDetailPage() {
     );
   }
 
-  const currentIdx = STATUS_FLOW.indexOf(order.status);
-  const nextStatus = currentIdx < STATUS_FLOW.length - 1 ? STATUS_FLOW[currentIdx + 1] : null;
+  const statusCfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.open;
+  const canEdit = order.status === "open";
+  const hasItems = serviceRows.length > 0 || partRows.length > 0;
+  const canSend = hasItems && order.status === "open";
+  const isOwner = isGarageOwner();
 
   return (
-    <div className="p-5 max-w-5xl mx-auto">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-muted hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
-        <span className={`text-xs font-semibold px-3 py-1 rounded-full ${STATUS_CONFIG[order.status]?.bgColor} text-white`}>
-          {STATUS_CONFIG[order.status]?.label}
+      <div className="bg-background border-b border-edge px-5 py-3 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.back()} className="p-1.5 text-muted hover:text-foreground hover:bg-hover rounded-md">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-base font-bold text-foreground">{order.jobCard}</h1>
+            <p className="text-xs text-muted">{order.customerName} &middot; {order.vehicleNumber}</p>
+          </div>
+        </div>
+        <span className={`text-xs font-semibold px-3 py-1 rounded-full text-white ${statusCfg.bgColor}`}>
+          {statusCfg.label}
         </span>
       </div>
 
-      {/* Job Card Title */}
-      <div className="bg-background rounded-xl border border-edge p-5 mb-4">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-lg bg-primary-light flex items-center justify-center">
-            <FileText className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-foreground">{order.jobCard}</h1>
-            <p className="text-xs text-muted">{order.date}</p>
-          </div>
-        </div>
-
-        {/* Customer & Vehicle Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted uppercase">Customer</p>
-            <p className="text-sm font-semibold text-foreground">{order.customerName}</p>
-            <div className="flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5 text-muted" />
-              <span className="text-sm text-secondary">{order.phone || order.customerPhone || "-"}</span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted uppercase">Vehicle</p>
-            <div className="flex items-center gap-1.5">
-              <Car className="w-3.5 h-3.5 text-muted" />
-              <span className="text-sm font-semibold text-foreground">{order.vehicle || "-"}</span>
-            </div>
-            <p className="text-sm text-secondary">{order.vehicleNumber || "-"}</p>
-          </div>
-        </div>
-
-        {/* Services */}
-        {order.services && order.services.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-edge-light">
-            <p className="text-xs font-medium text-muted uppercase mb-2">Services</p>
-            <div className="flex flex-wrap gap-1.5">
-              {order.services.map((s) => (
-                <span key={s} className="text-xs bg-dim text-secondary px-2.5 py-1 rounded-md">{s}</span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Amount */}
-        <div className="mt-4 pt-4 border-t border-edge-light flex items-center justify-between">
-          <span className="text-xs font-medium text-muted uppercase">Amount</span>
-          <div className="flex items-center gap-1 text-lg font-bold text-foreground">
-            <IndianRupee className="w-4 h-4" />
-            {(order.amount ?? 0).toLocaleString("en-IN")}
-          </div>
-        </div>
-      </div>
-
-      {/* Status Progress Stepper */}
-      <div className="bg-background rounded-xl border border-edge p-5 mb-4">
-        <p className="text-xs font-medium text-muted uppercase mb-4">Order Progress</p>
-        <div className="flex items-center justify-between relative">
-          {/* Progress line */}
-          <div className="absolute top-4 left-5 right-5 h-0.5 bg-edge-light z-0" />
-          <div
-            className="absolute top-4 left-5 h-0.5 bg-primary z-0 transition-all duration-300"
-            style={{ width: `${(currentIdx / (STATUS_FLOW.length - 1)) * (100 - 10)}%` }}
-          />
-
-          {STATUS_FLOW.map((status, idx) => {
-            const config = STATUS_CONFIG[status];
-            const isDone = idx <= currentIdx;
-            const isCurrent = idx === currentIdx;
-            return (
-              <div key={status} className="flex flex-col items-center z-10 relative">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
-                  isCurrent
-                    ? `${config.bgColor} border-transparent text-white scale-110`
-                    : isDone
-                      ? "bg-primary border-primary text-white"
-                      : "bg-background border-edge text-muted"
-                }`}>
-                  {isDone && !isCurrent ? (
-                    <CheckCircle2 className="w-4 h-4" />
-                  ) : status === "open" ? (
-                    <CircleDot className="w-4 h-4" />
-                  ) : status === "wip" ? (
-                    <Wrench className="w-4 h-4" />
-                  ) : status === "ready" ? (
-                    <Car className="w-4 h-4" />
-                  ) : status === "payment_due" ? (
-                    <CreditCard className="w-4 h-4" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4" />
-                  )}
-                </div>
-                <span className={`text-[10px] mt-1.5 font-medium text-center ${isCurrent ? config.color : isDone ? "text-primary" : "text-muted"}`}>
-                  {config.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      {order.status !== "completed" && (
-        <div className="bg-background rounded-xl border border-edge p-5">
-          <p className="text-xs font-medium text-muted uppercase mb-3">Change Status</p>
-          <div className="grid grid-cols-3 gap-2">
-            {STATUS_FLOW.filter((s) => s !== "completed").map((status) => {
-              const config = STATUS_CONFIG[status];
-              const isActive = order.status === status;
-              const statusIdx = STATUS_FLOW.indexOf(status);
-              const isNext = statusIdx === currentIdx + 1;
-              return (
-                <button
-                  key={status}
-                  onClick={() => handleStatusChange(status)}
-                  disabled={isActive || updating}
-                  className={`py-2.5 px-3 rounded-lg text-xs font-medium transition-all border ${
-                    isActive
-                      ? `${config.bgColor} text-white border-transparent`
-                      : isNext
-                        ? `border-2 border-dashed ${config.color} border-current bg-background hover:bg-dim`
-                        : "border-edge text-muted bg-dim hover:bg-hover"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {config.label}
-                  <span className="block text-[9px] mt-0.5 opacity-75">{config.description}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Primary Next Action */}
-          {nextStatus && (
-            <button
-              onClick={() => handleStatusChange(nextStatus)}
-              disabled={updating}
-              className={`w-full mt-3 py-3 rounded-lg text-sm font-semibold text-white transition-all ${STATUS_CONFIG[nextStatus].bgColor} hover:opacity-90 disabled:opacity-50`}
-            >
-              {updating ? "Updating..." : `Move to ${STATUS_CONFIG[nextStatus].label}`}
-            </button>
-          )}
-
-          {/* Mark Completed */}
-          {order.status === "payment_due" && (
-            <button
-              onClick={() => handleStatusChange("completed")}
-              disabled={updating}
-              className="w-full mt-2 py-3 rounded-lg text-sm font-semibold text-white bg-ok hover:opacity-90 disabled:opacity-50 transition-all"
-            >
-              {updating ? "Updating..." : "Mark as Completed (Payment Done)"}
-            </button>
-          )}
+      {/* Success banner */}
+      {successMsg && (
+        <div className="bg-ok-light border-b border-ok/20 px-5 py-2 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-ok" />
+          <span className="text-sm text-ok font-medium">{successMsg}</span>
         </div>
       )}
 
-      {order.status === "completed" && (
-        <div className="bg-ok-light rounded-xl border border-ok/20 p-5 text-center">
-          <CheckCircle2 className="w-8 h-8 text-ok mx-auto mb-2" />
-          <p className="text-sm font-semibold text-ok">Order Completed</p>
-          <p className="text-xs text-muted mt-1">Payment received and order closed</p>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-5">
+        <div className="max-w-5xl mx-auto space-y-5">
+
+          {/* ─── Order Info Card ─── */}
+          <div className="bg-background rounded-xl border border-edge p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted uppercase">Customer</p>
+                <p className="text-sm font-semibold text-foreground">{order.customerName}</p>
+                <div className="flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-muted" />
+                  <span className="text-sm text-secondary">{order.phone || order.customerPhone || "-"}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted uppercase">Vehicle</p>
+                <div className="flex items-center gap-1.5">
+                  <Car className="w-3.5 h-3.5 text-muted" />
+                  <span className="text-sm font-semibold text-foreground">{order.vehicle || "-"}</span>
+                </div>
+                <p className="text-sm text-secondary">{order.vehicleNumber || "-"}</p>
+              </div>
+            </div>
+
+            {/* Odometer & Fuel */}
+            {(order.odometerReading || order.fuelLevel) && (
+              <div className="flex gap-4 text-xs text-muted mt-4 pt-3 border-t border-edge-light">
+                {order.odometerReading && (
+                  <span className="flex items-center gap-1.5">
+                    <Gauge className="w-3.5 h-3.5" /> {order.odometerReading.toLocaleString()} km
+                  </span>
+                )}
+                {order.fuelLevel && (
+                  <span className="flex items-center gap-1.5 capitalize">
+                    <Fuel className="w-3.5 h-3.5" /> Fuel: {order.fuelLevel.replace("_", " ")}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ─── Inspection Images ─── */}
+          <div className="bg-background rounded-xl border border-edge p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Camera className="w-4 h-4 text-primary" /> Inspection Images
+              </h3>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {(order.imageIds || []).map((fileId) => (
+                <div key={fileId} className="relative group w-24 h-24 rounded-lg overflow-hidden border border-edge">
+                  <img src={getImageUrl(fileId)} alt="Inspection" className="w-full h-full object-cover" />
+                  {canEdit && (
+                    <button onClick={() => handleDeleteImage(fileId)}
+                      className="absolute top-1 right-1 w-5 h-5 bg-bad/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              {canEdit && (
+                <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                  className="w-24 h-24 rounded-lg border-2 border-dashed border-edge hover:border-primary flex flex-col items-center justify-center gap-1 text-muted hover:text-primary transition-colors">
+                  {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                  <span className="text-[10px]">{uploading ? "..." : "Add"}</span>
+                </button>
+              )}
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" multiple
+              className="hidden" onChange={(e) => handleImageUpload(e.target.files)} />
+          </div>
+
+          {/* ─── Customer Remarks ─── */}
+          <div className="bg-background rounded-xl border border-edge p-5">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
+              <StickyNote className="w-4 h-4 text-primary" /> Customer Remarks
+            </h3>
+            {(order.customerRemarks || []).length > 0 && (
+              <div className="space-y-1.5 mb-3">
+                {(order.customerRemarks || []).map((r, i) => (
+                  <div key={i} className="flex items-start gap-2 group">
+                    <CircleDot className="w-3 h-3 text-muted shrink-0 mt-1" />
+                    <p className="text-sm text-foreground flex-1">{r}</p>
+                    {canEdit && (
+                      <button onClick={async () => {
+                        const updated = (order.customerRemarks || []).filter((_, idx) => idx !== i);
+                        try {
+                          const result = await updateOrder(order.id, { customerRemarks: updated } as Partial<Order>);
+                          setOrder(result);
+                        } catch {}
+                      }}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 text-muted hover:text-bad transition-opacity shrink-0">
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            {canEdit && (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add a remark..."
+                  className={inputCls}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter" && (e.target as HTMLInputElement).value.trim()) {
+                      const val = (e.target as HTMLInputElement).value.trim();
+                      const updated = [...(order.customerRemarks || []), val];
+                      try {
+                        const result = await updateOrder(order.id, { customerRemarks: updated } as Partial<Order>);
+                        setOrder(result);
+                        (e.target as HTMLInputElement).value = "";
+                      } catch {}
+                    }
+                  }}
+                />
+                <button onClick={(e) => {
+                  const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                  if (input.value.trim()) {
+                    const val = input.value.trim();
+                    const updated = [...(order.customerRemarks || []), val];
+                    updateOrder(order.id, { customerRemarks: updated } as Partial<Order>)
+                      .then((result) => { setOrder(result); input.value = ""; })
+                      .catch(() => {});
+                  }
+                }}
+                  className="px-3 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary-hover shrink-0">
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            {(order.customerRemarks || []).length === 0 && !canEdit && (
+              <p className="text-sm text-muted">No remarks added.</p>
+            )}
+            {order.inspectionNotes && (
+              <div className="mt-3 pt-3 border-t border-edge-light">
+                <p className="text-xs font-medium text-muted uppercase mb-1">Notes</p>
+                <p className="text-sm text-secondary">{order.inspectionNotes}</p>
+              </div>
+            )}
+          </div>
+
+          {/* ─── Customer Response ─── */}
+          {order.customerApproved !== undefined && order.customerApproved !== null && (
+            <div className={`rounded-xl border p-5 ${order.customerApproved ? "bg-ok-light border-ok/20" : "bg-bad-light border-bad/20"}`}>
+              <div className="flex items-center gap-2 mb-1">
+                {order.customerApproved ? <CheckCircle2 className="w-4 h-4 text-ok" /> : <AlertCircle className="w-4 h-4 text-bad" />}
+                <span className={`text-sm font-semibold ${order.customerApproved ? "text-ok" : "text-bad"}`}>
+                  {order.customerApproved ? "Customer Approved" : "Customer Rejected"}
+                </span>
+              </div>
+              {order.customerRejectionNote && (
+                <p className="text-sm text-secondary mt-1">Reason: {order.customerRejectionNote}</p>
+              )}
+            </div>
+          )}
+
+          {/* ─── Estimate Controls ─── */}
+          {(canEdit || hasItems) && (
+            <div className="bg-background rounded-lg border border-edge p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div>
+                  <label className={labelCls}>Estimate Type</label>
+                  <div className="flex gap-2">
+                    {(["gst", "proforma"] as const).map((t) => (
+                      <button key={t} onClick={() => canEdit && setEstimateType(t)}
+                        className={`flex-1 py-2 text-sm font-medium rounded-md border capitalize transition-colors ${estimateType === t ? "bg-primary text-white border-primary" : "bg-background text-muted border-edge"} ${!canEdit ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >{t === "gst" ? "GST" : "Proforma"}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="relative">
+                  <label className={labelCls}>Place of Supply</label>
+                  <button onClick={() => canEdit && setPosOpen(!posOpen)} disabled={!canEdit}
+                    className={`${inputCls} text-left flex items-center justify-between disabled:opacity-50`}>
+                    <span className={placeOfSupply ? "text-foreground" : "text-muted"}>{placeOfSupply || "Select state..."}</span>
+                    <ChevronDown className="w-4 h-4 text-muted" />
+                  </button>
+                  {posOpen && canEdit && (
+                    <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-background border border-edge rounded-md shadow-lg max-h-60 flex flex-col">
+                      <div className="px-3 py-2 border-b border-edge-light">
+                        <input type="text" value={posFilter} onChange={e => setPosFilter(e.target.value)} placeholder="Search state..." autoFocus
+                          className="w-full px-2 py-1.5 border border-edge rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+                      </div>
+                      <div className="flex-1 overflow-y-auto">
+                        {filteredPosStates.map(s => (
+                          <button key={s} onClick={() => { setPlaceOfSupply(s); setPosOpen(false); setPosFilter(""); }}
+                            className={`w-full text-left px-4 py-2 text-sm hover:bg-hover transition-colors ${placeOfSupply === s ? "bg-primary-light text-primary font-medium" : "text-secondary"}`}>{s}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className={labelCls}>Est. Delivery</label>
+                  <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} disabled={!canEdit} className={`${inputCls} disabled:opacity-50`} />
+                </div>
+                <div>
+                  <label className={labelCls}>Package</label>
+                  {packages.length > 0 ? (
+                    <div className="relative">
+                      <select onChange={(e) => { const pkg = packages.find(p => p.id === e.target.value); if (pkg) handleApplyPackage(pkg); e.target.value = ""; }} disabled={!canEdit} className={`${inputCls} disabled:opacity-50`} defaultValue="">
+                        <option value="" disabled>Choose Package...</option>
+                        {packages.map(pkg => (
+                          <option key={pkg.id} value={pkg.id}>{pkg.name} ({(pkg.serviceItems?.length || 0) + (pkg.partItems?.length || 0)} items)</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted py-2">No packages available</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─── Services Section ─── */}
+          {(canEdit || serviceRows.length > 0) && (
+            <div className="bg-background rounded-lg border border-edge">
+              <div className="flex items-center justify-between px-5 py-3 bg-dim border-b border-edge rounded-t-lg">
+                <div className="flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-secondary">Services</h3>
+                  {serviceRows.length > 0 && <span className="text-xs bg-primary-light text-primary px-1.5 py-0.5 rounded-full">{serviceRows.length}</span>}
+                </div>
+                {canEdit && (
+                  <button onClick={() => { setChooseServicesOpen(true); setChooseServicesFilter(""); setChooseServicesSelected(new Set()); }}
+                    className="flex items-center gap-1 text-xs text-primary font-medium hover:bg-primary-light px-2.5 py-1.5 rounded transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add Service
+                  </button>
+                )}
+              </div>
+              <div className="p-4 space-y-3">
+                {serviceRows.map((s, idx) => {
+                  const c = serviceCalcs[idx];
+                  return (
+                    <div key={s.key} className="border border-edge-light rounded-lg p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-foreground">{s.description}</p>
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <span className="text-[11px] text-muted">GST Inclusive</span>
+                            <button onClick={() => canEdit && updateServiceRow(s.key, "gstInclusive", !s.gstInclusive)}
+                              className={`relative w-8 h-4.5 rounded-full transition-colors ${s.gstInclusive ? "bg-primary" : "bg-edge"}`}>
+                              <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${s.gstInclusive ? "left-[calc(100%-1rem)]" : "left-0.5"}`} />
+                            </button>
+                          </label>
+                          {canEdit && (
+                            <button onClick={() => setServiceRows(prev => prev.filter(x => x.key !== s.key))} className="p-1 text-muted hover:text-bad hover:bg-bad-light rounded transition-colors">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-7 gap-2 items-end">
+                        <div className="relative">
+                          <label className={labelCls}>GST %</label>
+                          <button onClick={() => canEdit && setGstDropdownKey(gstDropdownKey === s.key ? null : s.key)}
+                            className="w-full flex items-center justify-between px-2 py-1.5 border border-edge rounded text-sm bg-background">
+                            <span>{s.gstRate}%</span><ChevronDown className="w-3 h-3 text-muted" />
+                          </button>
+                          {gstDropdownKey === s.key && canEdit && (
+                            <div className="absolute z-30 top-full left-0 mt-1 min-w-[180px] bg-background border border-edge rounded-md shadow-lg max-h-48 overflow-y-auto">
+                              {serviceTaxProfiles.map(tp => (
+                                <button key={tp.id} onClick={() => { updateServiceRow(s.key, "gstRate", tp.taxPercent); if (tp.sacNumber) updateServiceRow(s.key, "hsnSac", tp.sacNumber); setGstDropdownKey(null); }}
+                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-hover ${s.gstRate === tp.taxPercent ? "bg-primary-light text-primary" : "text-secondary"}`}>
+                                  {tp.name} ({tp.taxPercent}%)
+                                </button>
+                              ))}
+                              <div className="border-t border-edge">
+                                <button onClick={() => { setGstDropdownKey(null); setTaxForm({ name: "", taxPercent: "", sacNumber: "", taxType: "service" }); setCreateTaxOpen(true); }}
+                                  className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-primary-light">+ Create GST Profile</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div><label className={labelCls}>SAC</label><input type="text" value={s.hsnSac} onChange={e => updateServiceRow(s.key, "hsnSac", e.target.value)} disabled={!canEdit} className={smallInputCls} /></div>
+                        <div><label className={labelCls}>Qty</label><input type="number" min={1} value={s.qty} onChange={e => updateServiceRow(s.key, "qty", parseInt(e.target.value) || 1)} disabled={!canEdit} className={smallInputCls} /></div>
+                        <div><label className={labelCls}>Rate</label><input type="number" min={0} value={s.rate || ""} onChange={e => updateServiceRow(s.key, "rate", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
+                        <div><label className={labelCls}>Disc %</label><input type="number" min={0} max={100} value={s.discount || ""} onChange={e => updateServiceRow(s.key, "discount", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
+                        <div><label className={labelCls}>Amount</label><div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{c.amount.toLocaleString("en-IN")}</div></div>
+                        <div><label className={labelCls}>GST Amt</label><div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{c.gstAmount.toLocaleString("en-IN")}</div></div>
+                      </div>
+
+                      {/* Staff assignment — inline on each service row when WIP */}
+                      {order.status === "wip" && isOwner && (() => {
+                        const existing = (order.serviceAssignments || []).find(a => a.lineItemId === s.key);
+                        const isAssigningThis = assigning === s.key;
+                        const isDropdownOpen = staffDropdownOpen === s.key;
+                        return (
+                          <div className="flex items-center gap-3 pt-3 border-t border-edge-light">
+                            <UserPlus className="w-3.5 h-3.5 text-muted shrink-0" />
+                            <div className="relative flex-1">
+                              <button
+                                onClick={() => setStaffDropdownOpen(isDropdownOpen ? null : s.key)}
+                                disabled={isAssigningThis}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors min-w-[140px] justify-between ${
+                                  existing
+                                    ? "border-edge text-foreground bg-background hover:bg-hover"
+                                    : "border-primary/30 text-primary bg-primary-light hover:bg-primary/10"
+                                } disabled:opacity-50`}
+                              >
+                                {isAssigningThis ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : existing ? (
+                                  <span className="truncate">{existing.assignedUserName}</span>
+                                ) : (
+                                  <span>Assign Staff</span>
+                                )}
+                                <ChevronDown className="w-3 h-3 shrink-0" />
+                              </button>
+                              {isDropdownOpen && staffMembers.length > 0 && (
+                                <div className="absolute left-0 top-full mt-1 z-30 bg-background border border-edge rounded-lg shadow-lg py-1 min-w-[200px] max-h-48 overflow-y-auto">
+                                  {staffMembers.filter(m => m.isActive).map((staff) => (
+                                    <button key={staff.id}
+                                      onClick={() => handleAssignService(s.key, staff)}
+                                      className={`w-full text-left px-3 py-2 text-xs hover:bg-hover transition-colors flex items-center justify-between ${
+                                        existing?.assignedUserId === staff.id ? "bg-primary-light text-primary font-medium" : "text-foreground"
+                                      }`}>
+                                      <div>
+                                        <p className="font-medium">{staff.name}</p>
+                                        {staff.staffTitle && <p className="text-muted mt-0.5">{staff.staffTitle}</p>}
+                                      </div>
+                                      {existing?.assignedUserId === staff.id && <Check className="w-3.5 h-3.5 text-primary" />}
+                                    </button>
+                                  ))}
+                                  {staffMembers.filter(m => m.isActive).length === 0 && (
+                                    <p className="px-3 py-2 text-xs text-muted">No staff members added yet</p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {existing && (
+                              <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${
+                                existing.status === "completed" ? "bg-ok/10 text-ok" :
+                                existing.status === "in_progress" ? "bg-warn/10 text-warn" :
+                                "bg-dim text-muted"
+                              }`}>
+                                {existing.status === "in_progress" ? "In Progress" :
+                                 existing.status === "completed" ? "Completed" : "Pending"}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  );
+                })}
+                {serviceRows.length === 0 && <p className="text-sm text-muted text-center py-6">No services added. Click &quot;Add Service&quot; to begin.</p>}
+              </div>
+            </div>
+          )}
+
+          {/* ─── Parts Section ─── */}
+          {(canEdit || partRows.length > 0) && (
+            <div className="bg-background rounded-lg border border-edge">
+              <div className="flex items-center justify-between px-5 py-3 bg-dim border-b border-edge rounded-t-lg">
+                <div className="flex items-center gap-2">
+                  <Package className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-secondary">Parts</h3>
+                  {partRows.length > 0 && <span className="text-xs bg-primary-light text-primary px-1.5 py-0.5 rounded-full">{partRows.length}</span>}
+                </div>
+                {canEdit && (
+                  <button onClick={() => { setChoosePartsOpen(true); setChoosePartsFilter(""); setChoosePartsSelected(new Set()); }}
+                    className="flex items-center gap-1 text-xs text-primary font-medium hover:bg-primary-light px-2.5 py-1.5 rounded transition-colors">
+                    <Plus className="w-3.5 h-3.5" /> Add Part
+                  </button>
+                )}
+              </div>
+              <div className="p-4 space-y-3">
+                {partRows.map((p, idx) => {
+                  const c = partCalcs[idx];
+                  return (
+                    <div key={p.key} className="border border-edge-light rounded-lg p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-foreground">{p.description}</p>
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <span className="text-[11px] text-muted">GST Inclusive</span>
+                            <button onClick={() => canEdit && updatePartRow(p.key, "gstInclusive", !p.gstInclusive)}
+                              className={`relative w-8 h-4.5 rounded-full transition-colors ${p.gstInclusive ? "bg-primary" : "bg-edge"}`}>
+                              <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${p.gstInclusive ? "left-[calc(100%-1rem)]" : "left-0.5"}`} />
+                            </button>
+                          </label>
+                          {canEdit && (
+                            <button onClick={() => setPartRows(prev => prev.filter(x => x.key !== p.key))} className="p-1 text-muted hover:text-bad hover:bg-bad-light rounded transition-colors">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-7 gap-2 items-end">
+                        <div className="relative">
+                          <label className={labelCls}>GST %</label>
+                          <button onClick={() => canEdit && setPartGstDropdownKey(partGstDropdownKey === p.key ? null : p.key)}
+                            className="w-full flex items-center justify-between px-2 py-1.5 border border-edge rounded text-sm bg-background">
+                            <span>{p.gstRate}%</span><ChevronDown className="w-3 h-3 text-muted" />
+                          </button>
+                          {partGstDropdownKey === p.key && canEdit && (
+                            <div className="absolute z-30 top-full left-0 mt-1 min-w-[180px] bg-background border border-edge rounded-md shadow-lg max-h-48 overflow-y-auto">
+                              {goodsTaxProfiles.map(tp => (
+                                <button key={tp.id} onClick={() => { updatePartRow(p.key, "gstRate", tp.taxPercent); if (tp.sacNumber) updatePartRow(p.key, "hsnSac", tp.sacNumber); setPartGstDropdownKey(null); }}
+                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-hover ${p.gstRate === tp.taxPercent ? "bg-primary-light text-primary" : "text-secondary"}`}>
+                                  {tp.name} ({tp.taxPercent}%)
+                                </button>
+                              ))}
+                              <div className="border-t border-edge">
+                                <button onClick={() => { setPartGstDropdownKey(null); setTaxForm({ name: "", taxPercent: "", sacNumber: "", taxType: "goods" }); setCreateTaxOpen(true); }}
+                                  className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-primary-light">+ Create GST Profile</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div><label className={labelCls}>HSN</label><input type="text" value={p.hsnSac} onChange={e => updatePartRow(p.key, "hsnSac", e.target.value)} disabled={!canEdit} className={smallInputCls} /></div>
+                        <div><label className={labelCls}>Qty</label><input type="number" min={1} value={p.qty} onChange={e => updatePartRow(p.key, "qty", parseInt(e.target.value) || 1)} disabled={!canEdit} className={smallInputCls} /></div>
+                        <div><label className={labelCls}>Rate</label><input type="number" min={0} value={p.rate || ""} onChange={e => updatePartRow(p.key, "rate", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
+                        <div><label className={labelCls}>Disc %</label><input type="number" min={0} max={100} value={p.discount || ""} onChange={e => updatePartRow(p.key, "discount", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
+                        <div><label className={labelCls}>Amount</label><div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{c.amount.toLocaleString("en-IN")}</div></div>
+                        <div><label className={labelCls}>GST Amt</label><div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{c.gstAmount.toLocaleString("en-IN")}</div></div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {partRows.length === 0 && <p className="text-sm text-muted text-center py-6">No parts added. Click &quot;Add Part&quot; to begin.</p>}
+              </div>
+            </div>
+          )}
+
+          {/* ─── Summary + Actions ─── */}
+          {hasItems && (
+            <div className="bg-background rounded-lg border border-edge p-5">
+              <h3 className="text-sm font-semibold text-secondary mb-3">Summary</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-secondary"><span>Services Subtotal</span><span>{serviceSubtotal.toLocaleString("en-IN")}</span></div>
+                {!isProforma && <div className="flex justify-between text-secondary"><span>Services GST</span><span>{serviceGstTotal.toLocaleString("en-IN")}</span></div>}
+                <div className="flex justify-between text-secondary"><span>Parts Subtotal</span><span>{partSubtotal.toLocaleString("en-IN")}</span></div>
+                {!isProforma && <div className="flex justify-between text-secondary"><span>Parts GST</span><span>{partGstTotal.toLocaleString("en-IN")}</span></div>}
+                <div className="flex justify-between text-foreground font-bold text-base border-t border-edge pt-2">
+                  <span className="flex items-center gap-1"><IndianRupee className="w-4 h-4" /> Grand Total</span>
+                  <span>{grandTotal.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+              <div className="mt-5 flex gap-3">
+                {canEdit && (
+                  <button onClick={handleSave} disabled={saving}
+                    className="flex-1 py-3 bg-background border border-edge rounded-lg text-sm font-medium text-foreground hover:bg-hover disabled:opacity-50">
+                    {saving ? "Saving..." : "Save Estimate"}
+                  </button>
+                )}
+                {canSend && (
+                  <button onClick={handleSendForApproval} disabled={sending}
+                    className="flex-1 py-3 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-hover disabled:opacity-50 flex items-center justify-center gap-2">
+                    <Send className="w-4 h-4" /> {sending ? "Sending..." : "Send for Approval"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Estimate Link */}
+          {(estimateLink || order.estimateToken) && (
+            <div className="bg-primary-light rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2"><Link2 className="w-4 h-4 text-primary" /><span className="text-sm font-medium text-primary">Estimate Link</span></div>
+                <div className="flex gap-2">
+                  <button onClick={handleCopyLink} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-md hover:bg-background"><Copy className="w-3 h-3" /> Copy</button>
+                  <a href={estimateLink || `/estimate/${order.estimateToken}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-md hover:bg-background"><ExternalLink className="w-3 h-3" /> Open</a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─── Status Actions ─── */}
+          {order.status !== "completed" && order.status !== "cancelled" && order.status !== "payment_due" && isOwner && (
+            <div className="bg-background rounded-xl border border-edge p-5">
+              <p className="text-xs font-medium text-muted uppercase mb-3">Actions</p>
+              <div className="flex flex-wrap gap-2">
+                {order.status === "open" && order.customerApproved === false && (
+                  <button onClick={async () => {
+                    setUpdating(true);
+                    try { const updated = await resendEstimate(order.id); setOrder(updated); showSuccess("Estimate resent"); }
+                    catch {} finally { setUpdating(false); }
+                  }} disabled={updating}
+                    className="px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50">
+                    Revise & Resend Estimate
+                  </button>
+                )}
+                {order.status === "wip" && (
+                  <button onClick={async () => {
+                    setUpdating(true);
+                    try {
+                      const updated = await markPaymentDue(order.id);
+                      setOrder(updated);
+                      showSuccess("Payment link sent to customer");
+                    } catch {} finally { setUpdating(false); }
+                  }} disabled={updating}
+                    className="px-4 py-2.5 bg-orange-500 text-white rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5">
+                    <IndianRupee className="w-4 h-4" />
+                    {updating ? "Sending..." : "Mark Completed & Send Payment"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {order.status === "payment_due" && (
+            <div className="bg-orange-50 rounded-xl border border-orange-200 p-5 text-center">
+              <IndianRupee className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-orange-700">Payment Due</p>
+              <p className="text-xs text-orange-600 mt-1">Payment link has been sent to the customer via email.</p>
+              {order.paymentToken && (
+                <button onClick={() => {
+                  const url = `${window.location.origin}/payment/${order.paymentToken}`;
+                  navigator.clipboard.writeText(url);
+                  showSuccess("Payment link copied");
+                }}
+                  className="mt-3 px-4 py-2 text-xs font-medium text-orange-700 border border-orange-300 rounded-lg hover:bg-orange-100">
+                  Copy Payment Link
+                </button>
+              )}
+            </div>
+          )}
+
+          {order.status === "completed" && (
+            <div className="bg-ok-light rounded-xl border border-ok/20 p-5 text-center">
+              <CheckCircle2 className="w-8 h-8 text-ok mx-auto mb-2" />
+              <p className="text-sm font-semibold text-ok">Order Completed</p>
+            </div>
+          )}
+
+          {order.status === "cancelled" && (
+            <div className="bg-bad-light rounded-xl border border-bad/20 p-5 text-center">
+              <AlertCircle className="w-8 h-8 text-bad mx-auto mb-2" />
+              <p className="text-sm font-semibold text-bad">Order Cancelled</p>
+              {order.customerRejectionNote && <p className="text-sm text-secondary mt-1">Reason: {order.customerRejectionNote}</p>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ════════ MODALS ════════ */}
+
+      {/* ── Choose Services Modal ── */}
+      {chooseServicesOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setChooseServicesOpen(false)} />
+          <div className="relative bg-background rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col animate-scale-in">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge">
+              <h3 className="text-base font-semibold text-foreground">Choose Services</h3>
+              <button onClick={() => setChooseServicesOpen(false)} className="p-1.5 text-muted hover:text-secondary hover:bg-hover rounded-sm"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="px-4 py-3 border-b border-edge-light">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <input type="text" value={chooseServicesFilter} onChange={e => setChooseServicesFilter(e.target.value)} placeholder="Search services..." autoFocus
+                  className="w-full pl-9 pr-4 py-2 bg-dim border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto py-1">
+              {allServices.filter(s => s.name.toLowerCase().includes(chooseServicesFilter.toLowerCase())).map(svc => {
+                const checked = chooseServicesSelected.has(svc.id);
+                const alreadyAdded = serviceRows.some(r => r.serviceId === svc.id);
+                return (
+                  <button key={svc.id} disabled={alreadyAdded} onClick={() => { setChooseServicesSelected(prev => { const next = new Set(prev); if (next.has(svc.id)) next.delete(svc.id); else next.add(svc.id); return next; }); }}
+                    className={`w-full flex items-center gap-3 px-5 py-3 text-left transition-colors border-b border-edge-light last:border-0 ${alreadyAdded ? "opacity-40" : "hover:bg-hover"}`}>
+                    <span className={`w-4.5 h-4.5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? "bg-primary border-primary" : "border-edge"}`}>{checked && <Check className="w-3 h-3 text-white" />}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">{svc.name}</p>
+                      <p className="text-xs text-muted">{svc.categoryName ? `${svc.categoryName} · ` : ""}Rs {svc.price}{svc.hasGst ? ` · GST ${svc.gstRate}%` : ""}{alreadyAdded ? " (Already added)" : ""}</p>
+                    </div>
+                  </button>
+                );
+              })}
+              {allServices.length === 0 && <p className="text-sm text-muted text-center py-8">No services in your catalog yet.</p>}
+            </div>
+            <div className="border-t border-edge px-4 py-3 flex gap-2">
+              <button onClick={() => { setSvcForm(emptyServiceForm); setCreateServiceOpen(true); }} className="flex-1 py-2.5 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary-light transition-colors">+ Create Service</button>
+              {chooseServicesSelected.size > 0 && (
+                <button onClick={handleAddSelectedServices} className="flex-1 py-2.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover transition-colors">Add {chooseServicesSelected.size} Service{chooseServicesSelected.size > 1 ? "s" : ""}</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Create Service Modal ── */}
+      {createServiceOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setCreateServiceOpen(false)} />
+          <div className="relative bg-background rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[85vh] overflow-y-auto p-6 animate-scale-in">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-semibold text-foreground">Create Service</h3>
+              <button onClick={() => setCreateServiceOpen(false)} className="p-1.5 text-muted hover:text-secondary hover:bg-hover rounded-sm"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className={labelCls}>Service Name <span className="text-bad">*</span></label><input type="text" value={svcForm.name} onChange={e => setSvcForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Engine Oil Change" className={inputCls} autoFocus /></div>
+                <div><label className={labelCls}>Price <span className="text-bad">*</span></label><input type="number" min={0} value={svcForm.price} onChange={e => setSvcForm(p => ({ ...p, price: e.target.value }))} placeholder="0" className={inputCls} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className={labelCls}>Service No.</label><input type="text" value={svcForm.serviceNumber} onChange={e => setSvcForm(p => ({ ...p, serviceNumber: e.target.value }))} placeholder="Optional" className={inputCls} /></div>
+                <div>
+                  <label className={labelCls}>Category</label>
+                  <button onClick={() => { setSvcCategoryPickerOpen(true); setSvcCategoryPickerFilter(""); setSvcCategoryNewName(""); }} className={`${inputCls} text-left flex items-center justify-between`}>
+                    <span className={svcForm.categoryName ? "text-foreground" : "text-muted"}>{svcForm.categoryName || "Select..."}</span><ChevronDown className="w-4 h-4 text-muted" />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={svcForm.hasGst} onChange={e => setSvcForm(p => ({ ...p, hasGst: e.target.checked }))} className="w-4 h-4 rounded border-edge text-primary focus:ring-primary" />
+                  <span className="text-sm text-secondary font-medium">GST Details</span>
+                </label>
+              </div>
+              {svcForm.hasGst && (
+                <div className="grid grid-cols-3 gap-3 bg-dim rounded-lg p-3">
+                  <div>
+                    <label className={labelCls}>Tax Category</label>
+                    <button onClick={() => { setSvcTaxPickerOpen(true); setSvcTaxPickerFilter(""); }} className={`${inputCls} text-left text-xs flex items-center justify-between`}>
+                      <span className={svcForm.taxProfileId ? "text-foreground" : "text-muted"}>{svcForm.taxProfileId ? (serviceTaxProfiles.find(t => t.id === svcForm.taxProfileId)?.name || "Selected") : "Select..."}</span>
+                      <ChevronDown className="w-3 h-3 text-muted" />
+                    </button>
+                  </div>
+                  <div><label className={labelCls}>SAC No.</label><input type="text" value={svcForm.sacNumber} onChange={e => setSvcForm(p => ({ ...p, sacNumber: e.target.value }))} className={inputCls} /></div>
+                  <div><label className={labelCls}>GST Rate %</label><input type="number" value={svcForm.gstRate} onChange={e => setSvcForm(p => ({ ...p, gstRate: e.target.value }))} className={inputCls} /></div>
+                </div>
+              )}
+              <div className="flex justify-end gap-2 pt-2">
+                <button onClick={() => setCreateServiceOpen(false)} className="px-4 py-2 text-sm font-medium text-secondary border border-edge rounded-md hover:bg-hover">Cancel</button>
+                <button onClick={handleCreateService} disabled={!svcForm.name.trim() || !svcForm.price || svcSaving} className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover disabled:opacity-50">{svcSaving ? "Saving..." : "Create"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Category Picker (Service) ── */}
+      {svcCategoryPickerOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setSvcCategoryPickerOpen(false)} />
+          <div className="relative bg-background rounded-xl shadow-2xl w-full max-w-sm mx-4 max-h-[60vh] flex flex-col animate-scale-in">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge">
+              <h3 className="text-sm font-semibold text-foreground">Select Category</h3>
+              <button onClick={() => setSvcCategoryPickerOpen(false)} className="p-1.5 text-muted hover:text-secondary hover:bg-hover rounded-sm"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="px-4 py-2 border-b border-edge-light"><input type="text" value={svcCategoryPickerFilter} onChange={e => setSvcCategoryPickerFilter(e.target.value)} placeholder="Search..." autoFocus className={inputCls} /></div>
+            <div className="flex-1 overflow-y-auto py-1">
+              {categories.filter(c => c.name.toLowerCase().includes(svcCategoryPickerFilter.toLowerCase())).map(c => (
+                <button key={c.id} onClick={() => { setSvcForm(p => ({ ...p, categoryId: c.id, categoryName: c.name })); setSvcCategoryPickerOpen(false); }}
+                  className={`w-full text-left px-5 py-2.5 text-sm hover:bg-hover ${svcForm.categoryId === c.id ? "bg-primary-light text-primary" : "text-secondary"}`}>{c.name}</button>
+              ))}
+            </div>
+            <div className="border-t border-edge px-4 py-3">
+              <div className="flex gap-2">
+                <input type="text" value={svcCategoryNewName} onChange={e => setSvcCategoryNewName(e.target.value)} placeholder="New category name..." className={`${inputCls} flex-1`} />
+                <button onClick={handleCreateServiceCategory} disabled={!svcCategoryNewName.trim() || svcCategoryCreating} className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-md disabled:opacity-50">{svcCategoryCreating ? "..." : "Add"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Tax Picker (Service) ── */}
+      {svcTaxPickerOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setSvcTaxPickerOpen(false)} />
+          <div className="relative bg-background rounded-xl shadow-2xl w-full max-w-sm mx-4 max-h-[60vh] flex flex-col animate-scale-in">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge">
+              <h3 className="text-sm font-semibold text-foreground">Select Tax Profile</h3>
+              <button onClick={() => setSvcTaxPickerOpen(false)} className="p-1.5 text-muted hover:text-secondary hover:bg-hover rounded-sm"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto py-1">
+              {serviceTaxProfiles.filter(t => t.name.toLowerCase().includes(svcTaxPickerFilter.toLowerCase())).map(t => (
+                <button key={t.id} onClick={() => { setSvcForm(p => ({ ...p, taxProfileId: t.id, sacNumber: t.sacNumber || p.sacNumber, gstRate: String(t.taxPercent) })); setSvcTaxPickerOpen(false); }}
+                  className={`w-full text-left px-5 py-2.5 text-sm hover:bg-hover ${svcForm.taxProfileId === t.id ? "bg-primary-light text-primary" : "text-secondary"}`}>{t.name} ({t.taxPercent}%)</button>
+              ))}
+            </div>
+            <div className="border-t border-edge px-4 py-3">
+              <button onClick={() => { setSvcTaxPickerOpen(false); setTaxForm({ name: "", taxPercent: "", sacNumber: "", taxType: "service" }); setCreateTaxOpen(true); }} className="w-full py-2 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary-light">+ Create Tax Profile</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Choose Parts Modal ── */}
+      {choosePartsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setChoosePartsOpen(false)} />
+          <div className="relative bg-background rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col animate-scale-in">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge">
+              <h3 className="text-base font-semibold text-foreground">Choose Parts</h3>
+              <button onClick={() => setChoosePartsOpen(false)} className="p-1.5 text-muted hover:text-secondary hover:bg-hover rounded-sm"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="px-4 py-3 border-b border-edge-light">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <input type="text" value={choosePartsFilter} onChange={e => setChoosePartsFilter(e.target.value)} placeholder="Search parts..." autoFocus
+                  className="w-full pl-9 pr-4 py-2 bg-dim border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto py-1">
+              {allParts.filter(p => p.name.toLowerCase().includes(choosePartsFilter.toLowerCase()) || p.partNumber.toLowerCase().includes(choosePartsFilter.toLowerCase())).map(part => {
+                const checked = choosePartsSelected.has(part.id);
+                const alreadyAdded = partRows.some(r => r.partId === part.id);
+                return (
+                  <button key={part.id} disabled={alreadyAdded} onClick={() => { setChoosePartsSelected(prev => { const next = new Set(prev); if (next.has(part.id)) next.delete(part.id); else next.add(part.id); return next; }); }}
+                    className={`w-full flex items-center gap-3 px-5 py-3 text-left transition-colors border-b border-edge-light last:border-0 ${alreadyAdded ? "opacity-40" : "hover:bg-hover"}`}>
+                    <span className={`w-4.5 h-4.5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? "bg-primary border-primary" : "border-edge"}`}>{checked && <Check className="w-3 h-3 text-white" />}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">{part.name}</p>
+                      <p className="text-xs text-muted">{part.partNumber ? `#${part.partNumber} · ` : ""}Rs {part.sellingPrice}{part.gstRate ? ` · GST ${part.gstRate}%` : ""} · Stock: {part.stockQty}{alreadyAdded ? " (Already added)" : ""}</p>
+                    </div>
+                  </button>
+                );
+              })}
+              {allParts.length === 0 && <p className="text-sm text-muted text-center py-8">No parts in inventory yet.</p>}
+            </div>
+            <div className="border-t border-edge px-4 py-3 flex gap-2">
+              <button onClick={() => { setPartForm(emptyPartForm); setCreatePartOpen(true); }} className="flex-1 py-2.5 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary-light transition-colors">+ Create Part</button>
+              {choosePartsSelected.size > 0 && (
+                <button onClick={handleAddSelectedParts} className="flex-1 py-2.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover transition-colors">Add {choosePartsSelected.size} Part{choosePartsSelected.size > 1 ? "s" : ""}</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Create Part Modal ── */}
+      {createPartOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setCreatePartOpen(false)} />
+          <div className="relative bg-background rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[85vh] overflow-y-auto p-6 animate-scale-in">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-semibold text-foreground">Create Part</h3>
+              <button onClick={() => setCreatePartOpen(false)} className="p-1.5 text-muted hover:text-secondary hover:bg-hover rounded-sm"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className={labelCls}>Part Name <span className="text-bad">*</span></label><input type="text" value={partForm.name} onChange={e => setPartForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Brake Pad" className={inputCls} autoFocus /></div>
+                <div><label className={labelCls}>Part No.</label><input type="text" value={partForm.partNumber} onChange={e => setPartForm(p => ({ ...p, partNumber: e.target.value }))} placeholder="Optional" className={inputCls} /></div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div><label className={labelCls}>MRP</label><input type="number" min={0} value={partForm.mrp} onChange={e => setPartForm(p => ({ ...p, mrp: e.target.value }))} placeholder="0" className={inputCls} /></div>
+                <div><label className={labelCls}>Selling Price <span className="text-bad">*</span></label><input type="number" min={0} value={partForm.sellingPrice} onChange={e => setPartForm(p => ({ ...p, sellingPrice: e.target.value }))} placeholder="0" className={inputCls} /></div>
+                <div><label className={labelCls}>Purchase Price</label><input type="number" min={0} value={partForm.purchasePrice} onChange={e => setPartForm(p => ({ ...p, purchasePrice: e.target.value }))} placeholder="0" className={inputCls} /></div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div><label className={labelCls}>HSN Code</label><input type="text" value={partForm.hsnCode} onChange={e => setPartForm(p => ({ ...p, hsnCode: e.target.value }))} className={inputCls} /></div>
+                <div><label className={labelCls}>GST Rate %</label><input type="number" value={partForm.gstRate} onChange={e => setPartForm(p => ({ ...p, gstRate: e.target.value }))} className={inputCls} /></div>
+                <div>
+                  <label className={labelCls}>Manufacturer</label>
+                  <button onClick={() => { setPartMfgPickerOpen(true); setPartMfgPickerFilter(""); setPartMfgNewName(""); }} className={`${inputCls} text-left flex items-center justify-between`}>
+                    <span className={partForm.manufacturerName ? "text-foreground" : "text-muted"}>{partForm.manufacturerName || "Select..."}</span><ChevronDown className="w-4 h-4 text-muted" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button onClick={() => setCreatePartOpen(false)} className="px-4 py-2 text-sm font-medium text-secondary border border-edge rounded-md hover:bg-hover">Cancel</button>
+                <button onClick={handleCreatePart} disabled={!partForm.name.trim() || !partForm.sellingPrice || partSaving} className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover disabled:opacity-50">{partSaving ? "Saving..." : "Create"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Manufacturer Picker ── */}
+      {partMfgPickerOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setPartMfgPickerOpen(false)} />
+          <div className="relative bg-background rounded-xl shadow-2xl w-full max-w-sm mx-4 max-h-[60vh] flex flex-col animate-scale-in">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge">
+              <h3 className="text-sm font-semibold text-foreground">Select Manufacturer</h3>
+              <button onClick={() => setPartMfgPickerOpen(false)} className="p-1.5 text-muted hover:text-secondary hover:bg-hover rounded-sm"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto py-1">
+              {manufacturers.filter(m => m.name.toLowerCase().includes(partMfgPickerFilter.toLowerCase())).map(m => (
+                <button key={m.id} onClick={() => { setPartForm(p => ({ ...p, manufacturerId: m.id, manufacturerName: m.name })); setPartMfgPickerOpen(false); }}
+                  className="w-full text-left px-5 py-2.5 text-sm hover:bg-hover text-secondary">{m.name}</button>
+              ))}
+            </div>
+            <div className="border-t border-edge px-4 py-3">
+              <div className="flex gap-2">
+                <input type="text" value={partMfgNewName} onChange={e => setPartMfgNewName(e.target.value)} placeholder="New manufacturer..." className={`${inputCls} flex-1`} />
+                <button onClick={handleCreateManufacturer} disabled={!partMfgNewName.trim() || partMfgCreating} className="px-3 py-2 text-sm font-medium text-white bg-primary rounded-md disabled:opacity-50">{partMfgCreating ? "..." : "Add"}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Create Tax Profile Modal ── */}
+      {createTaxOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center animate-fade-in">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setCreateTaxOpen(false)} />
+          <div className="relative bg-background rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6 animate-scale-in">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-foreground">Create Tax Profile</h3>
+              <button onClick={() => setCreateTaxOpen(false)} className="p-1.5 text-muted hover:text-secondary hover:bg-hover rounded-sm"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <div><label className={labelCls}>Name <span className="text-bad">*</span></label><input type="text" value={taxForm.name} onChange={e => setTaxForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. GST 18%" className={inputCls} autoFocus /></div>
+              <div><label className={labelCls}>Tax % <span className="text-bad">*</span></label><input type="number" min={0} value={taxForm.taxPercent} onChange={e => setTaxForm(p => ({ ...p, taxPercent: e.target.value }))} placeholder="18" className={inputCls} /></div>
+              <div><label className={labelCls}>SAC/HSN</label><input type="text" value={taxForm.sacNumber} onChange={e => setTaxForm(p => ({ ...p, sacNumber: e.target.value }))} className={inputCls} /></div>
+            </div>
+            <div className="flex justify-end gap-2 mt-5">
+              <button onClick={() => setCreateTaxOpen(false)} className="px-4 py-2 text-sm font-medium text-secondary border border-edge rounded-md hover:bg-hover">Cancel</button>
+              <button onClick={handleCreateTaxProfile} disabled={!taxForm.name.trim() || !taxForm.taxPercent || taxSaving} className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-hover disabled:opacity-50">{taxSaving ? "Saving..." : "Create"}</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

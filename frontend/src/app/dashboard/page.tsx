@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { tabs, TabKey, getOrders, getOrdersByStatus, getOrderCounts, Order } from "@/lib/api-orders";
 import { getCustomers } from "@/lib/api-customers";
 import { getParts, Part } from "@/lib/api-inventory";
-import { canManage } from "@/lib/auth";
+import { canManage, isGarageStaff, getUser } from "@/lib/auth";
+import { updateAssignmentStatus, type ServiceAssignment } from "@/lib/api-orders";
 import {
   Plus, FileText, Phone, Car, Calendar, IndianRupee, LayoutGrid, List,
   TrendingUp, TrendingDown, Users, AlertTriangle, ClipboardList,
+  Wrench, CheckCircle2, Clock, Loader2,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -70,9 +72,9 @@ function OrderCard({ order, onClick }: { order: Order; onClick?: () => void }) {
   const statusStyles: Record<string, string> = {
     open: "bg-primary-light text-primary",
     wip: "bg-warn-light text-warn",
-    ready: "bg-ok-light text-ok",
-    payment_due: "bg-bad-light text-bad",
-    completed: "bg-hover text-muted",
+    payment_due: "bg-orange-100 text-orange-600",
+    completed: "bg-ok-light text-ok",
+    cancelled: "bg-bad-light text-bad",
   };
 
   return (
@@ -138,14 +140,223 @@ function RevenueTooltip({ active, payload, label }: { active?: boolean; payload?
 const STATUS_COLORS: Record<string, string> = {
   Open: "#dc2626",
   WIP: "#d97706",
-  Ready: "#16a34a",
-  "Payment Due": "#e11d48",
-  Completed: "#a1a1aa",
+  Completed: "#16a34a",
+  Cancelled: "#e11d48",
 };
+
+/* ── Staff Task Item ──────────────────────────────── */
+
+interface TaskItem {
+  orderId: string;
+  jobCard: string;
+  customerName: string;
+  vehicle: string;
+  vehicleNumber: string;
+  assignment: ServiceAssignment;
+  serviceDescription: string;
+}
+
+/* ── Staff Dashboard ─────────────────────────────── */
+
+function StaffDashboard() {
+  const router = useRouter();
+  const user = getUser();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getOrders()
+      .then(setOrders)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const tasks: TaskItem[] = useMemo(() => {
+    if (!user) return [];
+    const result: TaskItem[] = [];
+    for (const order of orders) {
+      if (!order.serviceAssignments) continue;
+      for (const a of order.serviceAssignments) {
+        if (a.assignedUserId === user.id) {
+          const li = (order.lineItems || []).find(l => l.id === a.lineItemId);
+          result.push({
+            orderId: order.id,
+            jobCard: order.jobCard,
+            customerName: order.customerName,
+            vehicle: order.vehicle,
+            vehicleNumber: order.vehicleNumber,
+            assignment: a,
+            serviceDescription: li?.description || "Service",
+          });
+        }
+      }
+    }
+    return result;
+  }, [orders, user]);
+
+  const pending = tasks.filter(t => t.assignment.status === "pending").length;
+  const inProgress = tasks.filter(t => t.assignment.status === "in_progress").length;
+  const completed = tasks.filter(t => t.assignment.status === "completed").length;
+  const activeTasks = tasks.filter(t => t.assignment.status !== "completed");
+
+  async function handleStatusUpdate(task: TaskItem, newStatus: string) {
+    setUpdatingId(task.assignment.lineItemId);
+    try {
+      await updateAssignmentStatus(task.orderId, task.assignment.lineItemId, newStatus);
+      const updated = await getOrders();
+      setOrders(updated);
+    } catch { /* ignore */ }
+    finally { setUpdatingId(null); }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full py-20">
+        <Loader2 className="w-7 h-7 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-5 space-y-6">
+      {/* Greeting */}
+      <div>
+        <h1 className="text-lg font-bold text-foreground">Welcome, {user?.name || "Staff"}</h1>
+        <p className="text-sm text-muted mt-0.5">{user?.staffTitle || "Staff Member"}</p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <KpiCard label="Total Tasks" value={tasks.length.toString()} icon={ClipboardList} iconBg="bg-brand-500" />
+        <KpiCard label="Pending" value={pending.toString()} icon={Clock} iconBg="bg-gray-400" />
+        <KpiCard label="In Progress" value={inProgress.toString()} icon={Wrench} iconBg="bg-warning-500" />
+        <KpiCard label="Completed" value={completed.toString()} icon={CheckCircle2} iconBg="bg-success-500" />
+      </div>
+
+      {/* Progress bar */}
+      {tasks.length > 0 && (
+        <div className="glass-card p-5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-foreground">Overall Progress</p>
+            <span className="text-xs font-medium text-muted">{completed} / {tasks.length} completed</span>
+          </div>
+          <div className="w-full h-2.5 bg-hover rounded-full overflow-hidden">
+            <div className="h-full bg-success-500 rounded-full transition-all" style={{ width: `${(completed / tasks.length) * 100}%` }} />
+          </div>
+        </div>
+      )}
+
+      {/* Active Tasks */}
+      <div>
+        <h2 className="text-sm font-semibold text-foreground mb-3">
+          Active Tasks
+          {activeTasks.length > 0 && (
+            <span className="ml-2 text-xs font-medium text-muted bg-hover px-2 py-0.5 rounded-full">{activeTasks.length}</span>
+          )}
+        </h2>
+
+        {activeTasks.length === 0 ? (
+          <div className="glass-card p-10 text-center">
+            <CheckCircle2 className="w-10 h-10 text-ok mx-auto mb-3" />
+            <p className="text-foreground font-medium">All tasks completed!</p>
+            <p className="text-sm text-muted mt-1">No pending work right now.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {activeTasks.map((task) => (
+              <div key={`${task.orderId}-${task.assignment.lineItemId}`}
+                className="glass-card p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">{task.serviceDescription}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted">
+                      <span className="font-medium text-primary">{task.jobCard}</span>
+                      <span className="flex items-center gap-1"><Car className="w-3 h-3" />{task.vehicle}</span>
+                      <span className="font-mono">{task.vehicleNumber}</span>
+                    </div>
+                    <p className="text-xs text-muted mt-0.5">Customer: {task.customerName}</p>
+                  </div>
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
+                    task.assignment.status === "in_progress" ? "bg-warn/10 text-warn" : "bg-dim text-muted"
+                  }`}>
+                    {task.assignment.status === "in_progress" ? "In Progress" : "Pending"}
+                  </span>
+                </div>
+                <div className="flex gap-2 pt-3 border-t border-edge-light">
+                  {task.assignment.status === "pending" && (
+                    <button onClick={() => handleStatusUpdate(task, "in_progress")}
+                      disabled={updatingId === task.assignment.lineItemId}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-warn text-white rounded-lg text-xs font-medium hover:opacity-90 disabled:opacity-50">
+                      <Wrench className="w-3.5 h-3.5" />
+                      {updatingId === task.assignment.lineItemId ? "..." : "Start Work"}
+                    </button>
+                  )}
+                  {task.assignment.status === "in_progress" && (
+                    <button onClick={() => handleStatusUpdate(task, "completed")}
+                      disabled={updatingId === task.assignment.lineItemId}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-ok text-white rounded-lg text-xs font-medium hover:opacity-90 disabled:opacity-50">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      {updatingId === task.assignment.lineItemId ? "..." : "Mark Complete"}
+                    </button>
+                  )}
+                  <button onClick={() => router.push(`/dashboard/orders/${task.orderId}`)}
+                    className="px-4 py-2 text-xs font-medium text-secondary border border-edge rounded-lg hover:bg-hover">
+                    View Order
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Completed Tasks (collapsible) */}
+      {completed > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-foreground mb-3">
+            Completed
+            <span className="ml-2 text-xs font-medium text-ok bg-ok/10 px-2 py-0.5 rounded-full">{completed}</span>
+          </h2>
+          <div className="space-y-2">
+            {tasks.filter(t => t.assignment.status === "completed").map((task) => (
+              <div key={`${task.orderId}-${task.assignment.lineItemId}`}
+                className="glass-card-light p-4 opacity-75">
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-ok shrink-0" />
+                      {task.serviceDescription}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted ml-6">
+                      <span className="font-medium">{task.jobCard}</span>
+                      <span>{task.vehicle} ({task.vehicleNumber})</span>
+                    </div>
+                  </div>
+                  <button onClick={() => router.push(`/dashboard/orders/${task.orderId}`)}
+                    className="px-3 py-1.5 text-xs font-medium text-secondary border border-edge rounded-lg hover:bg-hover shrink-0">
+                    View
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ── Main dashboard ───────────────────────────────── */
 
 export default function DashboardPage() {
+  const staffMode = isGarageStaff();
+  if (staffMode) return <StaffDashboard />;
+
+  return <AdminDashboard />;
+}
+
+function AdminDashboard() {
   const router = useRouter();
 
   // ─── Analytics state ───
@@ -157,7 +368,7 @@ export default function DashboardPage() {
   // ─── Orders list state (existing) ───
   const [activeTab, setActiveTab] = useState<TabKey>("open");
   const [orders, setOrders] = useState<Order[]>([]);
-  const [counts, setCounts] = useState<Record<TabKey, number>>({ open: 0, wip: 0, ready: 0, payment_due: 0, completed: 0 });
+  const [counts, setCounts] = useState<Record<TabKey, number>>({ open: 0, wip: 0, payment_due: 0, completed: 0, cancelled: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
@@ -173,7 +384,7 @@ export default function DashboardPage() {
     ])
       .then(([ordersData, countsData, customers, parts]) => {
         setAllOrders(ordersData || []);
-        setCounts(countsData || { open: 0, wip: 0, ready: 0, payment_due: 0, completed: 0 });
+        setCounts(countsData || { open: 0, wip: 0, completed: 0, cancelled: 0 });
         setCustomerCount((customers || []).length);
         setLowStockParts(
           (parts || []).filter((p) => p.stockQty <= p.minStockQty)
@@ -249,9 +460,8 @@ export default function DashboardPage() {
     return [
       { name: "Open", value: counts.open },
       { name: "WIP", value: counts.wip },
-      { name: "Ready", value: counts.ready },
-      { name: "Payment Due", value: counts.payment_due },
       { name: "Completed", value: counts.completed },
+      { name: "Cancelled", value: counts.cancelled },
     ].filter((d) => d.value > 0);
   }, [counts]);
 
@@ -550,9 +760,8 @@ export default function DashboardPage() {
                   const statusStyles: Record<string, string> = {
                     open: "bg-primary-light text-primary",
                     wip: "bg-warn-light text-warn",
-                    ready: "bg-ok-light text-ok",
-                    payment_due: "bg-bad-light text-bad",
-                    completed: "bg-hover text-muted",
+                    completed: "bg-ok-light text-ok",
+                    cancelled: "bg-bad-light text-bad",
                   };
                   return (
                     <tr

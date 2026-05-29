@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { getOrders, Order } from "@/lib/api-orders";
 import { Search, FileText, Loader2, Calendar, LayoutGrid, List } from "lucide-react";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
@@ -13,9 +14,9 @@ type DatePreset = "week" | "month" | "custom";
 const STATUS_STYLES: Record<string, { label: string; cls: string }> = {
   open:        { label: "Open",        cls: "bg-primary-light text-primary" },
   wip:         { label: "WIP",         cls: "bg-warn-light text-warn" },
-  ready:       { label: "Ready",       cls: "bg-ok-light text-ok" },
-  payment_due: { label: "Payment Due", cls: "bg-bad-light text-bad" },
-  completed:   { label: "Completed",   cls: "bg-dim text-muted" },
+  payment_due: { label: "Payment Due", cls: "bg-orange-100 text-orange-600" },
+  completed:   { label: "Completed",   cls: "bg-ok-light text-ok" },
+  cancelled:   { label: "Cancelled",   cls: "bg-bad-light text-bad" },
 };
 
 function getPresetRange(preset: DatePreset): { from: string; to: string } {
@@ -100,6 +101,7 @@ const orderColumns: DataColumn<Order>[] = [
 ];
 
 export default function OrderSearchPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -278,7 +280,8 @@ export default function OrderSearchPage() {
               {filtered.map((order) => {
                 const st = STATUS_STYLES[order.status] || { label: order.status || "-", cls: "bg-dim text-muted" };
                 return (
-                  <div key={order.id} className="bg-background rounded-lg border border-edge p-5 hover:shadow-md transition-shadow">
+                  <div key={order.id} onClick={() => router.push(`/dashboard/orders/${order.id}`)}
+                    className="bg-background rounded-lg border border-edge p-5 hover:shadow-md transition-shadow cursor-pointer">
                     <div className="flex items-center justify-between mb-3">
                       <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
                         <FileText className="w-4 h-4 text-primary" />{order.jobCard || "-"}
@@ -296,7 +299,7 @@ export default function OrderSearchPage() {
                     </p>
                     {(order.services || []).length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-3">
-                        {order.services.map((s) => (
+                        {(order.services || []).map((s) => (
                           <span key={s} className="text-xs bg-accent-light text-accent px-2 py-0.5 rounded">{s}</span>
                         ))}
                       </div>
@@ -316,6 +319,7 @@ export default function OrderSearchPage() {
               data={filtered}
               keyExtractor={(o) => o.id}
               className={TABLE_CLS}
+              onRowClick={(o) => router.push(`/dashboard/orders/${o.id}`)}
             />
           </div>
         )}

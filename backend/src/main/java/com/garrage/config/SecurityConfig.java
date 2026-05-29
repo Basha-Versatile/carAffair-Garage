@@ -75,6 +75,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/models").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/garage-registrations").permitAll()
 
+                        // Public estimate endpoints (token-based, no auth)
+                        .requestMatchers("/api/public/estimate/**").permitAll()
+
+                        // Public payment endpoints (token-based, no auth)
+                        .requestMatchers("/api/public/payment/**").permitAll()
+
+                        // Image serving (authenticated via controller)
+                        .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
+
                         // Super Admin only
                         .requestMatchers("/api/garages/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/garage-registrations/**").hasRole("SUPER_ADMIN")
@@ -120,6 +129,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/garage-services/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
                         .requestMatchers("/api/tags/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
                         .requestMatchers("/api/tax-profiles/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
+                        .requestMatchers("/api/packages/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
 
                         .anyRequest().authenticated()
                 )

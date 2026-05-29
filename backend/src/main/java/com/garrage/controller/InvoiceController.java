@@ -90,7 +90,7 @@ public class InvoiceController {
         Invoice invoice = invoiceService.getInvoiceById(id, garageId);
 
         if (invoice.getCustomerPhone() == null && invoice.getCustomerName() == null) {
-            return ResponseEntity.badRequest().body(ApiResponse.ok("No customer info on invoice"));
+            return ResponseEntity.badRequest().body(ApiResponse.okMessage("No customer info on invoice"));
         }
 
         Garage garage = garageRepository.findById(garageId).orElse(null);
@@ -111,7 +111,7 @@ public class InvoiceController {
 
         if (customerEmail == null || customerEmail.isBlank()) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.ok("Customer does not have an email address"));
+                    .body(ApiResponse.okMessage("Customer does not have an email address"));
         }
 
         emailService.sendInvoiceEmail(customerEmail, invoice.getCustomerName(),
@@ -120,6 +120,6 @@ public class InvoiceController {
         // Update status to sent
         invoiceService.updateInvoiceStatus(id, "sent", garageId);
 
-        return ResponseEntity.ok(ApiResponse.ok("Invoice notification sent to " + customerEmail));
+        return ResponseEntity.ok(ApiResponse.okMessage("Invoice notification sent to " + customerEmail));
     }
 }

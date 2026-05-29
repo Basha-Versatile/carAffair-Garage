@@ -53,6 +53,6 @@ public class GarageStaffController {
     public ResponseEntity<ApiResponse<Void>> removeStaff(@PathVariable String id) {
         String garageId = TenantContext.getGarageId();
         garageStaffService.removeStaff(id, garageId);
-        return ResponseEntity.ok(ApiResponse.ok("Staff member removed"));
+        return ResponseEntity.ok(ApiResponse.okMessage("Staff member removed"));
     }
 }

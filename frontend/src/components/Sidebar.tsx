@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-type MenuItem = { label: string; icon: LucideIcon; href: string; module?: string; ownerOnly?: boolean; exact?: boolean };
+type MenuItem = { label: string; icon: LucideIcon; href: string; module?: string; ownerOnly?: boolean; staffOnly?: boolean; exact?: boolean };
 type Section = { title: string; items: MenuItem[] };
 
 const baseSections: Section[] = [
@@ -41,6 +41,7 @@ const baseSections: Section[] = [
   {
     title: "Operations",
     items: [
+      { label: "My Tasks", icon: ClipboardList, href: "/dashboard/my-tasks", module: "ORDERS", staffOnly: true },
       { label: "Invoices", icon: FileSpreadsheet, href: "/dashboard/invoices", module: "INVOICES" },
       { label: "Inventory", icon: ClipboardList, href: "/dashboard/inventory", module: "INVENTORY" },
       { label: "Accounts", icon: BookOpen, href: "/dashboard/accounts", module: "ACCOUNTS" },
@@ -119,12 +120,13 @@ export default function Sidebar() {
       ? [baseSections[0], superAdminSection]
       : baseSections;
 
-  // Filter items: ownerOnly items hidden from non-owners, module items hidden from unpermitted staff
+  // Filter items: ownerOnly items hidden from non-owners, staffOnly hidden from non-staff, module items hidden from unpermitted staff
   const sections: Section[] = rawSections
     .map((section) => ({
       ...section,
       items: section.items.filter((item) => {
         if (item.ownerOnly && !owner) return false;
+        if (item.staffOnly && !staffMode) return false;
         if (staffMode && item.module && !canView(item.module)) return false;
         return true;
       }),

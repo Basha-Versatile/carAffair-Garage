@@ -6,6 +6,10 @@ spring:
     mongodb:
       uri: ${MONGODB_URI:mongodb+srv://anudeep_db_user:gRdx5x1GXm403SJ9@ac-bwcipgb.gasaswd.mongodb.net/?retryWrites=true&w=majority}
       database: garrage
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
   mail:
     host: ${MAIL_HOST:smtp.ionos.co.uk}
     port: ${MAIL_PORT:587}

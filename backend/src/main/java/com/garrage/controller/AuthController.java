@@ -30,7 +30,7 @@ public class AuthController {
     @PostMapping("/send-otp")
     public ResponseEntity<ApiResponse<String>> sendOtp(@Valid @RequestBody SendOtpRequest request) {
         String otp = authService.sendOtp(request);
-        ApiResponse<String> response = ApiResponse.ok("OTP sent successfully");
+        ApiResponse<String> response = ApiResponse.okMessage("OTP sent successfully");
         response.setData(otp); // non-null only in mock/dev mode
         return ResponseEntity.ok(response);
     }
