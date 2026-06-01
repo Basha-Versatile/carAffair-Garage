@@ -58,6 +58,14 @@ public class BookingService {
                 "/dashboard/appointments",
                 "BOOKING", saved.getId());
 
+        // Send confirmation email to customer
+        if (saved.getCustomerEmail() != null && !saved.getCustomerEmail().isBlank()) {
+            emailService.sendBookingReceivedEmail(
+                    saved.getCustomerEmail(), saved.getCustomerName(),
+                    saved.getBookingId(), saved.getService(),
+                    saved.getPreferredDate(), saved.getPreferredTime());
+        }
+
         return saved;
     }
 

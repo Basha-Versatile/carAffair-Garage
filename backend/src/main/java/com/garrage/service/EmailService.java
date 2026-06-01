@@ -350,6 +350,48 @@ public class EmailService {
     }
 
     @Async
+    public void sendBookingReceivedEmail(String toEmail, String customerName,
+                                          String bookingId, String service,
+                                          String date, String time) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress);
+            helper.setTo(toEmail);
+            helper.setSubject("Booking Received - " + bookingId + " — Car Affair");
+
+            String html = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto'>"
+                    + "<div style='background:#2563eb;color:white;padding:24px;text-align:center;border-radius:8px 8px 0 0'>"
+                    + "<h1 style='margin:0;font-size:22px'>Car Affair</h1>"
+                    + "<p style='margin:4px 0 0;font-size:13px;opacity:0.9'>Booking Received</p>"
+                    + "</div>"
+                    + "<div style='padding:24px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px'>"
+                    + "<p>Dear <b>" + customerName + "</b>,</p>"
+                    + "<p>Thank you for contacting <b>Car Affair</b>! We have received your booking request and our team will review it shortly.</p>"
+                    + "<div style='background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0'>"
+                    + "<p style='margin:0 0 8px;font-weight:600'>Booking Details:</p>"
+                    + "<p style='margin:4px 0'><b>Booking ID:</b> " + bookingId + "</p>"
+                    + (service != null ? "<p style='margin:4px 0'><b>Service:</b> " + service + "</p>" : "")
+                    + (date != null ? "<p style='margin:4px 0'><b>Preferred Date:</b> " + date + "</p>" : "")
+                    + (time != null ? "<p style='margin:4px 0'><b>Preferred Time:</b> " + time + "</p>" : "")
+                    + "</div>"
+                    + "<div style='background:#eff6ff;border-left:4px solid #2563eb;border-radius:4px;padding:12px 16px;margin:16px 0'>"
+                    + "<p style='margin:0;font-size:14px;color:#1e40af'>We will review your request and get back to you with a confirmation soon.</p>"
+                    + "</div>"
+                    + "<p style='color:#64748b;font-size:13px'>If you have any questions in the meantime, feel free to reach out to us.</p>"
+                    + "<p>Thank you,<br><b>Car Affair</b></p>"
+                    + "</div></div>";
+
+            helper.setText(html, true);
+            mailSender.send(message);
+            log.info("Booking received email sent to {} for booking {}", toEmail, bookingId);
+        } catch (Exception e) {
+            log.error("Failed to send booking received email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Async
     public void sendBookingAcknowledgmentEmail(String toEmail, String customerName,
                                                 String bookingId, String adminNotes,
                                                 String date, String time, boolean isRescheduled) {
