@@ -1,8 +1,18 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { canManage } from "@/lib/auth";
+import { canManage, getUser } from "@/lib/auth";
 import { useRouter } from "next/navigation";
+import {
+  getDepartments,
+  getServiceDepartment,
+  setServiceDepartment,
+  getPartDepartment,
+  setPartDepartment,
+  getAllServiceDepartments,
+  getAllPartDepartments,
+  type Department,
+} from "@/lib/departments-local";
 import {
   Search,
   Plus,
@@ -62,12 +72,20 @@ const EMPTY_PART: Omit<Part, "id"> = {
 /* ═══════════════════════════════════════════
    Service columns
    ═══════════════════════════════════════════ */
-function makeServiceColumns(onEdit: (s: GarageService) => void): DataColumn<GarageService>[] {
+function makeServiceColumns(onEdit: (s: GarageService) => void, svcDeptMap: Record<string, { departmentId: string; departmentName: string }>): DataColumn<GarageService>[] {
   return [
     {
       key: "name",
       header: "Name",
-      render: (s) => <span className="font-medium text-foreground">{s.name}</span>,
+      render: (s) => {
+        const dept = svcDeptMap[s.id];
+        return (
+          <div>
+            <span className="font-medium text-foreground">{s.name}</span>
+            {dept && <span className="ml-2 text-[11px] bg-accent-light text-accent px-1.5 py-0.5 rounded">{dept.departmentName}</span>}
+          </div>
+        );
+      },
       sortValue: (s) => s.name,
     },
     {
@@ -113,17 +131,23 @@ function makeServiceColumns(onEdit: (s: GarageService) => void): DataColumn<Gara
 /* ═══════════════════════════════════════════
    Part columns
    ═══════════════════════════════════════════ */
-function makePartColumns(onEdit: (p: Part) => void): DataColumn<Part>[] {
+function makePartColumns(onEdit: (p: Part) => void, partDeptMap: Record<string, { departmentId: string; departmentName: string }>): DataColumn<Part>[] {
   return [
     {
       key: "name",
       header: "Name",
-      render: (p) => (
-        <div>
-          <p className="font-medium text-foreground">{p.name}</p>
-          <p className="text-xs text-muted font-mono">{p.partNumber || "-"}</p>
-        </div>
-      ),
+      render: (p) => {
+        const dept = partDeptMap[p.id];
+        return (
+          <div>
+            <p className="font-medium text-foreground">{p.name}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs text-muted font-mono">{p.partNumber || "-"}</p>
+              {dept && <span className="text-[11px] bg-accent-light text-accent px-1.5 py-0.5 rounded">{dept.departmentName}</span>}
+            </div>
+          </div>
+        );
+      },
       sortValue: (p) => p.name,
     },
     {
@@ -188,6 +212,8 @@ function makePartColumns(onEdit: (p: Part) => void): DataColumn<Part>[] {
    ═══════════════════════════════════════════ */
 export default function ServicePartsPage() {
   const router = useRouter();
+  const user = getUser();
+  const garageId = user?.garageId || "";
   const [tab, setTab] = useState<TabKey>("services");
   const [search, setSearch] = useState("");
 
@@ -197,6 +223,11 @@ export default function ServicePartsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // departments
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [svcDeptMap, setSvcDeptMap] = useState<Record<string, { departmentId: string; departmentName: string }>>({});
+  const [partDeptMap, setPartDeptMap] = useState<Record<string, { departmentId: string; departmentName: string }>>({});
+
   // form modal
   const [showForm, setShowForm] = useState(false);
   const [editingService, setEditingService] = useState<GarageService | null>(null);
@@ -205,12 +236,19 @@ export default function ServicePartsPage() {
 
   // service form state
   const [svcForm, setSvcForm] = useState(EMPTY_SERVICE);
+  const [svcDeptId, setSvcDeptId] = useState("");
   // part form state
   const [partForm, setPartForm] = useState(EMPTY_PART);
+  const [partDeptId, setPartDeptId] = useState("");
 
   useEffect(() => {
     loadData();
-  }, []);
+    if (garageId) {
+      setDepartments(getDepartments(garageId));
+      setSvcDeptMap(getAllServiceDepartments(garageId));
+      setPartDeptMap(getAllPartDepartments(garageId));
+    }
+  }, [garageId]);
 
   async function loadData() {
     setLoading(true);
@@ -248,13 +286,14 @@ export default function ServicePartsPage() {
   );
 
   // columns
-  const serviceColumns = useMemo(() => makeServiceColumns(openEditService), []);
-  const partColumns = useMemo(() => makePartColumns(openEditPart), []);
+  const serviceColumns = useMemo(() => makeServiceColumns(openEditService, svcDeptMap), [svcDeptMap]);
+  const partColumns = useMemo(() => makePartColumns(openEditPart, partDeptMap), [partDeptMap]);
 
   /* ── Open forms ── */
   function openAddService() {
     setEditingService(null);
     setSvcForm({ ...EMPTY_SERVICE });
+    setSvcDeptId("");
     setShowForm(true);
   }
   function openEditService(s: GarageService) {
@@ -267,11 +306,14 @@ export default function ServicePartsPage() {
       hasGst: s.hasGst,
       gstRate: s.gstRate,
     });
+    const existing = garageId ? getServiceDepartment(garageId, s.id) : null;
+    setSvcDeptId(existing?.departmentId || "");
     setShowForm(true);
   }
   function openAddPart() {
     setEditingPart(null);
     setPartForm({ ...EMPTY_PART });
+    setPartDeptId("");
     setShowForm(true);
   }
   function openEditPart(p: Part) {
@@ -291,6 +333,8 @@ export default function ServicePartsPage() {
       gstRate: p.gstRate,
       unit: p.unit || "Pcs",
     });
+    const existing = garageId ? getPartDepartment(garageId, p.id) : null;
+    setPartDeptId(existing?.departmentId || "");
     setShowForm(true);
   }
 
@@ -305,12 +349,23 @@ export default function ServicePartsPage() {
     if (!svcForm.name.trim()) return;
     setSaving(true);
     try {
+      let savedId: string;
       if (editingService) {
         const updated = await updateGarageService(editingService.id, svcForm);
         setServices((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+        savedId = updated.id;
       } else {
         const created = await createGarageService(svcForm);
         setServices((prev) => [created, ...prev]);
+        savedId = created.id;
+      }
+      // Save department mapping
+      if (garageId && svcDeptId) {
+        const dept = departments.find((d) => d.id === svcDeptId);
+        if (dept) {
+          setServiceDepartment(garageId, savedId, dept.id, dept.name);
+          setSvcDeptMap(getAllServiceDepartments(garageId));
+        }
       }
       closeForm();
     } catch {
@@ -324,12 +379,23 @@ export default function ServicePartsPage() {
     if (!partForm.name.trim()) return;
     setSaving(true);
     try {
+      let savedId: string;
       if (editingPart) {
         await updatePart(editingPart.id, partForm);
         setParts((prev) => prev.map((p) => (p.id === editingPart.id ? { ...p, ...partForm } : p)));
+        savedId = editingPart.id;
       } else {
         const created = await addPart(partForm as Omit<Part, "id">);
         setParts((prev) => [created, ...prev]);
+        savedId = created.id;
+      }
+      // Save department mapping
+      if (garageId && partDeptId) {
+        const dept = departments.find((d) => d.id === partDeptId);
+        if (dept) {
+          setPartDepartment(garageId, savedId, dept.id, dept.name);
+          setPartDeptMap(getAllPartDepartments(garageId));
+        }
       }
       closeForm();
     } catch {
@@ -530,6 +596,20 @@ export default function ServicePartsPage() {
                       </Field>
                     )}
                   </div>
+                  {departments.length > 0 && (
+                    <Field label="Department">
+                      <select
+                        value={svcDeptId}
+                        onChange={(e) => setSvcDeptId(e.target.value)}
+                        className={INPUT_CLS}
+                      >
+                        <option value="">-- None --</option>
+                        {departments.map((d) => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
                 </>
               ) : (
                 /* ── Part Form ── */
@@ -654,6 +734,20 @@ export default function ServicePartsPage() {
                       className={INPUT_CLS}
                     />
                   </Field>
+                  {departments.length > 0 && (
+                    <Field label="Department">
+                      <select
+                        value={partDeptId}
+                        onChange={(e) => setPartDeptId(e.target.value)}
+                        className={INPUT_CLS}
+                      >
+                        <option value="">-- None --</option>
+                        {departments.map((d) => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
                 </>
               )}
             </div>

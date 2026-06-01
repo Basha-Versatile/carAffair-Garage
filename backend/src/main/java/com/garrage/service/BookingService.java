@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -17,15 +18,18 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final ActivityLogService activityLogService;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String ALPHANUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final String DEFAULT_GARAGE_ID = "6a070ce037702834b23ba760";
 
     public Booking createBooking(CreateBookingRequest request) {
         String bookingId = generateBookingId();
 
         Booking booking = Booking.builder()
                 .bookingId(bookingId)
+                .garageId(DEFAULT_GARAGE_ID)
                 .service(request.getService())
                 .customerName(request.getCustomerName())
                 .customerPhone(request.getCustomerPhone())
@@ -39,11 +43,22 @@ public class BookingService {
                 .preferredDate(request.getPreferredDate())
                 .preferredTime(request.getPreferredTime())
                 .concerns(request.getConcerns())
+                .customerMessage(request.getCustomerMessage())
                 .pickDrop(request.isPickDrop())
                 .status("pending")
                 .build();
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+
+        // Notify garage about new booking
+        notificationService.notifyGarage(DEFAULT_GARAGE_ID,
+                "BOOKING_NEW", "APPOINTMENTS", "normal",
+                "New Booking Request",
+                saved.getCustomerName() + " - " + saved.getService() + " (" + saved.getPreferredDate() + ")",
+                "/dashboard/appointments",
+                "BOOKING", saved.getId());
+
+        return saved;
     }
 
     public List<Booking> getBookingsByPhone(String phone) {
@@ -59,25 +74,38 @@ public class BookingService {
         return bookingRepository.findByGarageIdOrderByCreatedAtDesc(garageId);
     }
 
-    public Booking updateBookingStatus(String id, String status, String garageId) {
+    public Booking updateBookingStatus(String id, String status, String garageId,
+                                        String adminNotes, String suggestedDate, String suggestedTime) {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
         booking.setStatus(status);
         if (booking.getGarageId() == null) {
             booking.setGarageId(garageId);
         }
+        if (adminNotes != null) booking.setAdminNotes(adminNotes);
+        if (suggestedDate != null) booking.setSuggestedDate(suggestedDate);
+        if (suggestedTime != null) booking.setSuggestedTime(suggestedTime);
+        if ("confirmed".equals(status)) {
+            booking.setConfirmedAt(LocalDateTime.now());
+        }
+
         Booking saved = bookingRepository.save(booking);
         activityLogService.log("UPDATE", "BOOKING", saved.getId(),
                 "updated booking " + saved.getBookingId() + " status to '" + status + "'");
 
-        // Notify garage about booking status changes
-        if ("pending".equals(status) && garageId != null) {
-            notificationService.notifyGarage(garageId,
-                    "BOOKING_NEW", "APPOINTMENTS", "normal",
-                    "New Booking",
-                    "Booking " + saved.getBookingId() + " from " + saved.getCustomerName(),
-                    "/dashboard/appointments",
-                    "BOOKING", saved.getId());
+        // Send acknowledgment email to customer
+        if (saved.getCustomerEmail() != null && !saved.getCustomerEmail().isBlank()) {
+            if ("confirmed".equals(status)) {
+                emailService.sendBookingAcknowledgmentEmail(
+                        saved.getCustomerEmail(), saved.getCustomerName(),
+                        saved.getBookingId(), adminNotes,
+                        saved.getPreferredDate(), saved.getPreferredTime(), false);
+            } else if ("rescheduled".equals(status)) {
+                emailService.sendBookingAcknowledgmentEmail(
+                        saved.getCustomerEmail(), saved.getCustomerName(),
+                        saved.getBookingId(), adminNotes,
+                        suggestedDate, suggestedTime, true);
+            }
         }
 
         return saved;

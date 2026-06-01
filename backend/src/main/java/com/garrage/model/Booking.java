@@ -54,10 +54,25 @@ public class Booking {
 
     private String concerns;
 
+    /** Custom message from customer during booking */
+    private String customerMessage;
+
     private boolean pickDrop;
 
     /** "pending", "confirmed", "rescheduled", "cancelled", "completed" */
     private String status;
+
+    /** Admin's response notes when acknowledging */
+    private String adminNotes;
+
+    /** Alternative date suggested by admin */
+    private String suggestedDate;
+
+    /** Alternative time suggested by admin */
+    private String suggestedTime;
+
+    /** When admin confirmed/acknowledged the booking */
+    private LocalDateTime confirmedAt;
 
     @CreatedDate
     private LocalDateTime createdAt;

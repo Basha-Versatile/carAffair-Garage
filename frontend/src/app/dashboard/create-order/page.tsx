@@ -89,8 +89,79 @@ export default function CreateOrderPage() {
   const [addBrandLoading, setAddBrandLoading] = useState(false);
   const [addBrandError, setAddBrandError] = useState("");
 
+  // Booking → Order prefill
+  const [bookingPrefill, setBookingPrefill] = useState<{
+    regNumber: string; customerName: string; customerPhone: string;
+    customerEmail: string; customerMessage: string;
+    vehicleBrand: string; vehicleModel: string;
+  } | null>(null);
+
   // preload brands
   useEffect(() => { getBrands().then((data) => setBrands(data || [])).catch(() => setBrands([])); }, []);
+
+  // Check sessionStorage for booking → order prefill on mount
+  useEffect(() => {
+    const raw = sessionStorage.getItem("booking_to_order");
+    if (!raw) return;
+    sessionStorage.removeItem("booking_to_order");
+    try {
+      const booking = JSON.parse(raw);
+      setBookingPrefill(booking);
+      setSearchReg(booking.regNumber || "");
+      setForm((prev) => ({
+        ...prev,
+        regNumber: booking.regNumber || "",
+        customerName: booking.customerName || "",
+        mobile: booking.customerPhone || "",
+        email: booking.customerEmail || "",
+      }));
+      if (booking.customerMessage) {
+        setCustomerRemarks([booking.customerMessage]);
+      }
+      setStep("form");
+
+      // Background RC fetch — silently get vehicle details without animation
+      if (booking.regNumber) {
+        lookupRC(booking.regNumber).then((rc) => {
+          setRcData(rc);
+          setForm((prev) => ({
+            ...prev,
+            brandId: rc.matchedBrandId || prev.brandId,
+            modelId: rc.matchedModelId || prev.modelId,
+            purchaseDate: rc.registrationDate || prev.purchaseDate,
+            engineNumber: rc.engineNumber || prev.engineNumber,
+            vinNumber: rc.chassisNumber || prev.vinNumber,
+            insuranceProvider: rc.insuranceCompany || prev.insuranceProvider,
+            policyNumber: rc.policyNumber || prev.policyNumber,
+            insuranceExpiry: rc.insuranceUpto || prev.insuranceExpiry,
+            address: rc.address || prev.address,
+          }));
+        }).catch(() => {
+          // Silently ignore — admin can fill manually
+        });
+      }
+    } catch { /* ignore invalid data */ }
+  }, []);
+
+  // Match brand/model by name once brands are loaded
+  useEffect(() => {
+    if (!bookingPrefill || brands.length === 0) return;
+    const brandName = bookingPrefill.vehicleBrand?.toLowerCase().trim();
+    const modelName = bookingPrefill.vehicleModel?.toLowerCase().trim();
+    if (!brandName) return;
+    const matchedBrand = brands.find((b) => b.name.toLowerCase().trim() === brandName);
+    if (!matchedBrand) return;
+    setForm((prev) => ({ ...prev, brandId: matchedBrand.id }));
+    if (!modelName) { setBookingPrefill(null); return; }
+    // Load models for matched brand and find model
+    getModelsByBrand(matchedBrand.id).then((models) => {
+      const matchedModel = (models || []).find((m) => m.name.toLowerCase().trim() === modelName);
+      if (matchedModel) {
+        setForm((prev) => ({ ...prev, modelId: matchedModel.id }));
+      }
+      setBookingPrefill(null); // done matching
+    }).catch(() => { setBookingPrefill(null); });
+  }, [brands, bookingPrefill]);
 
   // preload all vehicles + enrich
   useEffect(() => {
@@ -340,7 +411,7 @@ export default function CreateOrderPage() {
     const e: Record<string, string> = {};
     if (!form.customerName.trim()) e.customerName = "Customer name is required";
     if (!form.mobile.trim() || form.mobile.length < 10) e.mobile = "Valid mobile number is required";
-    if (!form.brandId) e.brandId = "Please select a make";
+    if (!form.brandId) e.brandId = "Please select a brand";
     if (!form.modelId) e.modelId = "Please select a model";
     if (Object.keys(e).length > 0) { setErrors(e); return; }
     setStep("inspection");
@@ -670,15 +741,15 @@ export default function CreateOrderPage() {
                   </div>
                 )}
 
-                {/* Make not matched — warning banner */}
+                {/* Brand not matched — warning banner */}
                 {!form.brandId && rcData.makerDescription && (
                   <div className="bg-warning-50 border border-warning-300/40 rounded-lg p-4 space-y-3">
                     <div className="flex items-start gap-2">
                       <AlertCircle className="w-4 h-4 text-warning-600 shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-warning-800">Make could not be auto-matched</p>
+                        <p className="text-sm font-medium text-warning-800">Brand could not be auto-matched</p>
                         <p className="text-xs text-warning-600 mt-0.5">
-                          RTO returned <span className="font-semibold">&quot;{rcData.makerDescription}&quot;</span> which doesn&apos;t match any existing make. Please select the correct make manually.
+                          RTO returned <span className="font-semibold">&quot;{rcData.makerDescription}&quot;</span> which doesn&apos;t match any existing brand. Please select the correct brand manually.
                         </p>
                       </div>
                     </div>
@@ -687,12 +758,12 @@ export default function CreateOrderPage() {
                       className="w-full flex items-center justify-center gap-2 py-2.5 bg-warning-500 text-white rounded-lg text-sm font-medium hover:bg-warning-600 transition-colors"
                     >
                       <ChevronDown className="w-4 h-4" />
-                      Select Make
+                      Select Brand
                     </button>
                   </div>
                 )}
 
-                {/* Make matched but model not matched — warning banner */}
+                {/* Brand matched but model not matched — warning banner */}
                 {form.brandId && !form.modelId && rcData.makerModel && (
                   <div className="bg-warning-50 border border-warning-300/40 rounded-lg p-4 space-y-3">
                     <div className="flex items-start gap-2">
@@ -700,7 +771,7 @@ export default function CreateOrderPage() {
                       <div>
                         <p className="text-sm font-medium text-warning-800">Model could not be auto-matched</p>
                         <p className="text-xs text-warning-600 mt-0.5">
-                          RTO returned <span className="font-semibold">&quot;{rcData.makerModel}&quot;</span> for {selectedBrand?.name || "the selected make"}. Please select or add the correct model.
+                          RTO returned <span className="font-semibold">&quot;{rcData.makerModel}&quot;</span> for {selectedBrand?.name || "the selected brand"}. Please select or add the correct model.
                         </p>
                       </div>
                     </div>
@@ -769,16 +840,16 @@ export default function CreateOrderPage() {
               <div className="p-5 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelCls}>Make <span className="text-bad">*</span></label>
+                    <label className={labelCls}>Brand <span className="text-bad">*</span></label>
                     <button onClick={() => setBrandModalOpen(true)} className={selectBtnCls}>
-                      <span className={selectedBrand ? "text-foreground" : "text-muted"}>{selectedBrand?.name || "Select make"}</span>
+                      <span className={selectedBrand ? "text-foreground" : "text-muted"}>{selectedBrand?.name || "Select brand"}</span>
                       <ChevronDown className="w-4 h-4 text-muted" />
                     </button>
                     {errors.brandId && <p className="text-xs text-bad mt-1">{errors.brandId}</p>}
                   </div>
                   <div>
                     <label className={labelCls}>Model <span className="text-bad">*</span></label>
-                    <button onClick={() => { if (!form.brandId) { setErrors((p) => ({ ...p, brandId: "Select a make first" })); return; } setModelModalOpen(true); }} className={selectBtnCls}>
+                    <button onClick={() => { if (!form.brandId) { setErrors((p) => ({ ...p, brandId: "Select a brand first" })); return; } setModelModalOpen(true); }} className={selectBtnCls}>
                       <span className={selectedModel ? "text-foreground" : "text-muted"}>
                         {selectedModel ? `${selectedModel.name} ${selectedModel.fuelType}` : "Select model"}
                       </span>

@@ -348,4 +348,54 @@ public class EmailService {
             log.error("Failed to send vehicle onboarding email to {}: {}", toEmail, e.getMessage());
         }
     }
+
+    @Async
+    public void sendBookingAcknowledgmentEmail(String toEmail, String customerName,
+                                                String bookingId, String adminNotes,
+                                                String date, String time, boolean isRescheduled) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress);
+            helper.setTo(toEmail);
+            helper.setSubject(isRescheduled
+                    ? "Booking Rescheduled - " + bookingId
+                    : "Booking Confirmed - " + bookingId);
+
+            String statusText = isRescheduled
+                    ? "Your booking has been rescheduled. Please see the updated details below."
+                    : "Your booking has been confirmed! Here are the details.";
+
+            String notesHtml = (adminNotes != null && !adminNotes.isBlank())
+                    ? "<p style='margin:12px 0'><b>Note from garage:</b> " + adminNotes + "</p>"
+                    : "";
+
+            String html = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto'>"
+                    + "<div style='background:#2563eb;color:white;padding:24px;text-align:center;border-radius:8px 8px 0 0'>"
+                    + "<h1 style='margin:0;font-size:22px'>Car Affair</h1>"
+                    + "<p style='margin:4px 0 0;font-size:13px;opacity:0.9'>"
+                    + (isRescheduled ? "Booking Rescheduled" : "Booking Confirmed") + "</p>"
+                    + "</div>"
+                    + "<div style='padding:24px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px'>"
+                    + "<p>Dear <b>" + customerName + "</b>,</p>"
+                    + "<p>" + statusText + "</p>"
+                    + "<div style='background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0'>"
+                    + "<p style='margin:0 0 8px;font-weight:600'>Appointment Details:</p>"
+                    + "<p style='margin:4px 0'><b>Booking ID:</b> " + bookingId + "</p>"
+                    + (date != null ? "<p style='margin:4px 0'><b>Date:</b> " + date + "</p>" : "")
+                    + (time != null ? "<p style='margin:4px 0'><b>Time:</b> " + time + "</p>" : "")
+                    + "</div>"
+                    + notesHtml
+                    + "<p style='color:#64748b;font-size:13px'>If you have any questions, please contact us directly.</p>"
+                    + "<p>Thank you,<br><b>Car Affair</b></p>"
+                    + "</div></div>";
+
+            helper.setText(html, true);
+            mailSender.send(message);
+            log.info("Booking acknowledgment email sent to {} for booking {}", toEmail, bookingId);
+        } catch (Exception e) {
+            log.error("Failed to send booking acknowledgment email to {}: {}", toEmail, e.getMessage());
+        }
+    }
 }

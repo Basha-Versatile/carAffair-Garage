@@ -76,6 +76,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/garage-registrations").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/gst/states").permitAll()
 
+                        // Public booking flow endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/public/rc-lookup").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/public/garage/*/services").permitAll()
+
                         // Public onboarding endpoints (token-based, no auth)
                         .requestMatchers("/api/public/onboarding/**").permitAll()
 
@@ -146,14 +150,13 @@ public class SecurityConfig {
         return http.build();
     }
 
+    @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:3002,http://localhost:8080}")
+    private String allowedOrigins;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                "http://localhost:3002",
-                "http://localhost:8080"
-        ));
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

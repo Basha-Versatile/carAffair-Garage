@@ -6,7 +6,6 @@ import lombok.Data;
 @Data
 public class CreateBookingRequest {
 
-    @NotBlank
     private String service;
 
     @NotBlank
@@ -15,6 +14,7 @@ public class CreateBookingRequest {
     @NotBlank
     private String customerPhone;
 
+    @NotBlank
     private String customerEmail;
 
     private String address;
@@ -37,6 +37,8 @@ public class CreateBookingRequest {
     private String preferredTime;
 
     private String concerns;
+
+    private String customerMessage;
 
     private boolean pickDrop;
 }

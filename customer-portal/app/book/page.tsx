@@ -5,13 +5,9 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { publicPost } from "@/lib/api";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
-  Wrench,
-  Wind,
-  CircleDot,
-  Paintbrush,
-  Battery,
-  CalendarClock,
   ChevronRight,
   ChevronLeft,
   Check,
@@ -19,114 +15,84 @@ import {
   User,
   Phone,
   Mail,
-  MapPin,
   Clock,
   MessageSquare,
   Truck,
-  Home,
   ArrowLeft,
+  Search,
+  Loader2,
+  AlertCircle,
+  Calendar,
+  Fuel,
+  CalendarDays,
+  Shield,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
-/*  Static data                                                       */
+/*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-const services = [
-  {
-    id: "general",
-    title: "General Service",
-    description: "Complete car checkup with oil change, filter replacement, and fluid top-up",
-    icon: Wrench,
-    price: "2,499 - 4,999",
-  },
-  {
-    id: "ac",
-    title: "AC Service & Repair",
-    description: "AC gas top-up, cooling check, vent cleaning, and compressor inspection",
-    icon: Wind,
-    price: "1,499 - 5,499",
-  },
-  {
-    id: "wheel",
-    title: "Wheel & Tyre Care",
-    description: "Wheel alignment, balancing, tyre rotation, and puncture repair",
-    icon: CircleDot,
-    price: "999 - 3,999",
-  },
-  {
-    id: "denting",
-    title: "Denting & Painting",
-    description: "Scratch removal, dent repair, panel painting, and full body polish",
-    icon: Paintbrush,
-    price: "2,999 - 14,999",
-  },
-  {
-    id: "battery",
-    title: "Battery Service",
-    description: "Battery health check, replacement, terminal cleaning, and jump start",
-    icon: Battery,
-    price: "499 - 6,999",
-  },
-  {
-    id: "periodic",
-    title: "Periodic Maintenance",
-    description: "Scheduled maintenance as per manufacturer guidelines with genuine parts",
-    icon: CalendarClock,
-    price: "3,499 - 8,999",
-  },
-];
-
-const brands = [
-  "Maruti Suzuki",
-  "Hyundai",
-  "Tata",
-  "Honda",
-  "Toyota",
-  "Mahindra",
-  "Kia",
-  "Volkswagen",
-  "Skoda",
-  "BMW",
-  "Mercedes",
-  "Audi",
-];
-
-const fuelTypes = ["Petrol", "Diesel", "CNG", "Electric", "Hybrid"];
-
-const timeSlots = {
-  Morning: ["8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM"],
-  Afternoon: ["12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM"],
-  Evening: ["4:00 PM", "5:00 PM", "6:00 PM"],
-};
-
-const stepLabels = [
-  "Service",
-  "Vehicle",
-  "Date & Time",
-  "Details",
-  "Confirm",
-];
+interface RcLookupResponse {
+  ownerName: string | null;
+  mobileNumber: string | null;
+  address: string | null;
+  makerDescription: string | null;
+  makerModel: string | null;
+  fuelType: string | null;
+  engineNumber: string | null;
+  chassisNumber: string | null;
+  manufacturingDate: string | null;
+  registrationDate: string | null;
+  color: string | null;
+  bodyType: string | null;
+  vehicleCategory: string | null;
+  rcStatus: string | null;
+  insuranceCompany: string | null;
+  insuranceUpto: string | null;
+  financer: string | null;
+  matchedBrandName: string | null;
+  matchedModelName: string | null;
+  matchedFuelType: string | null;
+}
 
 /* ------------------------------------------------------------------ */
-/*  Helper: next 7 days                                               */
+/*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-function getNext7Days(): { date: Date; dayName: string; dateStr: string; label: string }[] {
-  const days: { date: Date; dayName: string; dateStr: string; label: string }[] = [];
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const stepLabels = ["Vehicle", "Date & Time", "Details", "Confirm"];
+const stepIcons = [Car, CalendarDays, User, Check];
 
-  for (let i = 1; i <= 7; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    days.push({
-      date: d,
-      dayName: dayNames[d.getDay()],
-      dateStr: d.toISOString().split("T")[0],
-      label: `${d.getDate()} ${monthNames[d.getMonth()]}`,
-    });
-  }
-  return days;
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+function getTomorrow() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function formatDateDisplay(date: Date | null) {
+  if (!date) return "";
+  return date.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+
+function formatDateForApi(date: Date | null) {
+  if (!date) return "";
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function formatTime12h(date: Date | null) {
+  if (!date) return "";
+  const h = date.getHours();
+  const m = date.getMinutes();
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${ampm}`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -136,78 +102,103 @@ function getNext7Days(): { date: Date; dayName: string; dateStr: string; label: 
 export default function BookServicePage() {
   const [step, setStep] = useState(1);
 
-  // Step 1
-  const [selectedService, setSelectedService] = useState("");
-
-  // Step 2
+  // Step 1: Vehicle
   const [regNumber, setRegNumber] = useState("");
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [fuelType, setFuelType] = useState("");
   const [year, setYear] = useState("");
+  const [rcLoading, setRcLoading] = useState(false);
+  const [rcError, setRcError] = useState("");
+  const [rcFetched, setRcFetched] = useState(false);
+  const [ownerName, setOwnerName] = useState("");
+  const [ownerPhone, setOwnerPhone] = useState("");
+  const [rcData, setRcData] = useState<RcLookupResponse | null>(null);
 
-  // Step 3
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
+  // Step 2: Date & Time
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTime, setSelectedTime] = useState<Date | null>(null);
 
-  // Step 4
+  // Step 3: Details
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
-  const [concerns, setConcerns] = useState("");
+  const [customerMessage, setCustomerMessage] = useState("");
   const [pickDrop, setPickDrop] = useState(false);
 
-  // Step 5
+  // Step 4: Confirm
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [bookingIdFromApi, setBookingIdFromApi] = useState("");
 
-  const next7Days = useMemo(() => getNext7Days(), []);
+  const minDate = useMemo(() => getTomorrow(), []);
 
-  /* Validation per step */
+  // RC Lookup
+  const handleRcLookup = async () => {
+    if (!regNumber.trim()) return;
+    setRcLoading(true);
+    setRcError("");
+    try {
+      const result = await publicPost<RcLookupResponse>("/api/public/rc-lookup", {
+        registrationNumber: regNumber.trim(),
+      });
+      setRcFetched(true);
+      setRcData(result);
+      const brandVal = result.matchedBrandName || result.makerDescription || "";
+      const modelVal = result.matchedModelName || result.makerModel || "";
+      const fuelVal = result.matchedFuelType || result.fuelType || "";
+      if (brandVal) setBrand(brandVal);
+      if (modelVal) setModel(modelVal);
+      if (fuelVal) setFuelType(fuelVal);
+      if (result.ownerName) { setOwnerName(result.ownerName); setName(result.ownerName); }
+      if (result.mobileNumber) { setOwnerPhone(result.mobileNumber); setPhone(result.mobileNumber); }
+      if (result.manufacturingDate) {
+        const yearMatch = result.manufacturingDate.match(/\d{4}/);
+        if (yearMatch) setYear(yearMatch[0]);
+      }
+    } catch {
+      setRcError("Could not fetch vehicle details. Please check the number and try again.");
+    } finally {
+      setRcLoading(false);
+    }
+  };
+
+  // Validation
   const canProceed = (): boolean => {
     switch (step) {
       case 1:
-        return selectedService !== "";
+        return rcFetched && brand !== "";
       case 2:
-        return regNumber.trim() !== "" && brand !== "" && model.trim() !== "" && fuelType !== "" && year.trim() !== "";
+        return selectedDate !== null && selectedTime !== null;
       case 3:
-        return selectedDate !== "" && selectedTime !== "";
-      case 4:
-        return name.trim() !== "" && phone.trim().length >= 10;
+        return name.trim() !== "" && phone.trim().length >= 10 && email.trim() !== "";
       default:
         return true;
     }
   };
 
-  const handleNext = () => {
-    if (canProceed() && step < 5) setStep(step + 1);
-  };
-
-  const handleBack = () => {
-    if (step > 1) setStep(step - 1);
-  };
+  const handleNext = () => { if (canProceed() && step < 4) setStep(step + 1); };
+  const handleBack = () => { if (step > 1) setStep(step - 1); };
 
   const handleConfirm = async () => {
     setSubmitting(true);
     setSubmitError("");
     try {
       const result = await publicPost<{ bookingId: string }>("/api/bookings", {
-        service: selectedService,
+        service: "General Service",
         customerName: name,
         customerPhone: phone,
-        customerEmail: email || undefined,
-        address: address || undefined,
+        customerEmail: email,
         vehicleRegNumber: regNumber,
         vehicleBrand: brand,
         vehicleModel: model,
         vehicleFuelType: fuelType,
-        vehicleYear: year,
-        preferredDate: selectedDate,
-        preferredTime: selectedTime,
-        concerns: concerns || undefined,
+        vehicleYear: year || undefined,
+        preferredDate: formatDateForApi(selectedDate),
+        preferredTime: formatTime12h(selectedTime),
+        customerMessage: customerMessage || undefined,
+        concerns: customerMessage || undefined,
         pickDrop,
       });
       setBookingIdFromApi(result?.bookingId || "Pending");
@@ -219,77 +210,77 @@ export default function BookServicePage() {
     }
   };
 
-  const selectedServiceData = services.find((s) => s.id === selectedService);
-  const selectedDateObj = next7Days.find((d) => d.dateStr === selectedDate);
+  const selectedDateDisplay = formatDateDisplay(selectedDate);
+  const selectedTimeDisplay = formatTime12h(selectedTime);
 
-  /* ---------------------------------------------------------------- */
-  /*  Render helpers                                                   */
-  /* ---------------------------------------------------------------- */
-
-  const inputClasses =
-    "w-full px-4 py-2.5 rounded-lg border border-edge bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary";
-
-  const selectClasses =
-    "w-full px-4 py-2.5 rounded-lg border border-edge bg-background text-foreground text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none cursor-pointer";
+  const inputBase =
+    "w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-lg border border-edge bg-background text-foreground placeholder:text-muted text-sm transition-all duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50";
 
   return (
-    <div className="flex flex-col min-h-screen bg-background page-gradient">
+    <div className="flex flex-col min-h-screen bg-background overflow-x-hidden w-full">
       <Navbar />
 
-      <main className="relative z-10 flex-1 pt-16">
-        {/* Breadcrumb + Header */}
-        <div className="bg-dim/80 backdrop-blur-sm border-b border-edge">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-            <nav className="flex items-center gap-2 text-sm text-muted mb-3">
-              <Link href="/" className="hover:text-primary transition-colors">
-                Home
-              </Link>
-              <ChevronRight className="h-3.5 w-3.5" />
+      {/* Background with gradient orbs */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] rounded-full bg-primary/[0.04] blur-[80px] sm:blur-[100px] translate-x-[20%] -translate-y-[20%]" />
+        <div className="absolute bottom-0 left-0 w-[35vw] h-[35vw] max-w-[400px] max-h-[400px] rounded-full bg-primary/[0.03] blur-[60px] sm:blur-[80px] -translate-x-[20%] translate-y-[20%]" />
+        <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[30vw] h-[30vw] max-w-[350px] max-h-[350px] rounded-full bg-accent/[0.02] blur-[60px] sm:blur-[80px]" />
+      </div>
+
+      <main className="relative z-10 flex-1 pt-16 w-full">
+        {/* Hero Header */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+          <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 text-center">
+            <nav className="flex items-center justify-center gap-1.5 text-xs text-muted mb-2 sm:mb-3">
+              <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+              <ChevronRight className="h-3 w-3" />
               <span className="text-foreground font-medium">Book a Service</span>
             </nav>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight mb-1.5 sm:mb-2">
               Book a Service
             </h1>
+            <p className="text-xs sm:text-sm text-secondary max-w-sm mx-auto">
+              Schedule your vehicle service in just a few steps
+            </p>
           </div>
         </div>
 
         {/* Step Indicator */}
-        <div className="glass-bg border-b border-edge">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+        <div className="relative mx-auto max-w-3xl px-3 sm:px-6 lg:px-8 -mt-1 mb-4 sm:mb-6">
+          <div className="glass-card-premium rounded-lg sm:rounded-xl p-2.5 sm:p-3">
             <div className="flex items-center justify-between">
               {stepLabels.map((label, idx) => {
                 const stepNum = idx + 1;
                 const isActive = step === stepNum;
                 const isCompleted = step > stepNum;
-
+                const Icon = stepIcons[idx];
                 return (
                   <div key={label} className="flex items-center flex-1 last:flex-none">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div
-                        className={`flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full text-sm font-semibold transition-all duration-300 ${
-                          isCompleted
-                            ? "bg-primary text-white"
-                            : isActive
-                            ? "bg-primary text-white ring-4 ring-primary/20"
-                            : "bg-dim border-2 border-edge text-muted"
-                        }`}
-                      >
-                        {isCompleted ? <Check className="h-4 w-4" /> : stepNum}
+                    <div className="flex flex-col items-center gap-1">
+                      <div className={`flex items-center justify-center h-7 w-7 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl text-xs font-bold transition-all duration-500 ${
+                        isCompleted
+                          ? "bg-primary text-white shadow-md shadow-primary/30"
+                          : isActive
+                            ? "bg-primary text-white ring-2 ring-primary/20 shadow-md shadow-primary/20"
+                            : "bg-white/60 dark:bg-white/5 border border-edge/50 text-muted"
+                      }`}>
+                        {isCompleted ? <Check className="h-3 w-3 sm:h-4 sm:w-4" /> : <Icon className="h-3 w-3 sm:h-4 sm:w-4" />}
                       </div>
-                      <span
-                        className={`text-xs font-medium hidden sm:block transition-colors ${
-                          isActive || isCompleted ? "text-primary" : "text-muted"
-                        }`}
-                      >
+                      <span className={`text-[9px] sm:text-xs font-semibold transition-colors duration-300 ${
+                        isActive || isCompleted ? "text-primary" : "text-muted"
+                      }`}>
                         {label}
                       </span>
                     </div>
                     {idx < stepLabels.length - 1 && (
-                      <div
-                        className={`flex-1 h-0.5 mx-2 sm:mx-3 rounded-full transition-colors duration-300 ${
-                          step > stepNum ? "bg-primary" : "bg-edge"
-                        }`}
-                      />
+                      <div className="flex-1 mx-1 sm:mx-3">
+                        <div className={`h-0.5 rounded-full transition-all duration-500 ${
+                          step > stepNum
+                            ? "bg-gradient-to-r from-primary to-primary/70"
+                            : "bg-edge/30"
+                        }`} />
+                      </div>
                     )}
                   </div>
                 );
@@ -299,706 +290,417 @@ export default function BookServicePage() {
         </div>
 
         {/* Step Content */}
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-          {/* ---- Step 1: Select Service ---- */}
-          {step === 1 && (
-            <div className="animate-fade-in">
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">
-                Select a Service
-              </h2>
-              <p className="text-sm text-secondary mb-6">
-                Choose the type of service your car needs.
-              </p>
+        <div className="mx-auto max-w-3xl px-3 sm:px-6 lg:px-8 pb-6 sm:pb-10">
+          <div className="glass-card-premium rounded-xl sm:rounded-2xl p-3.5 sm:p-5 md:p-6 lg:p-8">
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {services.map((service) => {
-                  const Icon = service.icon;
-                  const isSelected = selectedService === service.id;
-                  return (
-                    <button
-                      key={service.id}
-                      type="button"
-                      onClick={() => setSelectedService(service.id)}
-                      className={`relative flex flex-col items-start p-5 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer group hover:shadow-lg hover:-translate-y-1 glass-card-premium ${
-                        isSelected
-                          ? "border-primary bg-primary-light shadow-sm"
-                          : "border-edge bg-background hover:border-primary/40"
-                      }`}
-                    >
-                      {isSelected && (
-                        <div className="absolute top-3 right-3 flex items-center justify-center h-6 w-6 rounded-full bg-primary text-white">
+            {/* ─── Step 1: Vehicle Number ─── */}
+            {step === 1 && (
+              <div className="animate-fade-in">
+                <div className="text-center mb-4 sm:mb-6">
+                  <div className="inline-flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-primary/10 mb-2 sm:mb-3">
+                    <Car className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                  </div>
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-1">Vehicle Details</h2>
+                  <p className="text-xs sm:text-sm text-secondary">Enter your vehicle registration number to get started</p>
+                </div>
+
+                <div className="w-full space-y-4">
+                  <div>
+                    <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-foreground mb-1.5">
+                      <Car className="h-3.5 w-3.5 text-primary" />
+                      Registration Number <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={regNumber}
+                        onChange={(e) => { setRegNumber(e.target.value.toUpperCase()); setRcFetched(false); setRcError(""); setBrand(""); setModel(""); setFuelType(""); setYear(""); setRcData(null); }}
+                        placeholder="e.g., TS 09 AB 1234"
+                        className={inputBase + " flex-1 font-mono tracking-wider"}
+                      />
+                      <button
+                        onClick={handleRcLookup}
+                        disabled={rcLoading || !regNumber.trim()}
+                        className="w-full sm:w-auto px-5 py-2.5 bg-primary text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold hover:bg-primary-hover disabled:opacity-40 flex items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-300 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98]"
+                      >
+                        {rcLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                        {rcLoading ? "Fetching..." : "Fetch Details"}
+                      </button>
+                    </div>
+                    {rcError && (
+                      <p className="flex items-center gap-1.5 text-xs text-red-500 mt-2 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg">
+                        <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {rcError}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Vehicle Details — glassmorphic display */}
+                  {rcFetched && brand && rcData && (
+                    <div className="animate-scale-in space-y-3">
+                      {/* Success banner */}
+                      <div className="flex items-center gap-2.5 p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-500/10 dark:to-emerald-500/10 border border-green-200/50 dark:border-green-500/20">
+                        <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-green-500 text-white shrink-0 shadow-sm shadow-green-500/30">
                           <Check className="h-3.5 w-3.5" />
                         </div>
-                      )}
-                      <div
-                        className={`flex items-center justify-center h-11 w-11 rounded-lg mb-3 transition-colors ${
-                          isSelected
-                            ? "bg-primary text-white"
-                            : "bg-dim text-primary group-hover:bg-primary-light"
-                        }`}
-                      >
-                        <Icon className="h-5 w-5" />
+                        <p className="text-xs sm:text-sm font-semibold text-green-700 dark:text-green-300">Vehicle details fetched successfully!</p>
                       </div>
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        {service.title}
-                      </h3>
-                      <p className="text-xs text-secondary leading-relaxed">
-                        {service.description}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
-          {/* ---- Step 2: Vehicle Details ---- */}
-          {step === 2 && (
-            <div className="animate-fade-in">
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">
-                Vehicle Details
-              </h2>
-              <p className="text-sm text-secondary mb-6">
-                Tell us about your vehicle so we can serve you better.
-              </p>
+                      {/* Vehicle detail card */}
+                      <div className="rounded-xl border border-white/20 bg-white/30 dark:bg-white/5 backdrop-blur-md shadow-sm overflow-hidden">
+                        {/* Vehicle header with reg + owner */}
+                        <div className="px-3.5 sm:px-4 py-3 sm:py-3.5 border-b border-white/15 dark:border-white/10 bg-gradient-to-r from-primary/[0.06] to-transparent">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-primary/10 shrink-0">
+                              <Car className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm sm:text-base font-bold text-foreground">{brand} {model}</p>
+                              <p className="text-[10px] sm:text-xs text-muted">{regNumber} {fuelType && `· ${fuelType}`} {year && `· ${year}`}</p>
+                            </div>
+                          </div>
+                        </div>
 
-              <div className="max-w-lg space-y-5">
-                {/* Registration Number */}
-                <div>
-                  <label htmlFor="regNumber" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-                    <Car className="h-4 w-4 text-muted" />
-                    Vehicle Registration Number <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="regNumber"
-                    type="text"
-                    value={regNumber}
-                    onChange={(e) => setRegNumber(e.target.value.toUpperCase())}
-                    placeholder="e.g., TS 09 AB 1234"
-                    className={inputClasses}
-                  />
-                </div>
+                        {/* Details grid */}
+                        <div className="p-3.5 sm:p-4">
+                          {ownerName && (
+                            <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-white/10 dark:border-white/5">
+                              <User className="h-3.5 w-3.5 text-primary shrink-0" />
+                              <div>
+                                <p className="text-[9px] sm:text-[10px] text-muted uppercase tracking-wider font-semibold">Owner</p>
+                                <p className="text-xs sm:text-sm font-bold text-foreground">{ownerName}</p>
+                              </div>
+                            </div>
+                          )}
 
-                {/* Brand */}
-                <div>
-                  <label htmlFor="brand" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-                    <Car className="h-4 w-4 text-muted" />
-                    Brand <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="brand"
-                      value={brand}
-                      onChange={(e) => setBrand(e.target.value)}
-                      className={selectClasses}
-                    >
-                      <option value="">Select Brand</option>
-                      {brands.map((b) => (
-                        <option key={b} value={b}>
-                          {b}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted rotate-90 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Model */}
-                <div>
-                  <label htmlFor="model" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-                    <Car className="h-4 w-4 text-muted" />
-                    Model <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="model"
-                    type="text"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    placeholder="e.g., Swift, Creta, Nexon"
-                    className={inputClasses}
-                  />
-                </div>
-
-                {/* Fuel Type */}
-                <div>
-                  <label htmlFor="fuelType" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-                    <CircleDot className="h-4 w-4 text-muted" />
-                    Fuel Type <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="fuelType"
-                      value={fuelType}
-                      onChange={(e) => setFuelType(e.target.value)}
-                      className={selectClasses}
-                    >
-                      <option value="">Select Fuel Type</option>
-                      {fuelTypes.map((f) => (
-                        <option key={f} value={f}>
-                          {f}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted rotate-90 pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Year */}
-                <div>
-                  <label htmlFor="year" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-                    <CalendarClock className="h-4 w-4 text-muted" />
-                    Year <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="year"
-                    type="text"
-                    value={year}
-                    onChange={(e) => setYear(e.target.value)}
-                    placeholder="e.g., 2022"
-                    maxLength={4}
-                    className={inputClasses}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ---- Step 3: Pick Date & Time ---- */}
-          {step === 3 && (
-            <div className="animate-fade-in">
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">
-                Pick Date & Time
-              </h2>
-              <p className="text-sm text-secondary mb-6">
-                Choose a convenient date and time slot for your service.
-              </p>
-
-              {/* Date Cards */}
-              <div className="mb-8">
-                <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-1.5">
-                  <CalendarClock className="h-4 w-4 text-muted" />
-                  Select Date
-                </h3>
-                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 sm:gap-3">
-                  {next7Days.map((day) => {
-                    const isSelected = selectedDate === day.dateStr;
-                    return (
-                      <button
-                        key={day.dateStr}
-                        type="button"
-                        onClick={() => setSelectedDate(day.dateStr)}
-                        className={`flex flex-col items-center py-3 px-2 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
-                          isSelected
-                            ? "border-primary bg-primary text-white shadow-sm"
-                            : "border-edge bg-background text-foreground hover:border-primary/40 hover:bg-primary-light"
-                        }`}
-                      >
-                        <span className={`text-xs font-medium ${isSelected ? "text-white/70" : "text-muted"}`}>
-                          {day.dayName}
-                        </span>
-                        <span className="text-lg font-bold mt-0.5">{day.date.getDate()}</span>
-                        <span className={`text-xs ${isSelected ? "text-white/70" : "text-secondary"}`}>
-                          {day.label.split(" ")[1]}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Time Slots */}
-              <div>
-                <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-1.5">
-                  <Clock className="h-4 w-4 text-muted" />
-                  Select Time Slot
-                </h3>
-                <div className="space-y-5">
-                  {Object.entries(timeSlots).map(([period, slots]) => (
-                    <div key={period}>
-                      <p className="text-xs font-medium text-muted uppercase tracking-wider mb-2">
-                        {period}
-                      </p>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {slots.map((slot) => {
-                          const isSelected = selectedTime === slot;
-                          return (
-                            <button
-                              key={slot}
-                              type="button"
-                              onClick={() => setSelectedTime(slot)}
-                              className={`py-2.5 px-3 rounded-lg border-2 text-sm font-medium transition-all duration-200 cursor-pointer ${
-                                isSelected
-                                  ? "border-primary bg-primary text-white shadow-sm"
-                                  : "border-edge bg-background text-foreground hover:border-primary/40 hover:bg-primary-light"
-                              }`}
-                            >
-                              {slot}
-                            </button>
-                          );
-                        })}
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
+                            <div className="rounded-lg border border-white/15 dark:border-white/10 bg-white/40 dark:bg-white/[0.03] backdrop-blur-sm p-2.5 sm:p-3">
+                              <p className="text-[9px] sm:text-[10px] text-primary/70 uppercase tracking-wider font-semibold mb-0.5">Brand</p>
+                              <p className="text-xs sm:text-sm font-bold text-foreground">{brand}</p>
+                            </div>
+                            <div className="rounded-lg border border-white/15 dark:border-white/10 bg-white/40 dark:bg-white/[0.03] backdrop-blur-sm p-2.5 sm:p-3">
+                              <p className="text-[9px] sm:text-[10px] text-primary/70 uppercase tracking-wider font-semibold mb-0.5">Model</p>
+                              <p className="text-xs sm:text-sm font-bold text-foreground">{model}</p>
+                            </div>
+                            <div className="rounded-lg border border-white/15 dark:border-white/10 bg-white/40 dark:bg-white/[0.03] backdrop-blur-sm p-2.5 sm:p-3">
+                              <div className="flex items-center gap-1 mb-0.5">
+                                <Fuel className="h-2.5 w-2.5 text-primary/70" />
+                                <p className="text-[9px] sm:text-[10px] text-primary/70 uppercase tracking-wider font-semibold">Fuel</p>
+                              </div>
+                              <p className="text-xs sm:text-sm font-bold text-foreground">{fuelType || "—"}</p>
+                            </div>
+                            {year && (
+                              <div className="rounded-lg border border-white/15 dark:border-white/10 bg-white/40 dark:bg-white/[0.03] backdrop-blur-sm p-2.5 sm:p-3">
+                                <div className="flex items-center gap-1 mb-0.5">
+                                  <Calendar className="h-2.5 w-2.5 text-primary/70" />
+                                  <p className="text-[9px] sm:text-[10px] text-primary/70 uppercase tracking-wider font-semibold">Year</p>
+                                </div>
+                                <p className="text-xs sm:text-sm font-bold text-foreground">{year}</p>
+                              </div>
+                            )}
+                            {rcData.color && (
+                              <div className="rounded-lg border border-white/15 dark:border-white/10 bg-white/40 dark:bg-white/[0.03] backdrop-blur-sm p-2.5 sm:p-3">
+                                <p className="text-[9px] sm:text-[10px] text-primary/70 uppercase tracking-wider font-semibold mb-0.5">Color</p>
+                                <p className="text-xs sm:text-sm font-bold text-foreground">{rcData.color}</p>
+                              </div>
+                            )}
+                            {rcData.bodyType && (
+                              <div className="rounded-lg border border-white/15 dark:border-white/10 bg-white/40 dark:bg-white/[0.03] backdrop-blur-sm p-2.5 sm:p-3">
+                                <p className="text-[9px] sm:text-[10px] text-primary/70 uppercase tracking-wider font-semibold mb-0.5">Body Type</p>
+                                <p className="text-xs sm:text-sm font-bold text-foreground">{rcData.bodyType}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ---- Step 4: Your Details ---- */}
-          {step === 4 && (
-            <div className="animate-fade-in">
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">
-                Your Details
-              </h2>
-              <p className="text-sm text-secondary mb-6">
-                Provide your contact information so we can reach you.
-              </p>
-
-              <div className="max-w-lg space-y-5">
-                {/* Name */}
-                <div>
-                  <label htmlFor="customerName" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-                    <User className="h-4 w-4 text-muted" />
-                    Full Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="customerName"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your full name"
-                    className={inputClasses}
-                  />
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label htmlFor="customerPhone" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-                    <Phone className="h-4 w-4 text-muted" />
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3.5 rounded-l-lg border border-r-0 border-edge bg-dim text-sm text-secondary font-medium">
-                      +91
-                    </span>
-                    <input
-                      id="customerPhone"
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="9876543210"
-                      maxLength={10}
-                      className="flex-1 px-4 py-2.5 rounded-r-lg border border-edge bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                    />
+            {/* ─── Step 2: Date & Time ─── */}
+            {step === 2 && (
+              <div className="animate-fade-in">
+                <div className="text-center mb-4 sm:mb-6">
+                  <div className="inline-flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-primary/10 mb-2 sm:mb-3">
+                    <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-1">Pick Date & Time</h2>
+                  <p className="text-xs sm:text-sm text-secondary">Choose your preferred appointment schedule</p>
                 </div>
 
-                {/* Email */}
-                <div>
-                  <label htmlFor="customerEmail" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-                    <Mail className="h-4 w-4 text-muted" />
-                    Email Address <span className="text-muted text-xs">(optional)</span>
-                  </label>
-                  <input
-                    id="customerEmail"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className={inputClasses}
-                  />
-                </div>
-
-                {/* Address */}
-                <div>
-                  <label htmlFor="customerAddress" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-                    <MapPin className="h-4 w-4 text-muted" />
-                    Address / Location
-                  </label>
-                  <textarea
-                    id="customerAddress"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Your address or locality"
-                    rows={2}
-                    className={`${inputClasses} resize-none`}
-                  />
-                </div>
-
-                {/* Concerns */}
-                <div>
-                  <label htmlFor="concerns" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-                    <MessageSquare className="h-4 w-4 text-muted" />
-                    Any specific concerns?
-                  </label>
-                  <textarea
-                    id="concerns"
-                    value={concerns}
-                    onChange={(e) => setConcerns(e.target.value)}
-                    placeholder="e.g., strange noise from engine, AC not cooling, etc."
-                    rows={3}
-                    className={`${inputClasses} resize-none`}
-                  />
-                </div>
-
-                {/* Pick & Drop Toggle */}
-                <div className="flex items-center justify-between p-4 rounded-xl border border-edge bg-dim">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary-light text-primary">
-                      <Truck className="h-5 w-5" />
-                    </div>
+                <div className="w-full space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    {/* Date Picker */}
                     <div>
-                      <p className="text-sm font-medium text-foreground">
-                        Pick & Drop Service
-                      </p>
-                      <p className="text-xs text-muted">
-                        We will pick up and deliver your car
-                      </p>
+                      <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-foreground mb-1.5">
+                        <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                        Preferred Date <span className="text-red-500">*</span>
+                      </label>
+                      <div className="book-datepicker">
+                        <DatePicker
+                          selected={selectedDate}
+                          onChange={(date: Date | null) => setSelectedDate(date)}
+                          minDate={minDate}
+                          dateFormat="EEEE, d MMMM yyyy"
+                          placeholderText="Tap to select a date"
+                          className={inputBase + " cursor-pointer w-full!"}
+                          wrapperClassName="w-full"
+                          popperPlacement="bottom-start"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Time Picker */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-foreground mb-1.5">
+                        <Clock className="h-3.5 w-3.5 text-primary" />
+                        Preferred Time <span className="text-red-500">*</span>
+                      </label>
+                      <div className="book-datepicker">
+                        <DatePicker
+                          selected={selectedTime}
+                          onChange={(date: Date | null) => setSelectedTime(date)}
+                          showTimeSelect
+                          showTimeSelectOnly
+                          timeIntervals={30}
+                          timeCaption="Time"
+                          dateFormat="h:mm aa"
+                          placeholderText="Tap to select a time"
+                          className={inputBase + " cursor-pointer w-full!"}
+                          wrapperClassName="w-full"
+                          popperPlacement="bottom-start"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={pickDrop}
-                    onClick={() => setPickDrop(!pickDrop)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                      pickDrop ? "bg-primary" : "bg-edge"
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                        pickDrop ? "translate-x-5" : "translate-x-0"
-                      }`}
+
+                  {/* Summary */}
+                  {selectedDate && selectedTime && (
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-500/10 dark:to-emerald-500/10 border border-green-200/50 dark:border-green-500/20 animate-scale-in">
+                      <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-green-500 text-white shrink-0 shadow-sm shadow-green-500/30">
+                        <Check className="h-3.5 w-3.5" />
+                      </div>
+                      <p className="text-xs sm:text-sm text-green-800 dark:text-green-300 font-semibold">
+                        {selectedDateDisplay} at {selectedTimeDisplay}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ─── Step 3: Customer Details ─── */}
+            {step === 3 && (
+              <div className="animate-fade-in">
+                <div className="text-center mb-4 sm:mb-6">
+                  <div className="inline-flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-primary/10 mb-2 sm:mb-3">
+                    <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                  </div>
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-1">Your Details</h2>
+                  <p className="text-xs sm:text-sm text-secondary">We need your contact info to confirm the appointment</p>
+                </div>
+
+                <div className="w-full space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-foreground mb-1.5">
+                        <User className="h-3.5 w-3.5 text-primary" /> Full Name <span className="text-red-500">*</span>
+                      </label>
+                      <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" className={inputBase} />
+                    </div>
+
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-foreground mb-1.5">
+                        <Phone className="h-3.5 w-3.5 text-primary" /> Phone Number <span className="text-red-500">*</span>
+                      </label>
+                      <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit phone number" maxLength={10} className={inputBase} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-foreground mb-1.5">
+                      <Mail className="h-3.5 w-3.5 text-primary" /> Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" className={inputBase} />
+                    <p className="text-[10px] sm:text-xs text-muted mt-1 ml-0.5">Booking confirmation will be sent to this email</p>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-foreground mb-1.5">
+                      <MessageSquare className="h-3.5 w-3.5 text-primary" /> What do you need help with?
+                    </label>
+                    <textarea
+                      value={customerMessage}
+                      onChange={(e) => setCustomerMessage(e.target.value)}
+                      placeholder="Describe the issue or service you need — e.g., AC not cooling, oil change, brake noise..."
+                      rows={3}
+                      className={inputBase + " resize-none"}
                     />
+                  </div>
+
+                  {/* Pickup & Drop */}
+                  <div className="flex items-center justify-between gap-2 p-3 sm:p-4 rounded-xl border border-white/20 bg-white/30 dark:bg-white/5 backdrop-blur-sm">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 shrink-0">
+                        <Truck className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-semibold text-foreground">Pickup & Drop</p>
+                        <p className="text-[10px] sm:text-xs text-muted truncate">We&apos;ll pick up and deliver your vehicle</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setPickDrop(!pickDrop)}
+                      className={`relative w-10 h-5 sm:w-11 sm:h-6 rounded-full transition-all duration-300 shrink-0 ${pickDrop ? "bg-primary shadow-sm shadow-primary/30" : "bg-edge/50"}`}
+                    >
+                      <span className={`absolute top-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white shadow transition-all duration-300 ${pickDrop ? "left-[calc(100%-1.125rem)] sm:left-[calc(100%-1.375rem)]" : "left-0.5"}`} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ─── Step 4: Review & Confirm ─── */}
+            {step === 4 && !confirmed && (
+              <div className="animate-fade-in">
+                <div className="text-center mb-4 sm:mb-6">
+                  <div className="inline-flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-primary/10 mb-2 sm:mb-3">
+                    <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                  </div>
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-1">Review & Confirm</h2>
+                  <p className="text-xs sm:text-sm text-secondary">Please verify your booking details before submitting</p>
+                </div>
+
+                <div className="w-full space-y-2.5 sm:space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
+                    {/* Vehicle Card */}
+                    <div className="rounded-xl border border-white/20 bg-white/30 dark:bg-white/5 backdrop-blur-sm p-3 sm:p-4">
+                      <p className="text-[9px] sm:text-[10px] text-muted uppercase tracking-wider font-semibold mb-2">Vehicle</p>
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary/10 shrink-0">
+                          <Car className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm sm:text-base font-bold text-foreground truncate">{brand} {model}</p>
+                          <p className="text-[10px] sm:text-xs text-muted truncate">{regNumber} {fuelType && `\u00B7 ${fuelType}`} {year && `\u00B7 ${year}`}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Appointment Card */}
+                    <div className="rounded-xl border border-white/20 bg-white/30 dark:bg-white/5 backdrop-blur-sm p-3 sm:p-4">
+                      <p className="text-[9px] sm:text-[10px] text-muted uppercase tracking-wider font-semibold mb-2">Appointment</p>
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary/10 shrink-0">
+                          <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm sm:text-base font-bold text-foreground truncate">{selectedDateDisplay}</p>
+                          <p className="text-[10px] sm:text-xs text-muted">at {selectedTimeDisplay}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contact Card */}
+                  <div className="rounded-xl border border-white/20 bg-white/30 dark:bg-white/5 backdrop-blur-sm p-3 sm:p-4">
+                    <p className="text-[9px] sm:text-[10px] text-muted uppercase tracking-wider font-semibold mb-2">Contact Details</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <User className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="text-foreground font-semibold truncate">{name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <Phone className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="text-foreground font-semibold">{phone}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="text-foreground font-semibold truncate">{email}</span>
+                      </div>
+                      {pickDrop && (
+                        <div className="flex items-center gap-2 text-xs sm:text-sm">
+                          <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span className="text-primary font-semibold">Pickup & Drop</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Message */}
+                  {customerMessage && (
+                    <div className="rounded-xl border border-white/20 bg-white/30 dark:bg-white/5 backdrop-blur-sm p-3 sm:p-4">
+                      <p className="text-[9px] sm:text-[10px] text-muted uppercase tracking-wider font-semibold mb-1">Your Message</p>
+                      <p className="text-xs sm:text-sm text-foreground leading-relaxed">{customerMessage}</p>
+                    </div>
+                  )}
+
+                  {submitError && (
+                    <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-3">
+                      <p className="text-xs text-red-600 dark:text-red-400">{submitError}</p>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleConfirm}
+                    disabled={submitting}
+                    className="w-full py-3 bg-primary text-white rounded-lg sm:rounded-xl text-sm sm:text-base font-bold hover:bg-primary-hover disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.99]"
+                  >
+                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    {submitting ? "Submitting..." : "Confirm Booking"}
                   </button>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ---- Step 5: Confirmation ---- */}
-          {step === 5 && !confirmed && (
-            <div className="animate-fade-in">
-              <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">
-                Review & Confirm
-              </h2>
-              <p className="text-sm text-secondary mb-6">
-                Please review your booking details before confirming.
-              </p>
-
-              <div className="max-w-2xl space-y-4">
-                {/* Service */}
-                <div className="rounded-xl glass-card-premium p-5">
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-muted mb-3">
-                    Service
-                  </h3>
-                  <div className="flex items-center gap-3">
-                    {selectedServiceData && (
-                      <>
-                        <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary-light text-primary">
-                          <selectedServiceData.icon className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">
-                            {selectedServiceData.title}
-                          </p>
-                          <p className="text-xs text-secondary">
-                            {selectedServiceData.description}
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
+            {/* ─── Success ─── */}
+            {confirmed && (
+              <div className="animate-scale-in text-center py-5 sm:py-8">
+                <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mb-3 sm:mb-5 shadow-lg shadow-green-500/30">
+                  <Check className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                 </div>
-
-                {/* Vehicle */}
-                <div className="rounded-xl glass-card-premium p-5">
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-muted mb-3">
-                    Vehicle
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-muted text-xs">Registration</span>
-                      <p className="font-medium text-foreground">{regNumber}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted text-xs">Brand & Model</span>
-                      <p className="font-medium text-foreground">
-                        {brand} {model}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-muted text-xs">Fuel Type</span>
-                      <p className="font-medium text-foreground">{fuelType}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted text-xs">Year</span>
-                      <p className="font-medium text-foreground">{year}</p>
-                    </div>
-                  </div>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground mb-1.5 sm:mb-2">Booking Submitted!</h2>
+                <p className="text-xs sm:text-sm text-secondary mb-4 sm:mb-5 max-w-xs mx-auto leading-relaxed">
+                  We will confirm availability within 2 hours. A confirmation will be sent to{" "}
+                  <span className="font-semibold text-foreground">{email}</span>.
+                </p>
+                <div className="inline-block rounded-xl border border-white/20 bg-white/30 dark:bg-white/5 backdrop-blur-sm px-5 py-2.5 sm:px-6 sm:py-3 mb-4 sm:mb-6">
+                  <p className="text-[9px] sm:text-[10px] text-muted uppercase tracking-wider font-semibold mb-0.5">Booking ID</p>
+                  <p className="text-lg sm:text-xl font-bold text-primary">{bookingIdFromApi}</p>
                 </div>
-
-                {/* Date & Time */}
-                <div className="rounded-xl glass-card-premium p-5">
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-muted mb-3">
-                    Date & Time
-                  </h3>
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <CalendarClock className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-foreground">
-                        {selectedDateObj
-                          ? `${selectedDateObj.dayName}, ${selectedDateObj.label}`
-                          : selectedDate}
-                      </span>
-                    </div>
-                    <div className="w-px h-4 bg-edge" />
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-foreground">{selectedTime}</span>
-                    </div>
-                  </div>
+                <div>
+                  <Link href="/" className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary hover:underline transition-colors">
+                    <ArrowLeft className="h-3.5 w-3.5" /> Back to Home
+                  </Link>
                 </div>
-
-                {/* Customer Details */}
-                <div className="rounded-xl glass-card-premium p-5">
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-muted mb-3">
-                    Customer Details
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-muted text-xs">Name</span>
-                      <p className="font-medium text-foreground">{name}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted text-xs">Phone</span>
-                      <p className="font-medium text-foreground">+91 {phone}</p>
-                    </div>
-                    {email && (
-                      <div>
-                        <span className="text-muted text-xs">Email</span>
-                        <p className="font-medium text-foreground">{email}</p>
-                      </div>
-                    )}
-                    {address && (
-                      <div>
-                        <span className="text-muted text-xs">Address</span>
-                        <p className="font-medium text-foreground">{address}</p>
-                      </div>
-                    )}
-                    {concerns && (
-                      <div className="col-span-2">
-                        <span className="text-muted text-xs">Concerns</span>
-                        <p className="font-medium text-foreground">{concerns}</p>
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-muted text-xs">Pick & Drop</span>
-                      <p className="font-medium text-foreground">
-                        {pickDrop ? "Yes" : "No"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Estimated Price */}
-                <div className="rounded-xl border-2 border-primary/30 bg-primary-light p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xs font-medium uppercase tracking-wider text-primary mb-1">
-                        Estimated Price
-                      </h3>
-                      <p className="text-xs text-secondary">
-                        Final price will be confirmed after inspection
-                      </p>
-                    </div>
-                    <p className="text-xl sm:text-2xl font-bold text-primary">
-                      {selectedServiceData ? `\u20B9${selectedServiceData.price}` : "\u20B92,499 - 4,999"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Confirm Button */}
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  disabled={submitting}
-                  className={`w-full flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98] cursor-pointer ${
-                    submitting ? "bg-primary/70 text-white cursor-not-allowed" : "bg-primary text-white hover:bg-primary-hover"
-                  }`}
-                >
-                  {submitting ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Booking...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-5 w-5" />
-                      Confirm Booking
-                    </>
-                  )}
-                </button>
-
-                {submitError && (
-                  <p className="text-sm text-red-500 text-center mt-3">{submitError}</p>
-                )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* ---- Navigation Buttons (Steps 1-4) ---- */}
-          {step < 5 && (
-            <div className="flex items-center justify-between mt-10 pt-6 border-t border-edge">
-              <button
-                type="button"
-                onClick={handleBack}
-                disabled={step === 1}
-                className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  step === 1
-                    ? "text-muted cursor-not-allowed"
-                    : "text-secondary border border-edge hover:bg-hover hover:text-foreground cursor-pointer"
-                }`}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Back
-              </button>
-
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className={`inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
-                  canProceed()
-                    ? "bg-primary text-white hover:bg-primary-hover shadow-sm hover:shadow-md active:scale-[0.98] cursor-pointer"
-                    : "bg-edge text-muted cursor-not-allowed"
-                }`}
-              >
-                Continue
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-
-          {/* ---- Step 5 Back button only ---- */}
-          {step === 5 && !confirmed && (
-            <div className="flex items-center mt-6 pt-6 border-t border-edge max-w-2xl">
-              <button
-                type="button"
-                onClick={handleBack}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg text-secondary border border-edge hover:bg-hover hover:text-foreground transition-all duration-200 cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Back
-              </button>
+          {/* ─── Navigation Buttons ─── */}
+          {!confirmed && step <= 4 && (
+            <div className="flex justify-between mt-3 sm:mt-5">
+              {step > 1 ? (
+                <button onClick={handleBack} className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold text-secondary hover:text-foreground hover:bg-white/50 dark:hover:bg-white/5 transition-all duration-300">
+                  <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Back
+                </button>
+              ) : <div />}
+              {step < 4 && (
+                <button
+                  onClick={handleNext}
+                  disabled={!canProceed()}
+                  className="flex items-center gap-1.5 px-5 sm:px-6 py-2 sm:py-2.5 bg-primary text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98]"
+                >
+                  Next <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                </button>
+              )}
             </div>
           )}
         </div>
       </main>
 
       <Footer />
-
-      {/* Success Modal */}
-      {confirmed && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="relative mx-4 w-full max-w-md glass-card-premium rounded-2xl p-8 sm:p-10 text-center animate-scale-in">
-            {/* Animated Checkmark */}
-            <div className="mx-auto mb-6 flex items-center justify-center h-20 w-20 rounded-full bg-primary-light">
-              <svg
-                className="h-10 w-10 text-primary"
-                viewBox="0 0 52 52"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle
-                  cx="26"
-                  cy="26"
-                  r="24"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  fill="none"
-                  style={{
-                    strokeDasharray: 151,
-                    strokeDashoffset: 151,
-                    animation: "circle-draw 0.6s ease-out forwards",
-                  }}
-                />
-                <path
-                  d="M15 27l7 7 15-15"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                  style={{
-                    strokeDasharray: 40,
-                    strokeDashoffset: 40,
-                    animation: "check-draw 0.4s ease-out 0.5s forwards",
-                  }}
-                />
-              </svg>
-              <style>{`
-                @keyframes circle-draw {
-                  to { stroke-dashoffset: 0; }
-                }
-                @keyframes check-draw {
-                  to { stroke-dashoffset: 0; }
-                }
-              `}</style>
-            </div>
-
-            <h3 className="text-2xl font-bold text-foreground">
-              Booking Confirmed!
-            </h3>
-            <p className="mt-3 text-secondary text-sm sm:text-base leading-relaxed">
-              You will receive a confirmation shortly.
-            </p>
-
-            <div className="mt-5 px-4 py-3 rounded-lg bg-dim border border-edge">
-              <p className="text-xs text-muted uppercase tracking-wider mb-1">
-                Booking ID
-              </p>
-              <p className="text-lg font-bold text-primary font-mono tracking-wider">
-                {bookingIdFromApi || "Pending"}
-              </p>
-            </div>
-
-            <div className="mt-4 px-4 py-3 rounded-lg bg-dim border border-edge text-left">
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-muted">Service</span>
-                  <p className="font-medium text-foreground">{selectedServiceData?.title}</p>
-                </div>
-                <div>
-                  <span className="text-muted">Vehicle</span>
-                  <p className="font-medium text-foreground">{brand} {model}</p>
-                </div>
-                <div>
-                  <span className="text-muted">Date</span>
-                  <p className="font-medium text-foreground">
-                    {selectedDateObj ? `${selectedDateObj.dayName}, ${selectedDateObj.label}` : selectedDate}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted">Time</span>
-                  <p className="font-medium text-foreground">{selectedTime}</p>
-                </div>
-              </div>
-            </div>
-
-            <Link
-              href="/"
-              className="mt-8 inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-primary text-white text-base font-semibold rounded-lg transition-all duration-200 hover:bg-primary-hover shadow-sm hover:shadow-md active:scale-[0.98]"
-            >
-              <Home className="h-4 w-4" />
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

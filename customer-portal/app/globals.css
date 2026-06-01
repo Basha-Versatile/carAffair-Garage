@@ -122,6 +122,7 @@ body {
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 /* ------------------------------------------------------------------ */
@@ -289,4 +290,280 @@ html {
 
 .section-gradient-bottom {
   background: linear-gradient(180deg, var(--background) 0%, var(--dim) 100%);
+}
+
+/* ------------------------------------------------------------------ */
+/*  React DatePicker custom styles (inline mode)                       */
+/* ------------------------------------------------------------------ */
+
+.book-datepicker .react-datepicker-wrapper {
+  width: 100%;
+}
+
+.book-datepicker .react-datepicker-popper {
+  z-index: 50;
+}
+
+/* ── Shared inline container ── */
+.book-datepicker .react-datepicker--inline {
+  font-family: inherit;
+  background: var(--card-bg);
+  border: 1px solid var(--edge);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  width: 100%;
+}
+
+.dark .book-datepicker .react-datepicker--inline {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Non-inline fallback */
+.book-datepicker .react-datepicker:not(.react-datepicker--inline) {
+  font-family: inherit;
+  background: var(--card-bg);
+  border: 1px solid var(--edge);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* ── Calendar month container stretches full width ── */
+.book-datepicker .react-datepicker__month-container {
+  width: 100%;
+}
+
+/* ── Header ── */
+.book-datepicker .react-datepicker__header {
+  background: var(--dim);
+  border-bottom: 1px solid var(--edge);
+  padding: 0.75rem 0.5rem 0.5rem;
+  border-radius: 0;
+}
+
+.book-datepicker .react-datepicker__current-month,
+.book-datepicker .react-datepicker-time__header {
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding-bottom: 0.25rem;
+}
+
+.book-datepicker .react-datepicker__day-names {
+  display: flex;
+  justify-content: space-around;
+}
+
+.book-datepicker .react-datepicker__day-name {
+  color: var(--secondary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  width: 2.25rem;
+  line-height: 2.25rem;
+  margin: 0;
+  flex: 1;
+  text-align: center;
+}
+
+/* ── Week rows stretch full width ── */
+.book-datepicker .react-datepicker__month {
+  margin: 0.25rem 0;
+}
+
+.book-datepicker .react-datepicker__week {
+  display: flex;
+  justify-content: space-around;
+}
+
+/* ── Day cells ── */
+.book-datepicker .react-datepicker__day {
+  color: var(--foreground);
+  width: 2.25rem;
+  height: 2.25rem;
+  line-height: 2.25rem;
+  margin: 0.125rem 0;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  flex: 1;
+  text-align: center;
+}
+
+.book-datepicker .react-datepicker__day:hover {
+  background: var(--primary);
+  color: white;
+  border-radius: 0.5rem;
+}
+
+.book-datepicker .react-datepicker__day--selected,
+.book-datepicker .react-datepicker__day--keyboard-selected {
+  background: var(--primary) !important;
+  color: white !important;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+}
+
+.book-datepicker .react-datepicker__day--today {
+  font-weight: 700;
+  border: 1.5px solid var(--primary);
+}
+
+.book-datepicker .react-datepicker__day--disabled {
+  color: var(--muted) !important;
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.book-datepicker .react-datepicker__day--disabled:hover {
+  background: transparent;
+  color: var(--muted) !important;
+}
+
+.book-datepicker .react-datepicker__day--outside-month {
+  color: var(--muted);
+  opacity: 0.25;
+}
+
+/* ── Navigation arrows ── */
+.book-datepicker .react-datepicker__navigation {
+  top: 0.75rem;
+}
+
+.book-datepicker .react-datepicker__navigation-icon::before {
+  border-color: var(--secondary);
+  border-width: 2px 2px 0 0;
+  width: 7px;
+  height: 7px;
+}
+
+.book-datepicker .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+  border-color: var(--primary);
+}
+
+/* ── Triangle ── */
+.book-datepicker .react-datepicker__triangle {
+  display: none;
+}
+
+/* ================================================================== */
+/*  Time-only picker (inline)                                          */
+/* ================================================================== */
+
+.book-datepicker--time .react-datepicker--inline {
+  border-radius: 0.75rem;
+}
+
+.book-datepicker--time .react-datepicker__time-container {
+  border-left: none;
+  width: 100%;
+  float: none;
+}
+
+.book-datepicker--time .react-datepicker__header--time {
+  background: var(--dim);
+  border-bottom: 1px solid var(--edge);
+  padding: 0.625rem 0.75rem;
+}
+
+.book-datepicker--time .react-datepicker-time__header {
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.book-datepicker--time .react-datepicker__time {
+  background: var(--card-bg);
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.book-datepicker--time .react-datepicker__time-box {
+  width: 100% !important;
+}
+
+.book-datepicker--time .react-datepicker__time-list {
+  height: 264px !important;
+  padding: 0.375rem !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge) transparent;
+}
+
+.book-datepicker--time .react-datepicker__time-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.book-datepicker--time .react-datepicker__time-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.book-datepicker--time .react-datepicker__time-list::-webkit-scrollbar-thumb {
+  background: var(--edge);
+  border-radius: 999px;
+}
+
+.book-datepicker--time .react-datepicker__time-list-item {
+  color: var(--foreground) !important;
+  font-size: 0.8125rem !important;
+  font-weight: 500;
+  padding: 0.5rem 0.875rem !important;
+  border-radius: 0.5rem !important;
+  margin: 0.125rem 0 !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer;
+}
+
+.book-datepicker--time .react-datepicker__time-list-item:hover {
+  background: var(--primary) !important;
+  color: white !important;
+}
+
+.book-datepicker--time .react-datepicker__time-list-item--selected {
+  background: var(--primary) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+}
+
+/* ================================================================== */
+/*  Date calendar picker (inline) — time container if combined         */
+/* ================================================================== */
+
+.book-datepicker--date .react-datepicker__time-container {
+  border-left: 1px solid var(--edge);
+  width: auto;
+}
+
+.book-datepicker--date .react-datepicker__time {
+  background: var(--card-bg);
+}
+
+.book-datepicker--date .react-datepicker__time-box {
+  width: 100%;
+}
+
+.book-datepicker--date .react-datepicker__time-list {
+  padding: 0.25rem;
+}
+
+.book-datepicker--date .react-datepicker__time-list-item {
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.375rem;
+  margin: 0.1rem 0;
+  transition: all 0.15s ease;
+}
+
+.book-datepicker--date .react-datepicker__time-list-item:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.book-datepicker--date .react-datepicker__time-list-item--selected {
+  background: var(--primary) !important;
+  color: white !important;
+  font-weight: 700;
 }

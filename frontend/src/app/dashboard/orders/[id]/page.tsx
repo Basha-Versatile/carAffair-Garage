@@ -18,12 +18,24 @@ import { getParts, addPart, type Part } from "@/lib/api-inventory";
 import { getManufacturers, createManufacturer, type Manufacturer } from "@/lib/api-manufacturers";
 import { getPartCategories, createPartCategory, type PartCategoryItem } from "@/lib/api-part-categories";
 import { getBrands, getModelsByBrand, type VehicleBrand, type VehicleModel } from "@/lib/api-vehicles";
-import { isGarageOwner, getAccessToken } from "@/lib/auth";
+import { isGarageOwner, getAccessToken, getUser } from "@/lib/auth";
+import {
+  getDepartments,
+  getServiceDepartment,
+  getPartDepartment,
+  getBillingMode,
+  setBillingMode as setStoredBillingMode,
+  getLineItemDepartment,
+  setLineItemDepartment,
+  getAllLineItemDepartments,
+  type Department,
+  type DeptMapping,
+} from "@/lib/departments-local";
 import {
   ArrowLeft, Phone, Car, IndianRupee, Camera, Upload,
   CheckCircle2, CircleDot, Loader2, Trash2, Plus,
   Send, Link2, Copy, X, Fuel, Gauge, StickyNote,
-  Wrench, Package, ChevronDown, ExternalLink, AlertCircle, Search, Check, Clock, UserPlus, Download, FileText, Share2,
+  Wrench, Package, ChevronDown, ExternalLink, AlertCircle, Search, Check, Clock, UserPlus, Download, FileText, Share2, Layers,
 } from "lucide-react";
 
 // ─── Status Config ───
@@ -265,6 +277,13 @@ export default function OrderDetailPage() {
   // Invoice
   const [invoice, setInvoice] = useState<Invoice | null>(null);
 
+  // Department billing
+  const user = getUser();
+  const garageId = user?.garageId || "";
+  const [billingMode, setBillingModeState] = useState<"standard" | "department">("standard");
+  const [deptList, setDeptList] = useState<Department[]>([]);
+  const [lineItemDepts, setLineItemDepts] = useState<Record<string, DeptMapping>>({});
+
   // Image upload
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -299,6 +318,15 @@ export default function OrderDetailPage() {
 
   useEffect(() => { loadOrder(); }, [loadOrder]);
   useEffect(() => { if (id) getInvoiceByOrderId(id).then(setInvoice).catch(() => {}); }, [id]);
+
+  // Load department data
+  useEffect(() => {
+    if (garageId) setDeptList(getDepartments(garageId));
+    if (id) {
+      setBillingModeState(getBillingMode(id));
+      setLineItemDepts(getAllLineItemDepartments(id));
+    }
+  }, [garageId, id]);
 
   useEffect(() => {
     getPackages().then(setPackages).catch(() => {});
@@ -502,6 +530,31 @@ export default function OrderDetailPage() {
       }
       setCreateTaxOpen(false); setTaxForm({ name: "", taxPercent: "", sacNumber: "", taxType: "service" });
     } catch { /* ignore */ } finally { setTaxSaving(false); }
+  }
+
+  // ─── Department helpers ───
+  function handleToggleBillingMode(mode: "standard" | "department") {
+    setBillingModeState(mode);
+    if (id) setStoredBillingMode(id, mode);
+  }
+
+  function resolveDept(key: string, itemType: "service" | "part", itemId: string): DeptMapping | null {
+    // 1. Check per-line-item override
+    const override = lineItemDepts[key];
+    if (override) return override;
+    // 2. Check master data default
+    if (!garageId) return null;
+    if (itemType === "service") return getServiceDepartment(garageId, itemId);
+    return getPartDepartment(garageId, itemId);
+  }
+
+  function handleLineItemDeptChange(key: string, deptId: string) {
+    if (!id) return;
+    const dept = deptList.find((d) => d.id === deptId);
+    if (dept) {
+      setLineItemDepartment(id, key, dept.id, dept.name);
+    }
+    setLineItemDepts(getAllLineItemDepartments(id));
   }
 
   // ─── Calculations ───
@@ -897,6 +950,26 @@ export default function OrderDetailPage() {
             </div>
           )}
 
+          {/* ─── Billing Mode Toggle ─── */}
+          {(canEdit || hasItems) && deptList.length > 0 && (
+            <div className="flex items-center gap-3 px-1">
+              <Layers className="w-4 h-4 text-muted" />
+              <span className="text-xs font-medium text-secondary">Billing Mode</span>
+              <div className="flex items-center bg-dim border border-edge rounded-lg overflow-hidden">
+                {(["standard", "department"] as const).map((m) => (
+                  <button key={m} onClick={() => handleToggleBillingMode(m)}
+                    className={`px-3.5 py-1.5 text-xs font-medium transition-colors capitalize ${billingMode === m ? "bg-primary text-white" : "text-muted hover:bg-hover"}`}
+                  >{m === "department" ? "Department-wise" : "Standard"}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════
+              STANDARD BILLING VIEW
+              ════════════════════════════════════════ */}
+          {billingMode === "standard" && (
+          <>
           {/* ─── Services Section ─── */}
           {(canEdit || serviceRows.length > 0) && (
             <div className="bg-background rounded-lg border border-edge">
@@ -1047,6 +1120,133 @@ export default function OrderDetailPage() {
               </div>
             </div>
           )}
+          </>
+          )}
+
+          {/* ════════════════════════════════════════
+              DEPARTMENT-WISE BILLING VIEW
+              ════════════════════════════════════════ */}
+          {billingMode === "department" && (canEdit || hasItems) && (() => {
+            // Build all items with department info
+            type DeptItem = { key: string; type: "service" | "part"; itemId: string; description: string; hsnSac: string; qty: number; rate: number; gstRate: number; discount: number; gstInclusive: boolean; calc: { amount: number; gstAmount: number; total: number } };
+            const allItems: DeptItem[] = [
+              ...serviceRows.map((s, i) => ({ key: s.key, type: "service" as const, itemId: s.serviceId, description: s.description, hsnSac: s.hsnSac, qty: s.qty, rate: s.rate, gstRate: s.gstRate, discount: s.discount, gstInclusive: s.gstInclusive, calc: serviceCalcs[i] })),
+              ...partRows.map((p, i) => ({ key: p.key, type: "part" as const, itemId: p.partId, description: p.description, hsnSac: p.hsnSac, qty: p.qty, rate: p.rate, gstRate: p.gstRate, discount: p.discount, gstInclusive: p.gstInclusive, calc: partCalcs[i] })),
+            ];
+
+            // Group by department
+            const grouped: Record<string, { dept: Department | null; items: DeptItem[] }> = {};
+            const UNCAT_KEY = "__uncategorized__";
+            allItems.forEach((item) => {
+              const mapping = resolveDept(item.key, item.type, item.itemId);
+              const dKey = mapping?.departmentId || UNCAT_KEY;
+              if (!grouped[dKey]) {
+                const dept = deptList.find((d) => d.id === dKey) || null;
+                grouped[dKey] = { dept, items: [] };
+              }
+              grouped[dKey].items.push(item);
+            });
+
+            // Sort: departments by sortOrder, uncategorized at end
+            const sortedGroups = Object.entries(grouped).sort(([keyA, a], [keyB, b]) => {
+              if (keyA === UNCAT_KEY) return 1;
+              if (keyB === UNCAT_KEY) return -1;
+              return (a.dept?.sortOrder || 99) - (b.dept?.sortOrder || 99);
+            });
+
+            return (
+              <>
+                {/* Add buttons */}
+                {canEdit && (
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => { setChooseServicesOpen(true); setChooseServicesFilter(""); setChooseServicesSelected(new Set()); }}
+                      className="flex items-center gap-1.5 text-xs text-primary font-medium hover:bg-primary-light px-3 py-2 rounded-lg border border-primary/20 transition-colors">
+                      <Plus className="w-3.5 h-3.5" /> Add Service
+                    </button>
+                    <button onClick={() => { setChoosePartsOpen(true); setChoosePartsFilter(""); setChoosePartsSelected(new Set()); }}
+                      className="flex items-center gap-1.5 text-xs text-primary font-medium hover:bg-primary-light px-3 py-2 rounded-lg border border-primary/20 transition-colors">
+                      <Plus className="w-3.5 h-3.5" /> Add Part
+                    </button>
+                  </div>
+                )}
+
+                {allItems.length === 0 && (
+                  <p className="text-sm text-muted text-center py-6">No items added. Use the buttons above to add services or parts.</p>
+                )}
+
+                {sortedGroups.map(([dKey, group]) => {
+                  const deptSubtotal = group.items.reduce((s, it) => s + it.calc.amount, 0);
+                  const deptGst = group.items.reduce((s, it) => s + it.calc.gstAmount, 0);
+                  return (
+                    <div key={dKey} className="bg-background rounded-lg border border-edge">
+                      {/* Department header */}
+                      <div className="flex items-center justify-between px-5 py-3 bg-dim border-b border-edge rounded-t-lg">
+                        <div className="flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-accent" />
+                          <h3 className="text-sm font-semibold text-secondary">
+                            {group.dept?.name || "Uncategorized"}
+                          </h3>
+                          <span className="text-xs bg-accent-light text-accent px-1.5 py-0.5 rounded-full">{group.items.length}</span>
+                        </div>
+                        <span className="text-sm font-semibold text-foreground tabular-nums">
+                          Subtotal: ₹{(deptSubtotal + (isProforma ? 0 : deptGst)).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+
+                      <div className="p-4 space-y-3">
+                        {group.items.map((item) => {
+                          const isService = item.type === "service";
+                          return (
+                            <div key={item.key} className="border border-edge-light rounded-lg p-3 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {isService ? <Wrench className="w-3.5 h-3.5 text-primary" /> : <Package className="w-3.5 h-3.5 text-warn" />}
+                                  <p className="text-sm font-medium text-foreground">{item.description}</p>
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${isService ? "bg-primary-light text-primary" : "bg-warn-light text-warn"}`}>
+                                    {isService ? "Service" : "Part"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {/* Department override dropdown */}
+                                  {canEdit && (
+                                    <select
+                                      value={resolveDept(item.key, item.type, item.itemId)?.departmentId || ""}
+                                      onChange={(e) => handleLineItemDeptChange(item.key, e.target.value)}
+                                      className="text-[11px] px-2 py-1 border border-edge rounded bg-background text-secondary focus:outline-none focus:ring-1 focus:ring-primary max-w-[140px]"
+                                    >
+                                      <option value="">No Dept</option>
+                                      {deptList.map((d) => (
+                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                      ))}
+                                    </select>
+                                  )}
+                                  {canEdit && (
+                                    <button onClick={() => {
+                                      if (isService) setServiceRows(prev => prev.filter(x => x.key !== item.key));
+                                      else setPartRows(prev => prev.filter(x => x.key !== item.key));
+                                    }} className="p-1 text-muted hover:text-bad hover:bg-bad-light rounded transition-colors">
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-5 gap-2 items-end">
+                                <div><label className={labelCls}>{isService ? "SAC" : "HSN"}</label><input type="text" value={item.hsnSac} onChange={e => { if (isService) updateServiceRow(item.key, "hsnSac", e.target.value); else updatePartRow(item.key, "hsnSac", e.target.value); }} disabled={!canEdit} className={smallInputCls} /></div>
+                                <div><label className={labelCls}>Qty</label><input type="number" min={1} value={item.qty} onChange={e => { if (isService) updateServiceRow(item.key, "qty", parseInt(e.target.value) || 1); else updatePartRow(item.key, "qty", parseInt(e.target.value) || 1); }} disabled={!canEdit} className={smallInputCls} /></div>
+                                <div><label className={labelCls}>Rate</label><input type="number" min={0} value={item.rate || ""} onChange={e => { if (isService) updateServiceRow(item.key, "rate", parseFloat(e.target.value) || 0); else updatePartRow(item.key, "rate", parseFloat(e.target.value) || 0); }} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
+                                <div><label className={labelCls}>Amount</label><div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{item.calc.amount.toLocaleString("en-IN")}</div></div>
+                                <div><label className={labelCls}>GST</label><div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{item.calc.gstAmount.toLocaleString("en-IN")}</div></div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            );
+          })()}
 
           {/* ─── Staff Assignment Section ─── */}
           {order.status === "wip" && isOwner && serviceRows.length > 0 && (

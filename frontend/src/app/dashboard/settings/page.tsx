@@ -20,6 +20,7 @@ import {
   ShieldX,
   Shield,
   ScrollText,
+  Layers,
   X,
 } from "lucide-react";
 
@@ -65,6 +66,14 @@ const GARAGE_SETTINGS: SettingCard[] = [
     iconBg: "bg-primary-light",
     iconColor: "text-primary",
     href: "/dashboard/settings/logs",
+    ownerOnly: true,
+  },
+  {
+    label: "Departments",
+    icon: Layers,
+    iconBg: "bg-accent-light",
+    iconColor: "text-accent",
+    href: "/dashboard/settings/departments",
     ownerOnly: true,
   },
   {
