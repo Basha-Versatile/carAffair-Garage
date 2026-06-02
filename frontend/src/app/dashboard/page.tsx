@@ -18,6 +18,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from "recharts";
+import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
 
 type ViewMode = "cards" | "table";
 
@@ -694,6 +695,8 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [orderPage, setOrderPage] = useState(1);
+  const [orderPageSize, setOrderPageSize] = useState<PageSize>(PAGE_SIZES[0]);
 
   // ─── Fetch analytics data once on mount ───
   useEffect(() => {
@@ -720,6 +723,7 @@ function AdminDashboard() {
   useEffect(() => {
     setLoading(true);
     setError("");
+    setOrderPage(1);
     getOrdersByStatus(activeTab)
       .then((data) => setOrders(data || []))
       .catch(() => setError("Failed to load orders."))
@@ -1052,81 +1056,105 @@ function AdminDashboard() {
             </div>
             <p className="text-sm text-muted">No orders in this category</p>
           </div>
-        ) : viewMode === "cards" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {(orders || []).map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onClick={() => router.push(`/dashboard/orders/${order.id}`)}
+        ) : (() => {
+          const totalPages = Math.max(1, Math.ceil(orders.length / orderPageSize));
+          const safePage = Math.min(orderPage, totalPages);
+          const start = (safePage - 1) * orderPageSize;
+          const pagedOrders = orders.slice(start, start + orderPageSize);
+          return viewMode === "cards" ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {pagedOrders.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onClick={() => router.push(`/dashboard/orders/${order.id}`)}
+                  />
+                ))}
+              </div>
+              <div className="glass-card overflow-hidden mt-3">
+                <Pagination
+                  total={orders.length}
+                  page={safePage}
+                  pageSize={orderPageSize}
+                  onPageChange={setOrderPage}
+                  onPageSizeChange={setOrderPageSize}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="glass-card overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-dim border-b border-edge">
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Job Card</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Customer</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Vehicle</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Date</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Services</th>
+                    <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
+                    <th className="text-right px-4 py-3 font-medium text-secondary">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-edge-light">
+                  {pagedOrders.map((order) => {
+                    const statusStyles: Record<string, string> = {
+                      open: "bg-primary-light text-primary",
+                      wip: "bg-warn-light text-warn",
+                      completed: "bg-ok-light text-ok",
+                      cancelled: "bg-bad-light text-bad",
+                    };
+                    return (
+                      <tr
+                        key={order.id}
+                        onClick={() => router.push(`/dashboard/orders/${order.id}`)}
+                        className="hover:bg-hover transition-colors cursor-pointer"
+                      >
+                        <td className="px-4 py-3 font-medium text-foreground">{order.jobCard || "-"}</td>
+                        <td className="px-4 py-3 text-secondary">{order.customerName || "-"}</td>
+                        <td className="px-4 py-3 text-muted">{order.phone || "-"}</td>
+                        <td className="px-4 py-3 text-secondary">
+                          {order.vehicle || "-"}{" "}
+                          <span className="text-muted">{order.vehicleNumber || ""}</span>
+                        </td>
+                        <td className="px-4 py-3 text-muted">{order.date || "-"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {(order.services || []).map((s) => (
+                              <span key={s} className="text-[11px] bg-dim text-muted px-2 py-0.5 rounded">
+                                {s}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                              statusStyles[order.status] ?? ""
+                            }`}
+                          >
+                            {(order.status ?? "").replace("_", " ").toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold text-foreground">
+                          {(order.amount ?? 0).toLocaleString("en-IN")}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <Pagination
+                total={orders.length}
+                page={safePage}
+                pageSize={orderPageSize}
+                onPageChange={setOrderPage}
+                onPageSizeChange={setOrderPageSize}
               />
-            ))}
-          </div>
-        ) : (
-          <div className="glass-card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-dim border-b border-edge">
-                  <th className="text-left px-4 py-3 font-medium text-secondary">Job Card</th>
-                  <th className="text-left px-4 py-3 font-medium text-secondary">Customer</th>
-                  <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
-                  <th className="text-left px-4 py-3 font-medium text-secondary">Vehicle</th>
-                  <th className="text-left px-4 py-3 font-medium text-secondary">Date</th>
-                  <th className="text-left px-4 py-3 font-medium text-secondary">Services</th>
-                  <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
-                  <th className="text-right px-4 py-3 font-medium text-secondary">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-edge-light">
-                {(orders || []).map((order) => {
-                  const statusStyles: Record<string, string> = {
-                    open: "bg-primary-light text-primary",
-                    wip: "bg-warn-light text-warn",
-                    completed: "bg-ok-light text-ok",
-                    cancelled: "bg-bad-light text-bad",
-                  };
-                  return (
-                    <tr
-                      key={order.id}
-                      onClick={() => router.push(`/dashboard/orders/${order.id}`)}
-                      className="hover:bg-hover transition-colors cursor-pointer"
-                    >
-                      <td className="px-4 py-3 font-medium text-foreground">{order.jobCard || "-"}</td>
-                      <td className="px-4 py-3 text-secondary">{order.customerName || "-"}</td>
-                      <td className="px-4 py-3 text-muted">{order.phone || "-"}</td>
-                      <td className="px-4 py-3 text-secondary">
-                        {order.vehicle || "-"}{" "}
-                        <span className="text-muted">{order.vehicleNumber || ""}</span>
-                      </td>
-                      <td className="px-4 py-3 text-muted">{order.date || "-"}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {(order.services || []).map((s) => (
-                            <span key={s} className="text-[11px] bg-dim text-muted px-2 py-0.5 rounded">
-                              {s}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                            statusStyles[order.status] ?? ""
-                          }`}
-                        >
-                          {(order.status ?? "").replace("_", " ").toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-foreground">
-                        {(order.amount ?? 0).toLocaleString("en-IN")}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

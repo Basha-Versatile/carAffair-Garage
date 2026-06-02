@@ -12,6 +12,7 @@ import { canManage } from "@/lib/auth";
 import SelectModal from "@/components/modals/SelectModal";
 import AddModelModal from "@/components/modals/AddModelModal";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
+import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
 
 const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
 
@@ -98,11 +99,15 @@ export default function CustomersPage() {
   const [modelModalOpen, setModelModalOpen] = useState(false);
   const [addModelModalOpen, setAddModelModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [listPage, setListPage] = useState(1);
+  const [listPageSize, setListPageSize] = useState<PageSize>(PAGE_SIZES[0]);
 
   const [brands, setBrands] = useState<VehicleBrand[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<VehicleBrand | null>(null);
   const [selectedModel, setSelectedModel] = useState<VehicleModel | null>(null);
   const [modelsForBrand, setModelsForBrand] = useState<VehicleModel[]>([]);
+
+  useEffect(() => { setListPage(1); }, [search]);
 
   useEffect(() => {
     setLoading(true);
@@ -256,9 +261,22 @@ export default function CustomersPage() {
           </div>
         ) : viewMode === "list" ? (
           <div className="px-6 py-3">
-            <div className="bg-background rounded-xl border border-edge divide-y divide-edge-light">
-              {filtered.map((customer) => <CustomerRow key={customer.id} customer={customer} onClick={() => router.push(`/dashboard/customers/${customer.id}`)} />)}
-            </div>
+            {(() => {
+              const totalPages = Math.max(1, Math.ceil(filtered.length / listPageSize));
+              const safePage = Math.min(listPage, totalPages);
+              const start = (safePage - 1) * listPageSize;
+              const paged = filtered.slice(start, start + listPageSize);
+              return (
+                <>
+                  <div className="bg-background rounded-xl border border-edge divide-y divide-edge-light">
+                    {paged.map((customer) => <CustomerRow key={customer.id} customer={customer} onClick={() => router.push(`/dashboard/customers/${customer.id}`)} />)}
+                  </div>
+                  <div className="bg-background rounded-lg border border-edge overflow-hidden mt-4">
+                    <Pagination total={filtered.length} page={safePage} pageSize={listPageSize} onPageChange={setListPage} onPageSizeChange={setListPageSize} />
+                  </div>
+                </>
+              );
+            })()}
           </div>
         ) : (
           <div className="px-6 py-3">

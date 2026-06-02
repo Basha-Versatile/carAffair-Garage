@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Wrench, Menu, X, ChevronRight, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -18,7 +18,24 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
+  const router = useRouter();
   const isHome = pathname === "/";
+
+  // Handle anchor links — smooth scroll on home page, navigate home first from other pages
+  const handleNavClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+      if (!href.startsWith("#")) return; // let normal links work as usual
+      e.preventDefault();
+      setMobileMenuOpen(false);
+      if (isHome) {
+        const el = document.querySelector(href);
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      } else {
+        router.push("/" + href);
+      }
+    },
+    [isHome, router],
+  );
 
   // Only use transparent navbar on the homepage hero; inner pages always show solid navbar
   const showTransparent = isHome && !scrolled;
@@ -74,7 +91,8 @@ export default function Navbar() {
             {navLinks.map((link) => (
               <Link
                 key={link.label}
-                href={link.href}
+                href={link.href.startsWith("#") ? `/${link.href}` : link.href}
+                onClick={(e) => handleNavClick(e, link.href)}
                 className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 hover:text-primary ${
                   showTransparent
                     ? "text-white/80 hover:text-white hover:bg-white/10"
@@ -182,9 +200,9 @@ export default function Navbar() {
           {navLinks.map((link) => (
             <Link
               key={link.label}
-              href={link.href}
+              href={link.href.startsWith("#") ? `/${link.href}` : link.href}
               className="flex items-center justify-between px-4 py-3 text-base font-medium text-secondary rounded-lg transition-colors duration-200 hover:text-primary hover:bg-primary-light"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={(e) => { handleNavClick(e, link.href); setMobileMenuOpen(false); }}
             >
               {link.label}
               <ChevronRight className="h-4 w-4 text-muted" />

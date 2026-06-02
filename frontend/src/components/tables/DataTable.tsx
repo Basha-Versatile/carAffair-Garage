@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { ChevronUp, ChevronDown, Filter, Search } from "lucide-react";
+import { Pagination, PAGE_SIZES, type PageSize } from "./Pagination";
 
 /* ── Public types ── */
 
@@ -26,6 +27,8 @@ export interface DataTableProps<T> {
   className?: string;
   /** Optional footer rendered as <tfoot> inside the table. */
   footer?: React.ReactNode;
+  /** Default page size. Defaults to 10. */
+  defaultPageSize?: PageSize;
 }
 
 /* ── Component ── */
@@ -33,7 +36,7 @@ export interface DataTableProps<T> {
 type SortDir = "asc" | "desc" | null;
 
 export function DataTable<T>(props: DataTableProps<T>) {
-  const { columns, data, keyExtractor, onRowClick, className, footer } = props;
+  const { columns, data, keyExtractor, onRowClick, className, footer, defaultPageSize } = props;
 
   /* sort state */
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -41,6 +44,10 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
   /* filter state: colKey -> set of selected values */
   const [filters, setFilters] = useState<Record<string, Set<string>>>({});
+
+  /* pagination state */
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<PageSize>(defaultPageSize ?? PAGE_SIZES[0]);
 
   /* dropdown state */
   const [openFilter, setOpenFilter] = useState<string | null>(null);
@@ -60,6 +67,9 @@ export function DataTable<T>(props: DataTableProps<T>) {
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
   }, [openFilter]);
+
+  /* Reset page to 1 when data or filters change */
+  useEffect(() => { setPage(1); }, [data, filters, sortKey, sortDir]);
 
   /* helpers */
   function getUniqueValues(col: DataColumn<T>): string[] {
@@ -139,6 +149,12 @@ export function DataTable<T>(props: DataTableProps<T>) {
     }
     return res;
   }, [data, filters, sortKey, sortDir, columns]);
+
+  /* paginated slice */
+  const totalPages = Math.max(1, Math.ceil(processed.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * pageSize;
+  const pageData = processed.slice(pageStart, pageStart + pageSize);
 
   const activeCol = openFilter
     ? columns.find((c) => c.key === openFilter)
@@ -234,7 +250,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
             </thead>
 
             <tbody>
-              {processed.length === 0 ? (
+              {pageData.length === 0 ? (
                 <tr>
                   <td
                     colSpan={columns.length}
@@ -244,7 +260,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                   </td>
                 </tr>
               ) : (
-                processed.map((row) => (
+                pageData.map((row) => (
                   <tr
                     key={keyExtractor(row)}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
@@ -265,6 +281,15 @@ export function DataTable<T>(props: DataTableProps<T>) {
             {footer}
           </table>
         </div>
+
+        {/* Pagination */}
+        <Pagination
+          total={processed.length}
+          page={safePage}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {/* ── Filter dropdown (portal) ── */}

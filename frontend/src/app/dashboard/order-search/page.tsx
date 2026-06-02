@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getOrders, Order } from "@/lib/api-orders";
 import { Search, FileText, Loader2, Calendar, LayoutGrid, List } from "lucide-react";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
+import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
 
 const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
 
@@ -107,6 +108,8 @@ export default function OrderSearchPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [cardPage, setCardPage] = useState(1);
+  const [cardPageSize, setCardPageSize] = useState<PageSize>(PAGE_SIZES[0]);
 
   // date filter
   const [preset, setPreset] = useState<DatePreset>("month");
@@ -151,6 +154,8 @@ export default function OrderSearchPage() {
 
     return list;
   }, [orders, dateRange, search]);
+
+  useEffect(() => { setCardPage(1); }, [filtered.length]);
 
   return (
     <div className="h-full flex flex-col">
@@ -276,41 +281,54 @@ export default function OrderSearchPage() {
           </div>
         ) : viewMode === "cards" ? (
           <div className="px-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filtered.map((order) => {
-                const st = STATUS_STYLES[order.status] || { label: order.status || "-", cls: "bg-dim text-muted" };
-                return (
-                  <div key={order.id} onClick={() => router.push(`/dashboard/orders/${order.id}`)}
-                    className="bg-background rounded-lg border border-edge p-5 hover:shadow-md transition-shadow cursor-pointer">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                        <FileText className="w-4 h-4 text-primary" />{order.jobCard || "-"}
-                      </span>
-                      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-md ${st.cls}`}>{st.label}</span>
-                    </div>
-                    <p className="text-sm font-medium text-foreground">{order.customerName || "-"}</p>
-                    <p className="text-xs text-muted mt-0.5">{order.phone || order.customerPhone || "-"}</p>
-                    <div className="flex items-center gap-1.5 mt-2 text-sm text-secondary">
-                      <span>{order.vehicle || "-"}</span>
-                      <span className="text-muted font-mono text-xs">({order.vehicleNumber || "-"})</span>
-                    </div>
-                    <p className="text-xs text-muted mt-1.5">
-                      {order.date ? new Date(order.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "-"}
-                    </p>
-                    {(order.services || []).length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-3">
-                        {(order.services || []).map((s) => (
-                          <span key={s} className="text-xs bg-accent-light text-accent px-2 py-0.5 rounded">{s}</span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="pt-3 mt-3 border-t border-edge-light">
-                      <span className="text-sm font-semibold text-foreground">₹{(order.amount ?? 0).toLocaleString("en-IN")}</span>
-                    </div>
+            {(() => {
+              const totalPages = Math.max(1, Math.ceil(filtered.length / cardPageSize));
+              const safePage = Math.min(cardPage, totalPages);
+              const start = (safePage - 1) * cardPageSize;
+              const paged = filtered.slice(start, start + cardPageSize);
+              return (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {paged.map((order) => {
+                      const st = STATUS_STYLES[order.status] || { label: order.status || "-", cls: "bg-dim text-muted" };
+                      return (
+                        <div key={order.id} onClick={() => router.push(`/dashboard/orders/${order.id}`)}
+                          className="bg-background rounded-lg border border-edge p-5 hover:shadow-md transition-shadow cursor-pointer">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                              <FileText className="w-4 h-4 text-primary" />{order.jobCard || "-"}
+                            </span>
+                            <span className={`text-xs font-medium px-2.5 py-0.5 rounded-md ${st.cls}`}>{st.label}</span>
+                          </div>
+                          <p className="text-sm font-medium text-foreground">{order.customerName || "-"}</p>
+                          <p className="text-xs text-muted mt-0.5">{order.phone || order.customerPhone || "-"}</p>
+                          <div className="flex items-center gap-1.5 mt-2 text-sm text-secondary">
+                            <span>{order.vehicle || "-"}</span>
+                            <span className="text-muted font-mono text-xs">({order.vehicleNumber || "-"})</span>
+                          </div>
+                          <p className="text-xs text-muted mt-1.5">
+                            {order.date ? new Date(order.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "-"}
+                          </p>
+                          {(order.services || []).length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-3">
+                              {(order.services || []).map((s) => (
+                                <span key={s} className="text-xs bg-accent-light text-accent px-2 py-0.5 rounded">{s}</span>
+                              ))}
+                            </div>
+                          )}
+                          <div className="pt-3 mt-3 border-t border-edge-light">
+                            <span className="text-sm font-semibold text-foreground">₹{(order.amount ?? 0).toLocaleString("en-IN")}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
+                  <div className="bg-background rounded-lg border border-edge overflow-hidden mt-4">
+                    <Pagination total={filtered.length} page={safePage} pageSize={cardPageSize} onPageChange={setCardPage} onPageSizeChange={setCardPageSize} />
+                  </div>
+                </>
+              );
+            })()}
           </div>
         ) : (
           <div className="px-6 py-4">

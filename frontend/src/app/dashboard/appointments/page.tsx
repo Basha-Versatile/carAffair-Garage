@@ -20,6 +20,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { getAccessToken } from "@/lib/auth";
+import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
 
 /* ── Types ─────────────────────────────────────────── */
 
@@ -90,6 +91,8 @@ export default function AppointmentsPage() {
   const [suggestedDate, setSuggestedDate] = useState("");
   const [suggestedTime, setSuggestedTime] = useState("");
   const [updating, setUpdating] = useState(false);
+  const [listPage, setListPage] = useState(1);
+  const [listPageSize, setListPageSize] = useState<PageSize>(PAGE_SIZES[0]);
 
   function handleConvertToOrder(booking: Booking) {
     sessionStorage.setItem("booking_to_order", JSON.stringify({
@@ -116,6 +119,8 @@ export default function AppointmentsPage() {
     } catch { /* ignore */ }
     finally { setLoading(false); }
   }
+
+  useEffect(() => { setListPage(1); }, [tab, search]);
 
   const filtered = bookings
     .filter((b) => b.status === tab)
@@ -229,55 +234,65 @@ export default function AppointmentsPage() {
             <p className="text-sm text-muted">No {tab === "pending" ? "requested" : tab} appointments</p>
           </div>
         ) : (
-          <div className="bg-background rounded-lg border border-edge overflow-hidden">
-            {/* List Header */}
-            <div className="hidden sm:grid sm:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 px-4 py-2.5 bg-dim border-b border-edge text-xs font-medium text-muted uppercase tracking-wide">
-              <span>Customer</span>
-              <span>Vehicle</span>
-              <span>Date & Time</span>
-              <span>Service</span>
-              <span className="w-6" />
-            </div>
-            {/* List Rows */}
-            <div className="divide-y divide-edge">
-              {filtered.map((booking) => (
-                <div
-                  key={booking.id}
-                  onClick={() => { setSelectedBooking(booking); setActionMode(""); }}
-                  className="px-4 py-3 cursor-pointer hover:bg-hover transition-colors sm:grid sm:grid-cols-[1fr_1fr_1fr_1fr_auto] sm:items-center gap-3"
-                >
-                  {/* Customer */}
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{booking.customerName}</p>
-                    <p className="text-xs text-muted truncate">{booking.customerPhone}</p>
-                  </div>
-                  {/* Vehicle */}
-                  <div className="min-w-0 mt-1 sm:mt-0">
-                    <p className="text-sm text-foreground truncate">{booking.vehicleRegNumber}</p>
-                    <p className="text-xs text-muted truncate">{booking.vehicleBrand} {booking.vehicleModel || ""}</p>
-                  </div>
-                  {/* Date & Time */}
-                  <div className="min-w-0 mt-1 sm:mt-0">
-                    <p className="text-sm text-foreground">{booking.preferredDate}</p>
-                    <p className="text-xs text-muted">{booking.preferredTime}</p>
-                  </div>
-                  {/* Service + badges */}
-                  <div className="min-w-0 mt-1 sm:mt-0 flex items-center gap-2">
-                    <span className="text-sm text-foreground truncate">{booking.service}</span>
-                    {booking.pickDrop && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-primary bg-primary-light px-1.5 py-0.5 rounded shrink-0">
-                        <Truck className="w-2.5 h-2.5" /> Pickup
-                      </span>
-                    )}
-                  </div>
-                  {/* Arrow */}
-                  <div className="hidden sm:flex items-center w-6 justify-center">
-                    <ChevronRight className="w-4 h-4 text-muted" />
-                  </div>
+          (() => {
+            const totalPages = Math.max(1, Math.ceil(filtered.length / listPageSize));
+            const safePage = Math.min(listPage, totalPages);
+            const start = (safePage - 1) * listPageSize;
+            const paged = filtered.slice(start, start + listPageSize);
+            return (
+              <div className="bg-background rounded-lg border border-edge overflow-hidden">
+                {/* List Header */}
+                <div className="hidden sm:grid sm:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 px-4 py-2.5 bg-dim border-b border-edge text-xs font-medium text-muted uppercase tracking-wide">
+                  <span>Customer</span>
+                  <span>Vehicle</span>
+                  <span>Date & Time</span>
+                  <span>Service</span>
+                  <span className="w-6" />
                 </div>
-              ))}
-            </div>
-          </div>
+                {/* List Rows */}
+                <div className="divide-y divide-edge">
+                  {paged.map((booking) => (
+                    <div
+                      key={booking.id}
+                      onClick={() => { setSelectedBooking(booking); setActionMode(""); }}
+                      className="px-4 py-3 cursor-pointer hover:bg-hover transition-colors sm:grid sm:grid-cols-[1fr_1fr_1fr_1fr_auto] sm:items-center gap-3"
+                    >
+                      {/* Customer */}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{booking.customerName}</p>
+                        <p className="text-xs text-muted truncate">{booking.customerPhone}</p>
+                      </div>
+                      {/* Vehicle */}
+                      <div className="min-w-0 mt-1 sm:mt-0">
+                        <p className="text-sm text-foreground truncate">{booking.vehicleRegNumber}</p>
+                        <p className="text-xs text-muted truncate">{booking.vehicleBrand} {booking.vehicleModel || ""}</p>
+                      </div>
+                      {/* Date & Time */}
+                      <div className="min-w-0 mt-1 sm:mt-0">
+                        <p className="text-sm text-foreground">{booking.preferredDate}</p>
+                        <p className="text-xs text-muted">{booking.preferredTime}</p>
+                      </div>
+                      {/* Service + badges */}
+                      <div className="min-w-0 mt-1 sm:mt-0 flex items-center gap-2">
+                        <span className="text-sm text-foreground truncate">{booking.service}</span>
+                        {booking.pickDrop && (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-primary bg-primary-light px-1.5 py-0.5 rounded shrink-0">
+                            <Truck className="w-2.5 h-2.5" /> Pickup
+                          </span>
+                        )}
+                      </div>
+                      {/* Arrow */}
+                      <div className="hidden sm:flex items-center w-6 justify-center">
+                        <ChevronRight className="w-4 h-4 text-muted" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Pagination */}
+                <Pagination total={filtered.length} page={safePage} pageSize={listPageSize} onPageChange={setListPage} onPageSizeChange={setListPageSize} />
+              </div>
+            );
+          })()
         )}
       </div>
 

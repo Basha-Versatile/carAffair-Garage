@@ -7,6 +7,7 @@ import {
   MessageSquare, ThumbsUp, ThumbsDown, User, LayoutGrid, List,
 } from "lucide-react";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
+import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
 
 const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
 
@@ -95,6 +96,8 @@ export default function ServiceFeedbacksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [cardPage, setCardPage] = useState(1);
+  const [cardPageSize, setCardPageSize] = useState<PageSize>(PAGE_SIZES[0]);
 
   useEffect(() => {
     setLoading(true);
@@ -143,6 +146,8 @@ export default function ServiceFeedbacksPage() {
         (f.vehicleNumber ?? "").toLowerCase().includes(q),
     );
   }, [search, tabFiltered]);
+
+  useEffect(() => { setCardPage(1); }, [activeTab, search]);
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: "all",       label: "All Reviews", count: reviewed.length },
@@ -286,10 +291,25 @@ export default function ServiceFeedbacksPage() {
                 </p>
               </div>
             ) : viewMode === "cards" ? (
-              <div className="px-6 py-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filtered.map((fb, idx) => (
-                  <FeedbackCard key={fb.id} feedback={fb} index={idx} />
-                ))}
+              <div className="px-6 py-3">
+                {(() => {
+                  const totalPages = Math.max(1, Math.ceil(filtered.length / cardPageSize));
+                  const safePage = Math.min(cardPage, totalPages);
+                  const start = (safePage - 1) * cardPageSize;
+                  const paged = filtered.slice(start, start + cardPageSize);
+                  return (
+                    <>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {paged.map((fb, idx) => (
+                          <FeedbackCard key={fb.id} feedback={fb} index={idx} />
+                        ))}
+                      </div>
+                      <div className="bg-background rounded-lg border border-edge overflow-hidden mt-4">
+                        <Pagination total={filtered.length} page={safePage} pageSize={cardPageSize} onPageChange={setCardPage} onPageSizeChange={setCardPageSize} />
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             ) : (
               <div className="px-6 py-3">

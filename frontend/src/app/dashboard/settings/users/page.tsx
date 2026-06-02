@@ -20,6 +20,7 @@ import {
   type StaffMember,
 } from "@/lib/api-staff";
 import { getRoles, type GarageRole } from "@/lib/api-roles";
+import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
 
 const INPUT_CLS =
   "w-full px-3 py-2 border border-edge rounded-lg text-sm text-foreground bg-background placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
@@ -58,6 +59,10 @@ export default function GarageUsersPage() {
   const [formRoleId, setFormRoleId] = useState("");
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // pagination
+  const [tablePage, setTablePage] = useState(1);
+  const [tablePageSize, setTablePageSize] = useState<PageSize>(PAGE_SIZES[0]);
 
   // delete confirm
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
@@ -260,156 +265,168 @@ export default function GarageUsersPage() {
             </button>
           </div>
         ) : (
-          <>
-            {/* ── Desktop Table (md and above) ── */}
-            <div className="hidden md:block px-6 py-4">
-              <div className="bg-background rounded-lg border border-edge overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-edge bg-dim">
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
-                        Name
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
-                        Phone
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
-                        Title
-                      </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
-                        Role
-                      </th>
-                      <th className="text-center px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
-                        Status
-                      </th>
-                      <th className="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {staff.map((member) => (
-                      <tr
-                        key={member.id}
-                        className="border-b border-edge last:border-b-0 hover:bg-dim transition-colors"
-                      >
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-foreground">
-                            {member.name}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-secondary font-mono text-xs">
-                            {formatPhone(member.phone)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-secondary">
-                            {member.staffTitle || "\u2014"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs bg-accent-light text-accent px-2 py-0.5 rounded font-medium">
-                            {getRoleName(member)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {member.isActive ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-ok bg-ok-light px-2 py-0.5 rounded-full">
-                              <span className="w-1.5 h-1.5 rounded-full bg-ok" />
-                              Active
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-muted bg-dim px-2 py-0.5 rounded-full">
-                              <span className="w-1.5 h-1.5 rounded-full bg-muted" />
-                              Inactive
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => openEdit(member)}
-                              className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary-light px-2.5 py-1.5 rounded-md transition-colors"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => openDelete(member)}
-                              className="p-1.5 rounded-md text-muted hover:text-bad hover:bg-bad-light transition-colors"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* ── Mobile Card Layout (below md) ── */}
-            <div className="md:hidden px-4 py-4 space-y-3">
-              {staff.map((member) => (
-                <div
-                  key={member.id}
-                  className="bg-background border border-edge rounded-lg p-4"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="font-medium text-foreground text-sm">
-                        {member.name}
-                      </p>
-                      <p className="text-xs text-secondary font-mono mt-0.5">
-                        {formatPhone(member.phone)}
-                      </p>
-                    </div>
-                    {member.isActive ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-ok bg-ok-light px-2 py-0.5 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-ok" />
-                        Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-muted bg-dim px-2 py-0.5 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-muted" />
-                        Inactive
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    {member.staffTitle && (
-                      <span className="text-xs text-secondary bg-dim px-2 py-0.5 rounded">
-                        {member.staffTitle}
-                      </span>
-                    )}
-                    <span className="text-xs bg-accent-light text-accent px-2 py-0.5 rounded font-medium">
-                      {getRoleName(member)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 border-t border-edge pt-3">
-                    <button
-                      onClick={() => openEdit(member)}
-                      className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary-light px-2.5 py-1.5 rounded-md transition-colors"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => openDelete(member)}
-                      className="flex items-center gap-1 text-xs font-medium text-muted hover:text-bad hover:bg-bad-light px-2.5 py-1.5 rounded-md transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Remove
-                    </button>
+          (() => {
+            const totalPages = Math.max(1, Math.ceil(staff.length / tablePageSize));
+            const safePage = Math.min(tablePage, totalPages);
+            const start = (safePage - 1) * tablePageSize;
+            const pagedStaff = staff.slice(start, start + tablePageSize);
+            return (
+              <>
+                {/* ── Desktop Table (md and above) ── */}
+                <div className="hidden md:block px-6 py-4">
+                  <div className="bg-background rounded-lg border border-edge overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-edge bg-dim">
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
+                            Name
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
+                            Phone
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
+                            Title
+                          </th>
+                          <th className="text-left px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
+                            Role
+                          </th>
+                          <th className="text-center px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
+                            Status
+                          </th>
+                          <th className="text-right px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wide">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pagedStaff.map((member) => (
+                          <tr
+                            key={member.id}
+                            className="border-b border-edge last:border-b-0 hover:bg-dim transition-colors"
+                          >
+                            <td className="px-4 py-3">
+                              <span className="font-medium text-foreground">
+                                {member.name}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-secondary font-mono text-xs">
+                                {formatPhone(member.phone)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-secondary">
+                                {member.staffTitle || "\u2014"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-xs bg-accent-light text-accent px-2 py-0.5 rounded font-medium">
+                                {getRoleName(member)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {member.isActive ? (
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-ok bg-ok-light px-2 py-0.5 rounded-full">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-ok" />
+                                  Active
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-muted bg-dim px-2 py-0.5 rounded-full">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-muted" />
+                                  Inactive
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => openEdit(member)}
+                                  className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary-light px-2.5 py-1.5 rounded-md transition-colors"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => openDelete(member)}
+                                  className="p-1.5 rounded-md text-muted hover:text-bad hover:bg-bad-light transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <Pagination total={staff.length} page={safePage} pageSize={tablePageSize} onPageChange={setTablePage} onPageSizeChange={setTablePageSize} />
                   </div>
                 </div>
-              ))}
-            </div>
-          </>
+
+                {/* ── Mobile Card Layout (below md) ── */}
+                <div className="md:hidden px-4 py-4 space-y-3">
+                  {pagedStaff.map((member) => (
+                    <div
+                      key={member.id}
+                      className="bg-background border border-edge rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <p className="font-medium text-foreground text-sm">
+                            {member.name}
+                          </p>
+                          <p className="text-xs text-secondary font-mono mt-0.5">
+                            {formatPhone(member.phone)}
+                          </p>
+                        </div>
+                        {member.isActive ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-ok bg-ok-light px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-ok" />
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-muted bg-dim px-2 py-0.5 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-muted" />
+                            Inactive
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        {member.staffTitle && (
+                          <span className="text-xs text-secondary bg-dim px-2 py-0.5 rounded">
+                            {member.staffTitle}
+                          </span>
+                        )}
+                        <span className="text-xs bg-accent-light text-accent px-2 py-0.5 rounded font-medium">
+                          {getRoleName(member)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 border-t border-edge pt-3">
+                        <button
+                          onClick={() => openEdit(member)}
+                          className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary-light px-2.5 py-1.5 rounded-md transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => openDelete(member)}
+                          className="flex items-center gap-1 text-xs font-medium text-muted hover:text-bad hover:bg-bad-light px-2.5 py-1.5 rounded-md transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="bg-background rounded-lg border border-edge overflow-hidden">
+                    <Pagination total={staff.length} page={safePage} pageSize={tablePageSize} onPageChange={setTablePage} onPageSizeChange={setTablePageSize} />
+                  </div>
+                </div>
+              </>
+            );
+          })()
         )}
       </div>
 

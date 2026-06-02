@@ -6,6 +6,7 @@ import { getVehicles, getBrandById, getModelById, getCustomerById, Vehicle } fro
 import { Search, Car, User, Phone, Calendar, Shield, Loader2, LayoutGrid, List, Plus } from "lucide-react";
 import { canManage } from "@/lib/auth";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
+import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
 
 const TABLE_CLS = "bg-background rounded-lg border border-edge overflow-hidden";
 
@@ -72,8 +73,11 @@ export default function VehicleSearchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [cardPage, setCardPage] = useState(1);
+  const [cardPageSize, setCardPageSize] = useState<PageSize>(PAGE_SIZES[0]);
 
   useEffect(() => { loadVehicles(); }, []);
+  useEffect(() => { setCardPage(1); }, [search]);
 
   async function loadVehicles() {
     setLoading(true);
@@ -228,41 +232,47 @@ export default function VehicleSearchPage() {
           </div>
         ) : viewMode === "cards" ? (
           <div className="px-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filtered.map((v) => (
-                <div key={v.id} className="bg-background rounded-lg border border-edge p-5 hover:shadow-md transition-shadow">
-                  {/* Reg number badge */}
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="inline-flex items-center gap-1.5 bg-primary-light text-primary px-3 py-1 rounded-lg text-sm font-semibold tracking-wider">
-                      <Car className="w-3.5 h-3.5" />{v.registrationNumber}
-                    </span>
-                    <span className="text-xs bg-hover text-muted px-2 py-0.5 rounded">{v.category || "-"}</span>
+            {(() => {
+              const totalPages = Math.max(1, Math.ceil(filtered.length / cardPageSize));
+              const safePage = Math.min(cardPage, totalPages);
+              const start = (safePage - 1) * cardPageSize;
+              const paged = filtered.slice(start, start + cardPageSize);
+              return (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {paged.map((v) => (
+                      <div key={v.id} className="bg-background rounded-lg border border-edge p-5 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="inline-flex items-center gap-1.5 bg-primary-light text-primary px-3 py-1 rounded-lg text-sm font-semibold tracking-wider">
+                            <Car className="w-3.5 h-3.5" />{v.registrationNumber}
+                          </span>
+                          <span className="text-xs bg-hover text-muted px-2 py-0.5 rounded">{v.category || "-"}</span>
+                        </div>
+                        <p className="font-medium text-foreground text-sm">{v.brandName || "Unknown"} {v.modelName || "Unknown"}</p>
+                        <p className="text-xs text-muted mt-0.5">{v.fuelType || "-"}</p>
+                        <div className="mt-3 pt-3 border-t border-edge-light space-y-1.5">
+                          <div className="flex items-center gap-2 text-sm text-secondary">
+                            <User className="w-3.5 h-3.5 text-muted" />{v.customerName || "Unknown"}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-secondary">
+                            <Phone className="w-3.5 h-3.5 text-muted" />{v.customerPhone || "-"}
+                          </div>
+                        </div>
+                        {(v.purchaseDate || v.insuranceExpiry) && (
+                          <div className="mt-3 pt-3 border-t border-edge-light flex flex-wrap gap-3 text-xs text-muted">
+                            {v.purchaseDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />Purchased: {v.purchaseDate}</span>}
+                            {v.insuranceExpiry && <span className="flex items-center gap-1"><Shield className="w-3 h-3" />Insurance: {v.insuranceExpiry}</span>}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-
-                  {/* Vehicle info */}
-                  <p className="font-medium text-foreground text-sm">{v.brandName || "Unknown"} {v.modelName || "Unknown"}</p>
-                  <p className="text-xs text-muted mt-0.5">{v.fuelType || "-"}</p>
-
-                  {/* Customer info */}
-                  <div className="mt-3 pt-3 border-t border-edge-light space-y-1.5">
-                    <div className="flex items-center gap-2 text-sm text-secondary">
-                      <User className="w-3.5 h-3.5 text-muted" />{v.customerName || "Unknown"}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-secondary">
-                      <Phone className="w-3.5 h-3.5 text-muted" />{v.customerPhone || "-"}
-                    </div>
+                  <div className="bg-background rounded-lg border border-edge overflow-hidden mt-4">
+                    <Pagination total={filtered.length} page={safePage} pageSize={cardPageSize} onPageChange={setCardPage} onPageSizeChange={setCardPageSize} />
                   </div>
-
-                  {/* Extra details */}
-                  {(v.purchaseDate || v.insuranceExpiry) && (
-                    <div className="mt-3 pt-3 border-t border-edge-light flex flex-wrap gap-3 text-xs text-muted">
-                      {v.purchaseDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />Purchased: {v.purchaseDate}</span>}
-                      {v.insuranceExpiry && <span className="flex items-center gap-1"><Shield className="w-3 h-3" />Insurance: {v.insuranceExpiry}</span>}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                </>
+              );
+            })()}
           </div>
         ) : (
           <div className="px-6 py-4">

@@ -8,6 +8,7 @@ import {
   Building2, Plus, Search, Phone, Mail, MapPin, CheckCircle, XCircle, LayoutGrid, List,
 } from "lucide-react";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
+import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
 
 const TABLE_CLS = "glass-card overflow-hidden";
 
@@ -85,6 +86,8 @@ export default function GaragesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [cardPage, setCardPage] = useState(1);
+  const [cardPageSize, setCardPageSize] = useState<PageSize>(PAGE_SIZES[0]);
 
   useEffect(() => {
     async function fetchGarages() {
@@ -99,6 +102,8 @@ export default function GaragesPage() {
     }
     fetchGarages();
   }, []);
+
+  useEffect(() => { setCardPage(1); }, [search]);
 
   const filtered = (garages || []).filter((g) => {
     const q = search.toLowerCase();
@@ -179,64 +184,77 @@ export default function GaragesPage() {
           </div>
         ) : viewMode === "cards" ? (
           <div className="px-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filtered.map((garage) => (
-                <div
-                  key={garage.id}
-                  onClick={() => router.push(`/dashboard/super-admin/garages/${garage.id}`)}
-                  className="glass-card p-5 hover:shadow-theme-lg transition-shadow cursor-pointer"
-                >
-                  {/* Name + Status */}
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-foreground truncate">
-                      {garage.name}
-                    </h3>
-                    {garage.isActive ? (
-                      <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-ok-light text-ok shrink-0">
-                        <CheckCircle className="w-3 h-3" />
-                        Active
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-bad-light text-bad shrink-0">
-                        <XCircle className="w-3 h-3" />
-                        Inactive
-                      </span>
-                    )}
-                  </div>
+            {(() => {
+              const totalPages = Math.max(1, Math.ceil(filtered.length / cardPageSize));
+              const safePage = Math.min(cardPage, totalPages);
+              const start = (safePage - 1) * cardPageSize;
+              const paged = filtered.slice(start, start + cardPageSize);
+              return (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {paged.map((garage) => (
+                      <div
+                        key={garage.id}
+                        onClick={() => router.push(`/dashboard/super-admin/garages/${garage.id}`)}
+                        className="glass-card p-5 hover:shadow-theme-lg transition-shadow cursor-pointer"
+                      >
+                        {/* Name + Status */}
+                        <div className="flex items-start justify-between mb-3">
+                          <h3 className="text-sm font-semibold text-foreground truncate">
+                            {garage.name}
+                          </h3>
+                          {garage.isActive ? (
+                            <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-ok-light text-ok shrink-0">
+                              <CheckCircle className="w-3 h-3" />
+                              Active
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-bad-light text-bad shrink-0">
+                              <XCircle className="w-3 h-3" />
+                              Inactive
+                            </span>
+                          )}
+                        </div>
 
-                  {/* Owner */}
-                  <p className="text-sm text-secondary mb-2">{garage.ownerName || "-"}</p>
+                        {/* Owner */}
+                        <p className="text-sm text-secondary mb-2">{garage.ownerName || "-"}</p>
 
-                  {/* Contact */}
-                  <div className="space-y-1.5 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-muted">
-                      <Phone className="w-3.5 h-3.5 shrink-0" />
-                      <span>{garage.phone || "-"}</span>
-                    </div>
-                    {garage.email && (
-                      <div className="flex items-center gap-2 text-sm text-muted">
-                        <Mail className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{garage.email}</span>
+                        {/* Contact */}
+                        <div className="space-y-1.5 mb-4">
+                          <div className="flex items-center gap-2 text-sm text-muted">
+                            <Phone className="w-3.5 h-3.5 shrink-0" />
+                            <span>{garage.phone || "-"}</span>
+                          </div>
+                          {garage.email && (
+                            <div className="flex items-center gap-2 text-sm text-muted">
+                              <Mail className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{garage.email}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 text-sm text-muted">
+                            <MapPin className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{garage.address || "-"}</span>
+                          </div>
+                        </div>
+
+                        {/* Action */}
+                        <div className="pt-3 border-t border-edge-light">
+                          <Link
+                            href={`/dashboard/super-admin/garages/${garage.id}`}
+                            className="text-sm font-medium text-primary hover:underline"
+                          >
+                            View Details
+                          </Link>
+                        </div>
                       </div>
-                    )}
-                    <div className="flex items-center gap-2 text-sm text-muted">
-                      <MapPin className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{garage.address || "-"}</span>
-                    </div>
+                    ))}
                   </div>
-
-                  {/* Action */}
-                  <div className="pt-3 border-t border-edge-light">
-                    <Link
-                      href={`/dashboard/super-admin/garages/${garage.id}`}
-                      className="text-sm font-medium text-primary hover:underline"
-                    >
-                      View Details
-                    </Link>
+                  <div className="bg-background rounded-lg border border-edge overflow-hidden mt-4">
+                    <Pagination total={filtered.length} page={safePage} pageSize={cardPageSize} onPageChange={setCardPage} onPageSizeChange={setCardPageSize} />
                   </div>
-                </div>
-              ))}
-            </div>
+                </>
+              );
+            })()}
           </div>
         ) : (
           <div className="px-6 py-4">
