@@ -8,7 +8,7 @@ import { useTheme } from "@/context/ThemeContext";
 import {
   Search, Menu, X, Sun, Moon,
   Car, User as UserIcon, FileText, ShoppingCart, Loader2,
-  LogOut, Building2, ChevronDown,
+  LogOut, Building2, ChevronDown, ClipboardList, Palette,
 } from "lucide-react";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import { getCustomers, Customer } from "@/lib/api-vehicles";
@@ -16,12 +16,14 @@ import { getVehicles, Vehicle } from "@/lib/api-vehicles";
 import { getOrders, Order } from "@/lib/api-orders";
 import { getInvoices, Invoice } from "@/lib/api-invoices";
 import { api } from "@/lib/api";
+import { GarageRegistration, getGarageRegistrations } from "@/lib/api-garage-registration";
+import { BrandRequest, getBrandRequests } from "@/lib/api-brand-requests";
 
 // ── Search result types ──
 
 interface SearchResult {
   id: string;
-  type: "customer" | "vehicle" | "order" | "invoice" | "garage";
+  type: "customer" | "vehicle" | "order" | "invoice" | "garage" | "garage-request" | "brand-request";
   title: string;
   subtitle: string;
   href: string;
@@ -43,15 +45,20 @@ let cachedVehicles: Vehicle[] | null = null;
 let cachedOrders: Order[] | null = null;
 let cachedInvoices: Invoice[] | null = null;
 let cachedGarages: Garage[] | null = null;
+let cachedGarageRequests: GarageRegistration[] | null = null;
+let cachedBrandRequests: BrandRequest[] | null = null;
 
 async function loadAllData(superAdmin: boolean) {
   if (superAdmin) {
-    // Super admin only searches garages
-    const garages = cachedGarages
-      ? cachedGarages
-      : await api.get<Garage[]>("/api/garages").catch(() => []);
+    const [garages, garageRequests, brandRequests] = await Promise.all([
+      cachedGarages ? Promise.resolve(cachedGarages) : api.get<Garage[]>("/api/garages").catch(() => []),
+      cachedGarageRequests ? Promise.resolve(cachedGarageRequests) : getGarageRegistrations().catch(() => []),
+      cachedBrandRequests ? Promise.resolve(cachedBrandRequests) : getBrandRequests().catch(() => []),
+    ]);
     cachedGarages = garages;
-    return { customers: [], vehicles: [], orders: [], invoices: [], garages };
+    cachedGarageRequests = garageRequests;
+    cachedBrandRequests = brandRequests;
+    return { customers: [], vehicles: [], orders: [], invoices: [], garages, garageRequests, brandRequests };
   }
 
   const [customers, vehicles, orders, invoices] = await Promise.all([
@@ -64,7 +71,7 @@ async function loadAllData(superAdmin: boolean) {
   cachedVehicles = vehicles;
   cachedOrders = orders;
   cachedInvoices = invoices;
-  return { customers, vehicles, orders, invoices, garages: [] };
+  return { customers, vehicles, orders, invoices, garages: [], garageRequests: [], brandRequests: [] };
 }
 
 function searchAll(
@@ -74,6 +81,8 @@ function searchAll(
   orders: Order[],
   invoices: Invoice[],
   garages: Garage[],
+  garageRequests: GarageRegistration[] = [],
+  brandRequests: BrandRequest[] = [],
 ): SearchResult[] {
   const term = q.toLowerCase().trim();
   if (!term) return [];
@@ -97,6 +106,46 @@ function searchAll(
         title: g.name || "Unknown",
         subtitle: [g.ownerName, g.phone].filter(Boolean).join(" - "),
         href: `/dashboard/super-admin/garages/${g.id}`,
+      });
+      count++;
+    }
+  }
+
+  // garage requests (super admin)
+  count = 0;
+  for (const gr of garageRequests) {
+    if (count >= MAX) break;
+    if (
+      gr.name?.toLowerCase().includes(term) ||
+      gr.ownerName?.toLowerCase().includes(term) ||
+      gr.phone?.includes(term) ||
+      gr.email?.toLowerCase().includes(term)
+    ) {
+      results.push({
+        id: `gr-${gr.id}`,
+        type: "garage-request",
+        title: gr.name || "Unknown",
+        subtitle: [gr.ownerName, gr.status].filter(Boolean).join(" - "),
+        href: `/dashboard/super-admin/garage-requests/${gr.id}`,
+      });
+      count++;
+    }
+  }
+
+  // brand requests (super admin)
+  count = 0;
+  for (const br of brandRequests) {
+    if (count >= MAX) break;
+    if (
+      br.name?.toLowerCase().includes(term) ||
+      br.garageName?.toLowerCase().includes(term)
+    ) {
+      results.push({
+        id: `br-${br.id}`,
+        type: "brand-request",
+        title: br.name || "Unknown",
+        subtitle: [br.garageName, br.status].filter(Boolean).join(" - "),
+        href: `/dashboard/super-admin/brand-requests/${br.id}`,
       });
       count++;
     }
@@ -187,11 +236,13 @@ function searchAll(
 }
 
 const TYPE_META: Record<SearchResult["type"], { icon: typeof Car; label: string; color: string }> = {
-  garage:   { icon: Building2, label: "Garage", color: "text-purple-500 bg-purple-50 dark:bg-purple-500/15" },
-  customer: { icon: UserIcon, label: "Customer", color: "text-brand-500 bg-brand-50 dark:bg-brand-500/15" },
-  vehicle:  { icon: Car, label: "Vehicle", color: "text-success-500 bg-success-50 dark:bg-success-500/15" },
-  order:    { icon: ShoppingCart, label: "Order", color: "text-warning-500 bg-warning-50 dark:bg-warning-500/15" },
-  invoice:  { icon: FileText, label: "Invoice", color: "text-error-500 bg-error-50 dark:bg-error-500/15" },
+  garage:           { icon: Building2, label: "Garage", color: "text-purple-500 bg-purple-50 dark:bg-purple-500/15" },
+  "garage-request": { icon: ClipboardList, label: "Garage Req", color: "text-amber-500 bg-amber-50 dark:bg-amber-500/15" },
+  "brand-request":  { icon: Palette, label: "Brand Req", color: "text-teal-500 bg-teal-50 dark:bg-teal-500/15" },
+  customer:         { icon: UserIcon, label: "Customer", color: "text-brand-500 bg-brand-50 dark:bg-brand-500/15" },
+  vehicle:          { icon: Car, label: "Vehicle", color: "text-success-500 bg-success-50 dark:bg-success-500/15" },
+  order:            { icon: ShoppingCart, label: "Order", color: "text-warning-500 bg-warning-50 dark:bg-warning-500/15" },
+  invoice:          { icon: FileText, label: "Invoice", color: "text-error-500 bg-error-50 dark:bg-error-500/15" },
 };
 
 export default function TopBar() {
@@ -242,9 +293,9 @@ export default function TopBar() {
 
     setSearchLoading(true);
     try {
-      const { customers, vehicles, orders, invoices, garages } = await loadAllData(superAdmin);
+      const { customers, vehicles, orders, invoices, garages, garageRequests, brandRequests } = await loadAllData(superAdmin);
       setDataLoaded(true);
-      const res = searchAll(q, customers, vehicles, orders, invoices, garages);
+      const res = searchAll(q, customers, vehicles, orders, invoices, garages, garageRequests, brandRequests);
       setResults(res);
       setShowDropdown(true);
     } catch {
@@ -271,6 +322,8 @@ export default function TopBar() {
         cachedOrders || [],
         cachedInvoices || [],
         cachedGarages || [],
+        cachedGarageRequests || [],
+        cachedBrandRequests || [],
       );
       setResults(res);
       setShowDropdown(true);
@@ -350,7 +403,7 @@ export default function TopBar() {
                 onChange={(e) => handleInputChange(e.target.value)}
                 onFocus={() => { if (query.trim() && results.length > 0) setShowDropdown(true); }}
                 onKeyDown={handleKeyDown}
-                placeholder={superAdmin ? "Search garages by name, owner, phone..." : "Search name, jobcard, phone, vehicle..."}
+                placeholder={superAdmin ? "Search garages, requests, brands..." : "Search name, jobcard, phone, vehicle..."}
                 className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-3 focus:ring-brand-500/10 focus:border-brand-300 dark:focus:border-brand-800 transition-shadow"
               />
               {searchLoading && (
