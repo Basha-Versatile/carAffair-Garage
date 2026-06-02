@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { isLoggedIn, isGarageStaff, canView, getFirstPermittedRoute } from "@/lib/auth";
+import { isLoggedIn, isGarageStaff, isSuperAdmin, clearUser, canView, getFirstPermittedRoute } from "@/lib/auth";
 import { SidebarProvider, useSidebar } from "@/context/SidebarContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import Sidebar from "@/components/Sidebar";
@@ -56,6 +56,26 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [denied, setDenied] = useState(false);
+  const [suspended, setSuspended] = useState(false);
+
+  // Check garage active status for non-super-admin users
+  useEffect(() => {
+    if (isSuperAdmin()) return;
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const token = typeof window !== "undefined"
+      ? (() => { try { return JSON.parse(localStorage.getItem("garrage_auth") || "{}").accessToken; } catch { return null; } })()
+      : null;
+    if (!token) return;
+    fetch(`${API_BASE}/api/orders/counts`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        if (res.status === 403) {
+          return res.json().then((data) => {
+            if (data?.error === "GARAGE_INACTIVE") setSuspended(true);
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!isGarageStaff()) {
@@ -100,7 +120,25 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           {/* Glassmorphic mesh gradient background */}
           <div className="glass-bg-mesh" aria-hidden="true" />
           <div className="relative">
-            {denied ? (
+            {suspended ? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
+                <div className="w-20 h-20 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-5">
+                  <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Account Suspended</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-6">
+                  Your garage account has been suspended by the administrator. Please contact support for more information.
+                </p>
+                <button
+                  onClick={() => { clearUser(); router.replace("/login"); }}
+                  className="px-6 py-2.5 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : denied ? (
               <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-6">
                 <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-4">
                   <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -13,7 +13,9 @@ import com.garrage.exception.ResourceNotFoundException;
 import com.garrage.model.Garage;
 import com.garrage.model.Order;
 import com.garrage.model.User;
+import com.garrage.repository.BrandRequestRepository;
 import com.garrage.repository.CustomerRepository;
+import com.garrage.repository.GarageRegistrationRepository;
 import com.garrage.repository.GarageRepository;
 import com.garrage.repository.OrderRepository;
 import com.garrage.repository.UserRepository;
@@ -32,6 +34,8 @@ public class GarageService {
     private final CustomerRepository customerRepository;
     private final VehicleRepository vehicleRepository;
     private final OrderRepository orderRepository;
+    private final GarageRegistrationRepository garageRegistrationRepository;
+    private final BrandRequestRepository brandRequestRepository;
     private final EmailService emailService;
 
     /**
@@ -196,6 +200,54 @@ public class GarageService {
         dashboard.put("todayOrders", todayOrders);
 
         return dashboard;
+    }
+
+    /**
+     * Returns platform-wide stats for the super admin dashboard.
+     */
+    public Map<String, Object> getSuperAdminStats() {
+        List<Garage> allGarages = garageRepository.findAll();
+        long activeGarages = allGarages.stream().filter(Garage::isActive).count();
+        long inactiveGarages = allGarages.size() - activeGarages;
+
+        long pendingGarageRequests = garageRegistrationRepository.findByStatus("PENDING").size();
+        long approvedGarageRequests = garageRegistrationRepository.findByStatus("APPROVED").size();
+        long rejectedGarageRequests = garageRegistrationRepository.findByStatus("REJECTED").size();
+
+        long pendingBrandRequests = brandRequestRepository.findByStatus("PENDING").size();
+        long approvedBrandRequests = brandRequestRepository.findByStatus("APPROVED").size();
+        long rejectedBrandRequests = brandRequestRepository.findByStatus("REJECTED").size();
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalGarages", (long) allGarages.size());
+        stats.put("activeGarages", activeGarages);
+        stats.put("inactiveGarages", inactiveGarages);
+        stats.put("totalGarageRequests", pendingGarageRequests + approvedGarageRequests + rejectedGarageRequests);
+        stats.put("pendingGarageRequests", pendingGarageRequests);
+        stats.put("approvedGarageRequests", approvedGarageRequests);
+        stats.put("rejectedGarageRequests", rejectedGarageRequests);
+        stats.put("totalBrandRequests", pendingBrandRequests + approvedBrandRequests + rejectedBrandRequests);
+        stats.put("pendingBrandRequests", pendingBrandRequests);
+        stats.put("approvedBrandRequests", approvedBrandRequests);
+        stats.put("rejectedBrandRequests", rejectedBrandRequests);
+
+        return stats;
+    }
+
+    /**
+     * Toggles the active status of a garage.
+     */
+    public GarageResponse toggleGarageActive(String garageId) {
+        Garage garage = garageRepository.findById(garageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Garage not found with id: " + garageId));
+
+        garage.setActive(!garage.isActive());
+        garage = garageRepository.save(garage);
+
+        log.info("Garage {} (id: {}) is now {}", garage.getName(), garage.getId(),
+                garage.isActive() ? "active" : "inactive");
+
+        return toGarageResponse(garage);
     }
 
     // ---- Private helpers ----

@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { tabs, TabKey, getOrders, getOrdersByStatus, getOrderCounts, Order } from "@/lib/api-orders";
 import { getCustomers } from "@/lib/api-customers";
 import { getParts, Part } from "@/lib/api-inventory";
-import { canManage, isGarageStaff, getUser } from "@/lib/auth";
+import { canManage, isGarageStaff, isSuperAdmin, getUser } from "@/lib/auth";
+import { api } from "@/lib/api";
 import { updateAssignmentStatus, type ServiceAssignment } from "@/lib/api-orders";
 import {
   Plus, FileText, Phone, Car, Calendar, IndianRupee, LayoutGrid, List,
   TrendingUp, TrendingDown, Users, AlertTriangle, ClipboardList,
-  Wrench, CheckCircle2, Clock, Loader2,
+  Wrench, CheckCircle2, Clock, Loader2, Building2, Palette,
+  ChevronRight, XCircle, CheckCircle, ArrowRight,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -347,9 +349,329 @@ function StaffDashboard() {
   );
 }
 
+/* ── Super Admin Dashboard ────────────────────────── */
+
+interface SuperAdminStats {
+  totalGarages: number;
+  activeGarages: number;
+  inactiveGarages: number;
+  totalGarageRequests: number;
+  pendingGarageRequests: number;
+  approvedGarageRequests: number;
+  rejectedGarageRequests: number;
+  totalBrandRequests: number;
+  pendingBrandRequests: number;
+  approvedBrandRequests: number;
+  rejectedBrandRequests: number;
+}
+
+function SuperAdminDashboard() {
+  const router = useRouter();
+  const [stats, setStats] = useState<SuperAdminStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get<SuperAdminStats>("/api/garages/stats")
+      .then(setStats)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full py-20">
+        <Loader2 className="w-7 h-7 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  const s = stats || {
+    totalGarages: 0, activeGarages: 0, inactiveGarages: 0,
+    totalGarageRequests: 0, pendingGarageRequests: 0, approvedGarageRequests: 0, rejectedGarageRequests: 0,
+    totalBrandRequests: 0, pendingBrandRequests: 0, approvedBrandRequests: 0, rejectedBrandRequests: 0,
+  };
+
+  return (
+    <div className="p-5 space-y-6">
+      {/* Greeting */}
+      <div>
+        <h1 className="text-lg font-bold text-foreground">Super Admin Dashboard</h1>
+        <p className="text-sm text-muted mt-0.5">Platform overview and management</p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <KpiCard
+          label="Active Garages"
+          value={s.activeGarages.toLocaleString()}
+          icon={Building2}
+          iconBg="bg-success-500"
+        />
+        <KpiCard
+          label="Inactive Garages"
+          value={s.inactiveGarages.toLocaleString()}
+          icon={Building2}
+          iconBg="bg-error-500"
+        />
+        <KpiCard
+          label="Pending Garage Requests"
+          value={s.pendingGarageRequests.toLocaleString()}
+          icon={ClipboardList}
+          iconBg="bg-warning-500"
+        />
+        <KpiCard
+          label="Pending Brand Requests"
+          value={s.pendingBrandRequests.toLocaleString()}
+          icon={Palette}
+          iconBg="bg-brand-500"
+        />
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Garage Status — Donut */}
+        <div
+          onClick={() => router.push("/dashboard/super-admin/garages")}
+          className="glass-card p-5 cursor-pointer hover:shadow-theme-lg transition-shadow group"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-foreground">Garage Status</h3>
+            <ChevronRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors" />
+          </div>
+          <p className="text-xs text-muted mb-3">{s.totalGarages} total garages</p>
+          <div className="h-48 flex items-center justify-center">
+            {s.totalGarages === 0 ? (
+              <p className="text-sm text-muted">No garages yet</p>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Active", value: s.activeGarages },
+                      { name: "Inactive", value: s.inactiveGarages },
+                    ].filter(d => d.value > 0)}
+                    innerRadius={50}
+                    outerRadius={75}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    <Cell fill="#16a34a" />
+                    {s.inactiveGarages > 0 && <Cell fill="#dc2626" />}
+                  </Pie>
+                  <Tooltip formatter={(value, name) => [`${value}`, `${name}`]} />
+                  <text x="50%" y="46%" textAnchor="middle" dominantBaseline="middle" className="fill-foreground text-2xl font-bold">
+                    {s.totalGarages}
+                  </text>
+                  <text x="50%" y="58%" textAnchor="middle" dominantBaseline="middle" className="fill-muted text-[11px]">
+                    Total
+                  </text>
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+          <div className="flex items-center justify-center gap-5 mt-2">
+            <div className="flex items-center gap-1.5 text-xs text-secondary">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              Active <span className="font-semibold text-foreground ml-0.5">{s.activeGarages}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-secondary">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+              Inactive <span className="font-semibold text-foreground ml-0.5">{s.inactiveGarages}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Garage Requests — Donut */}
+        <div
+          onClick={() => router.push("/dashboard/super-admin/garage-requests")}
+          className="glass-card p-5 cursor-pointer hover:shadow-theme-lg transition-shadow group"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-foreground">Garage Requests</h3>
+            <ChevronRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors" />
+          </div>
+          <p className="text-xs text-muted mb-3">{s.totalGarageRequests} total requests</p>
+          <div className="h-48 flex items-center justify-center">
+            {s.totalGarageRequests === 0 ? (
+              <p className="text-sm text-muted">No requests yet</p>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Pending", value: s.pendingGarageRequests },
+                      { name: "Approved", value: s.approvedGarageRequests },
+                      { name: "Rejected", value: s.rejectedGarageRequests },
+                    ].filter(d => d.value > 0)}
+                    innerRadius={50}
+                    outerRadius={75}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {[
+                      { name: "Pending", color: "#f59e0b" },
+                      { name: "Approved", color: "#16a34a" },
+                      { name: "Rejected", color: "#dc2626" },
+                    ]
+                      .filter(d => {
+                        const val = d.name === "Pending" ? s.pendingGarageRequests : d.name === "Approved" ? s.approvedGarageRequests : s.rejectedGarageRequests;
+                        return val > 0;
+                      })
+                      .map((d) => (
+                        <Cell key={d.name} fill={d.color} />
+                      ))}
+                  </Pie>
+                  <Tooltip formatter={(value, name) => [`${value}`, `${name}`]} />
+                  <text x="50%" y="46%" textAnchor="middle" dominantBaseline="middle" className="fill-foreground text-2xl font-bold">
+                    {s.totalGarageRequests}
+                  </text>
+                  <text x="50%" y="58%" textAnchor="middle" dominantBaseline="middle" className="fill-muted text-[11px]">
+                    Total
+                  </text>
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+          <div className="flex items-center justify-center gap-4 mt-2">
+            <div className="flex items-center gap-1.5 text-xs text-secondary">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+              Pending <span className="font-semibold text-foreground ml-0.5">{s.pendingGarageRequests}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-secondary">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              Approved <span className="font-semibold text-foreground ml-0.5">{s.approvedGarageRequests}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-secondary">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+              Rejected <span className="font-semibold text-foreground ml-0.5">{s.rejectedGarageRequests}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Brand Requests — Donut */}
+        <div
+          onClick={() => router.push("/dashboard/super-admin/brand-requests")}
+          className="glass-card p-5 cursor-pointer hover:shadow-theme-lg transition-shadow group"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-foreground">Brand Requests</h3>
+            <ChevronRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors" />
+          </div>
+          <p className="text-xs text-muted mb-3">{s.totalBrandRequests} total requests</p>
+          <div className="h-48 flex items-center justify-center">
+            {s.totalBrandRequests === 0 ? (
+              <p className="text-sm text-muted">No requests yet</p>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Pending", value: s.pendingBrandRequests },
+                      { name: "Approved", value: s.approvedBrandRequests },
+                      { name: "Rejected", value: s.rejectedBrandRequests },
+                    ].filter(d => d.value > 0)}
+                    innerRadius={50}
+                    outerRadius={75}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {[
+                      { name: "Pending", color: "#f59e0b" },
+                      { name: "Approved", color: "#16a34a" },
+                      { name: "Rejected", color: "#dc2626" },
+                    ]
+                      .filter(d => {
+                        const val = d.name === "Pending" ? s.pendingBrandRequests : d.name === "Approved" ? s.approvedBrandRequests : s.rejectedBrandRequests;
+                        return val > 0;
+                      })
+                      .map((d) => (
+                        <Cell key={d.name} fill={d.color} />
+                      ))}
+                  </Pie>
+                  <Tooltip formatter={(value, name) => [`${value}`, `${name}`]} />
+                  <text x="50%" y="46%" textAnchor="middle" dominantBaseline="middle" className="fill-foreground text-2xl font-bold">
+                    {s.totalBrandRequests}
+                  </text>
+                  <text x="50%" y="58%" textAnchor="middle" dominantBaseline="middle" className="fill-muted text-[11px]">
+                    Total
+                  </text>
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+          <div className="flex items-center justify-center gap-4 mt-2">
+            <div className="flex items-center gap-1.5 text-xs text-secondary">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+              Pending <span className="font-semibold text-foreground ml-0.5">{s.pendingBrandRequests}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-secondary">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              Approved <span className="font-semibold text-foreground ml-0.5">{s.approvedBrandRequests}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-secondary">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+              Rejected <span className="font-semibold text-foreground ml-0.5">{s.rejectedBrandRequests}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <button
+          onClick={() => router.push("/dashboard/super-admin/garages")}
+          className="glass-card p-4 flex items-center gap-3 hover:shadow-theme-lg transition-shadow text-left group"
+        >
+          <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center shrink-0">
+            <Building2 className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Manage Garages</p>
+            <p className="text-xs text-muted">{s.totalGarages} total</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
+        </button>
+
+        <button
+          onClick={() => router.push("/dashboard/super-admin/garage-requests")}
+          className="glass-card p-4 flex items-center gap-3 hover:shadow-theme-lg transition-shadow text-left group"
+        >
+          <div className="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center shrink-0">
+            <ClipboardList className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Garage Requests</p>
+            <p className="text-xs text-muted">{s.pendingGarageRequests} pending</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
+        </button>
+
+        <button
+          onClick={() => router.push("/dashboard/super-admin/brand-requests")}
+          className="glass-card p-4 flex items-center gap-3 hover:shadow-theme-lg transition-shadow text-left group"
+        >
+          <div className="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center shrink-0">
+            <Palette className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Brand Requests</p>
+            <p className="text-xs text-muted">{s.pendingBrandRequests} pending</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main dashboard ───────────────────────────────── */
 
 export default function DashboardPage() {
+  if (isSuperAdmin()) return <SuperAdminDashboard />;
+
   const staffMode = isGarageStaff();
   if (staffMode) return <StaffDashboard />;
 

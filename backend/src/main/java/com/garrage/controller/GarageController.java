@@ -87,6 +87,28 @@ public class GarageController {
         return ResponseEntity.ok(ApiResponse.ok(dashboard));
     }
 
+    /**
+     * GET /api/garages/stats
+     * Get platform-wide stats for the super admin dashboard.
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getSuperAdminStats() {
+        requireRole("super_admin");
+        Map<String, Object> stats = garageService.getSuperAdminStats();
+        return ResponseEntity.ok(ApiResponse.ok(stats));
+    }
+
+    /**
+     * PUT /api/garages/{id}/toggle-active
+     * Toggle active status for a garage. Restricted to super_admin only.
+     */
+    @PutMapping("/{id}/toggle-active")
+    public ResponseEntity<ApiResponse<GarageResponse>> toggleGarageActive(@PathVariable String id) {
+        requireRole("super_admin");
+        GarageResponse garage = garageService.toggleGarageActive(id);
+        return ResponseEntity.ok(ApiResponse.ok(garage));
+    }
+
     // ---- Private helpers ----
 
     /**

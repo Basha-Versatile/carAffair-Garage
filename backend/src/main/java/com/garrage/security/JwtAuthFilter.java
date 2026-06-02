@@ -3,12 +3,16 @@ package com.garrage.security;
 import java.io.IOException;
 import java.util.List;
 
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.garrage.model.Garage;
+import com.garrage.repository.GarageRepository;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -22,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final GarageRepository garageRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -63,6 +68,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 TenantContext.setGarageId(garageId);
+
+                // Block API access for inactive garages (garage_admin and garage_staff only)
+                if (("garage_admin".equals(role) || "garage_staff".equals(role))
+                        && garageId != null && !garageId.isBlank()) {
+                    boolean garageActive = garageRepository.findById(garageId)
+                            .map(Garage::isActive)
+                            .orElse(false);
+                    if (!garageActive) {
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                        response.getWriter().write(
+                                "{\"error\":\"GARAGE_INACTIVE\",\"message\":\"Your garage account has been suspended\"}");
+                        return;
+                    }
+                }
             }
         } catch (Exception e) {
             logger.error("Could not set user authentication in security context", e);
