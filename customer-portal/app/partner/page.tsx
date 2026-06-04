@@ -2,8 +2,10 @@
 
 import { useState, FormEvent } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AtmosphericBackground from "@/components/AtmosphericBackground";
 import { publicPost } from "@/lib/api";
 import {
   Building2,
@@ -36,6 +38,13 @@ const benefits = [
   "Access to inventory and billing tools",
   "Dedicated support team",
 ];
+
+/* shared input classes */
+const inputBase =
+  "w-full px-4 py-2.5 rounded-xl border bg-[var(--bg-glass)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm transition-all duration-200 outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50";
+const inputBorder = "border-[var(--border-color)]";
+const inputError = "border-red-500";
+const labelBase = "flex items-center gap-1.5 text-sm font-medium text-[var(--text-primary)] mb-1.5";
 
 export default function PartnerPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -114,33 +123,56 @@ export default function PartnerPage() {
     }
   };
 
+  const Spinner = () => (
+    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+
   return (
-    <div className="flex flex-col min-h-screen bg-background page-gradient">
+    <div className="relative min-h-screen flex flex-col grain">
+      <AtmosphericBackground />
       <Navbar />
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 pt-16">
         <div className="flex flex-col lg:flex-row min-h-[calc(100vh-4rem)]">
           {/* Left Info Panel */}
-          <div className="relative lg:w-[45%] xl:w-[42%] bg-gradient-to-br from-[#E63946] to-[#9B1B24] text-white px-6 py-12 sm:px-10 sm:py-16 lg:px-12 lg:py-20 xl:px-16 flex flex-col justify-center overflow-hidden">
+          <div className="relative lg:w-[45%] xl:w-[42%] bg-gradient-to-br from-red-600 to-red-900 text-white px-6 py-12 sm:px-10 sm:py-16 lg:px-12 lg:py-20 xl:px-16 flex flex-col justify-center overflow-hidden">
             {/* Decorative circles */}
             <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/5 rounded-full" />
             <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-white/5 rounded-full" />
             <div className="absolute top-1/2 -right-16 w-48 h-48 bg-white/5 rounded-full" />
 
             <div className="relative z-10 max-w-lg mx-auto lg:mx-0">
-              <h1 className="text-3xl sm:text-4xl lg:text-[2.5rem] xl:text-5xl font-bold leading-tight tracking-tight animate-slide-up">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="text-3xl sm:text-4xl lg:text-[2.5rem] xl:text-5xl font-bold leading-tight tracking-tight"
+              >
                 Become a Vendor With
                 <br />
                 Car Affair
-              </h1>
-              <p className="mt-4 text-base sm:text-lg text-red-100 leading-relaxed animate-slide-up [animation-delay:100ms]">
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="mt-4 text-base sm:text-lg text-red-100 leading-relaxed"
+              >
                 Join our growing network of trusted garages and take your
                 business to the next level.
-              </p>
+              </motion.p>
 
               {/* Benefits List */}
-              <ul className="mt-8 space-y-4 animate-slide-up [animation-delay:200ms]">
+              <motion.ul
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="mt-8 space-y-4"
+              >
                 {benefits.map((benefit, idx) => (
                   <li key={idx} className="flex items-start gap-3">
                     <CheckCircle2 className="h-5 w-5 mt-0.5 text-red-300 shrink-0" />
@@ -149,10 +181,15 @@ export default function PartnerPage() {
                     </span>
                   </li>
                 ))}
-              </ul>
+              </motion.ul>
 
               {/* Stats */}
-              <div className="mt-10 flex gap-4 animate-slide-up [animation-delay:300ms]">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="mt-10 flex gap-4"
+              >
                 <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl px-5 py-3">
                   <div className="text-2xl sm:text-3xl font-bold">500+</div>
                   <div className="text-sm text-red-200 mt-1">
@@ -165,10 +202,15 @@ export default function PartnerPage() {
                     Monthly Bookings
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Testimonial */}
-              <div className="mt-10 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-5 animate-slide-up [animation-delay:400ms]">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="mt-10 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-5"
+              >
                 <p className="text-sm sm:text-base italic text-red-100 leading-relaxed">
                   &ldquo;Car Affair helped us grow our customer base by 3x in
                   just 6 months.&rdquo;
@@ -186,32 +228,42 @@ export default function PartnerPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
 
           {/* Right Form Panel */}
-          <div className="flex-1 px-4 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16 xl:px-20 bg-background/80 backdrop-blur-sm overflow-y-auto">
+          <div className="flex-1 px-4 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16 xl:px-20 bg-[var(--bg-primary)]/80 backdrop-blur-sm overflow-y-auto">
             <div className="max-w-xl mx-auto lg:mx-0">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight animate-fade-in">
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight"
+              >
                 Register Your Garage
-              </h2>
-              <p className="mt-2 text-secondary text-sm sm:text-base animate-fade-in [animation-delay:100ms]">
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="mt-2 text-[var(--text-secondary)] text-sm sm:text-base"
+              >
                 Fill in the details below and our team will get in touch.
-              </p>
+              </motion.p>
 
-              <form
+              <motion.form
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
                 onSubmit={handleSubmit}
                 noValidate
-                className="mt-8 space-y-6 animate-fade-in [animation-delay:200ms]"
+                className="mt-8 space-y-6"
               >
                 {/* Garage/Company Name */}
                 <div>
-                  <label
-                    htmlFor="garageName"
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5"
-                  >
-                    <Building2 className="h-4 w-4 text-muted" />
+                  <label htmlFor="garageName" className={labelBase}>
+                    <Building2 className="h-4 w-4 text-[var(--text-muted)]" />
                     Garage/Company Name{" "}
                     <span className="text-red-500">*</span>
                   </label>
@@ -221,26 +273,17 @@ export default function PartnerPage() {
                     value={garageName}
                     onChange={(e) => setGarageName(e.target.value)}
                     placeholder="e.g., AutoCare Garage"
-                    className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary ${
-                      isFieldInvalid(garageName)
-                        ? "border-red-500"
-                        : "border-edge"
-                    }`}
+                    className={`${inputBase} ${isFieldInvalid(garageName) ? inputError : inputBorder}`}
                   />
                   {isFieldInvalid(garageName) && (
-                    <p className="mt-1 text-xs text-red-500">
-                      Garage name is required.
-                    </p>
+                    <p className="mt-1 text-xs text-red-500">Garage name is required.</p>
                   )}
                 </div>
 
                 {/* Owner Name */}
                 <div>
-                  <label
-                    htmlFor="ownerName"
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5"
-                  >
-                    <User className="h-4 w-4 text-muted" />
+                  <label htmlFor="ownerName" className={labelBase}>
+                    <User className="h-4 w-4 text-[var(--text-muted)]" />
                     Owner Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -249,30 +292,21 @@ export default function PartnerPage() {
                     value={ownerName}
                     onChange={(e) => setOwnerName(e.target.value)}
                     placeholder="Full name"
-                    className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary ${
-                      isFieldInvalid(ownerName)
-                        ? "border-red-500"
-                        : "border-edge"
-                    }`}
+                    className={`${inputBase} ${isFieldInvalid(ownerName) ? inputError : inputBorder}`}
                   />
                   {isFieldInvalid(ownerName) && (
-                    <p className="mt-1 text-xs text-red-500">
-                      Owner name is required.
-                    </p>
+                    <p className="mt-1 text-xs text-red-500">Owner name is required.</p>
                   )}
                 </div>
 
                 {/* Phone Number */}
                 <div>
-                  <label
-                    htmlFor="phone"
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5"
-                  >
-                    <Phone className="h-4 w-4 text-muted" />
+                  <label htmlFor="phone" className={labelBase}>
+                    <Phone className="h-4 w-4 text-[var(--text-muted)]" />
                     Phone Number <span className="text-red-500">*</span>
                   </label>
                   <div className="flex">
-                    <span className="inline-flex items-center px-3.5 rounded-l-lg border border-r-0 border-edge bg-dim text-sm text-secondary font-medium">
+                    <span className="inline-flex items-center px-3.5 rounded-l-xl border border-r-0 border-[var(--border-color)] bg-[var(--bg-secondary)] text-sm text-[var(--text-secondary)] font-medium">
                       +91
                     </span>
                     <input
@@ -282,27 +316,20 @@ export default function PartnerPage() {
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="9876543210"
                       maxLength={10}
-                      className={`flex-1 px-4 py-2.5 rounded-r-lg border bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary ${
-                        isFieldInvalid(phone)
-                          ? "border-red-500"
-                          : "border-edge"
+                      className={`flex-1 px-4 py-2.5 rounded-r-xl border bg-[var(--bg-glass)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm transition-all duration-200 outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 ${
+                        isFieldInvalid(phone) ? inputError : inputBorder
                       }`}
                     />
                   </div>
                   {isFieldInvalid(phone) && (
-                    <p className="mt-1 text-xs text-red-500">
-                      Phone number is required.
-                    </p>
+                    <p className="mt-1 text-xs text-red-500">Phone number is required.</p>
                   )}
                 </div>
 
                 {/* Email Address */}
                 <div>
-                  <label
-                    htmlFor="email"
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5"
-                  >
-                    <Mail className="h-4 w-4 text-muted" />
+                  <label htmlFor="email" className={labelBase}>
+                    <Mail className="h-4 w-4 text-[var(--text-muted)]" />
                     Email Address <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -311,26 +338,17 @@ export default function PartnerPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="garage@example.com"
-                    className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary ${
-                      isFieldInvalid(email)
-                        ? "border-red-500"
-                        : "border-edge"
-                    }`}
+                    className={`${inputBase} ${isFieldInvalid(email) ? inputError : inputBorder}`}
                   />
                   {isFieldInvalid(email) && (
-                    <p className="mt-1 text-xs text-red-500">
-                      Email address is required.
-                    </p>
+                    <p className="mt-1 text-xs text-red-500">Email address is required.</p>
                   )}
                 </div>
 
                 {/* Years of Experience */}
                 <div>
-                  <label
-                    htmlFor="experience"
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5"
-                  >
-                    <Clock className="h-4 w-4 text-muted" />
+                  <label htmlFor="experience" className={labelBase}>
+                    <Clock className="h-4 w-4 text-[var(--text-muted)]" />
                     Years of Experience{" "}
                     <span className="text-red-500">*</span>
                   </label>
@@ -341,23 +359,17 @@ export default function PartnerPage() {
                     value={experience}
                     onChange={(e) => setExperience(e.target.value)}
                     placeholder="e.g., 5"
-                    className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary ${
-                      isFieldInvalid(experience)
-                        ? "border-red-500"
-                        : "border-edge"
-                    }`}
+                    className={`${inputBase} ${isFieldInvalid(experience) ? inputError : inputBorder}`}
                   />
                   {isFieldInvalid(experience) && (
-                    <p className="mt-1 text-xs text-red-500">
-                      Years of experience is required.
-                    </p>
+                    <p className="mt-1 text-xs text-red-500">Years of experience is required.</p>
                   )}
                 </div>
 
                 {/* Specialties */}
                 <div>
-                  <label className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-3">
-                    <Wrench className="h-4 w-4 text-muted" />
+                  <label className={`${labelBase} mb-3`}>
+                    <Wrench className="h-4 w-4 text-[var(--text-muted)]" />
                     Specialties <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -366,10 +378,10 @@ export default function PartnerPage() {
                       return (
                         <label
                           key={specialty}
-                          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer text-sm transition-colors duration-200 select-none ${
+                          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer text-sm transition-all duration-200 select-none ${
                             checked
-                              ? "border-primary bg-primary-light text-primary font-medium"
-                              : "border-edge bg-background text-secondary hover:bg-hover"
+                              ? "border-red-500 bg-red-500/10 text-red-500 font-medium"
+                              : `${inputBorder} bg-[var(--bg-glass)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]`
                           } ${
                             isFieldInvalid(specialties) && !checked
                               ? "border-red-300"
@@ -385,20 +397,12 @@ export default function PartnerPage() {
                           <span
                             className={`flex items-center justify-center h-4 w-4 rounded border shrink-0 transition-colors duration-200 ${
                               checked
-                                ? "bg-primary border-primary text-white"
-                                : "border-muted bg-background"
+                                ? "bg-red-500 border-red-500 text-white"
+                                : "border-[var(--text-muted)] bg-[var(--bg-glass)]"
                             }`}
                           >
                             {checked && (
-                              <svg
-                                className="h-3 w-3"
-                                viewBox="0 0 12 12"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
+                              <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M2 6l3 3 5-5" />
                               </svg>
                             )}
@@ -409,19 +413,14 @@ export default function PartnerPage() {
                     })}
                   </div>
                   {isFieldInvalid(specialties) && (
-                    <p className="mt-1.5 text-xs text-red-500">
-                      Please select at least one specialty.
-                    </p>
+                    <p className="mt-1.5 text-xs text-red-500">Please select at least one specialty.</p>
                   )}
                 </div>
 
                 {/* Service Area / Location */}
                 <div>
-                  <label
-                    htmlFor="location"
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5"
-                  >
-                    <MapPin className="h-4 w-4 text-muted" />
+                  <label htmlFor="location" className={labelBase}>
+                    <MapPin className="h-4 w-4 text-[var(--text-muted)]" />
                     Service Area / Location{" "}
                     <span className="text-red-500">*</span>
                   </label>
@@ -431,26 +430,17 @@ export default function PartnerPage() {
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="e.g., Banjara Hills, Hyderabad"
-                    className={`w-full px-4 py-2.5 rounded-lg border bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary ${
-                      isFieldInvalid(location)
-                        ? "border-red-500"
-                        : "border-edge"
-                    }`}
+                    className={`${inputBase} ${isFieldInvalid(location) ? inputError : inputBorder}`}
                   />
                   {isFieldInvalid(location) && (
-                    <p className="mt-1 text-xs text-red-500">
-                      Service area is required.
-                    </p>
+                    <p className="mt-1 text-xs text-red-500">Service area is required.</p>
                   )}
                 </div>
 
                 {/* Full Address */}
                 <div>
-                  <label
-                    htmlFor="fullAddress"
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5"
-                  >
-                    <MapPin className="h-4 w-4 text-muted" />
+                  <label htmlFor="fullAddress" className={labelBase}>
+                    <MapPin className="h-4 w-4 text-[var(--text-muted)]" />
                     Full Address
                   </label>
                   <textarea
@@ -459,17 +449,14 @@ export default function PartnerPage() {
                     onChange={(e) => setFullAddress(e.target.value)}
                     placeholder="Complete workshop address"
                     rows={3}
-                    className="w-full px-4 py-2.5 rounded-lg border border-edge bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                    className={`${inputBase} ${inputBorder} resize-none`}
                   />
                 </div>
 
                 {/* Number of Bays/Lifts */}
                 <div>
-                  <label
-                    htmlFor="bays"
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5"
-                  >
-                    <Building2 className="h-4 w-4 text-muted" />
+                  <label htmlFor="bays" className={labelBase}>
+                    <Building2 className="h-4 w-4 text-[var(--text-muted)]" />
                     Number of Bays/Lifts
                   </label>
                   <input
@@ -479,17 +466,14 @@ export default function PartnerPage() {
                     value={bays}
                     onChange={(e) => setBays(e.target.value)}
                     placeholder="e.g., 4"
-                    className="w-full px-4 py-2.5 rounded-lg border border-edge bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    className={`${inputBase} ${inputBorder}`}
                   />
                 </div>
 
                 {/* Certifications */}
                 <div>
-                  <label
-                    htmlFor="certifications"
-                    className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5"
-                  >
-                    <Award className="h-4 w-4 text-muted" />
+                  <label htmlFor="certifications" className={labelBase}>
+                    <Award className="h-4 w-4 text-[var(--text-muted)]" />
                     Any Certifications
                   </label>
                   <input
@@ -498,7 +482,7 @@ export default function PartnerPage() {
                     value={certifications}
                     onChange={(e) => setCertifications(e.target.value)}
                     placeholder="e.g., Maruti Authorized, Bosch Car Service"
-                    className="w-full px-4 py-2.5 rounded-lg border border-edge bg-background text-foreground placeholder:text-muted text-sm transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    className={`${inputBase} ${inputBorder}`}
                   />
                 </div>
 
@@ -512,22 +496,14 @@ export default function PartnerPage() {
                     <span
                       className={`flex items-center justify-center h-5 w-5 mt-0.5 rounded border shrink-0 transition-colors duration-200 ${
                         agreedTerms
-                          ? "bg-primary border-primary text-white"
+                          ? "bg-red-500 border-red-500 text-white"
                           : isFieldInvalid(agreedTerms)
-                          ? "border-red-500 bg-background"
-                          : "border-edge bg-background group-hover:border-muted"
+                          ? "border-red-500 bg-[var(--bg-glass)]"
+                          : "border-[var(--border-color)] bg-[var(--bg-glass)] group-hover:border-[var(--text-muted)]"
                       }`}
                     >
                       {agreedTerms && (
-                        <svg
-                          className="h-3.5 w-3.5"
-                          viewBox="0 0 12 12"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M2 6l3 3 5-5" />
                         </svg>
                       )}
@@ -542,29 +518,21 @@ export default function PartnerPage() {
                       className={`text-sm leading-snug ${
                         isFieldInvalid(agreedTerms)
                           ? "text-red-500"
-                          : "text-secondary"
+                          : "text-[var(--text-secondary)]"
                       }`}
                     >
                       I agree to the{" "}
-                      <Link
-                        href="/terms"
-                        className="text-primary underline underline-offset-2 hover:text-primary-hover"
-                      >
+                      <Link href="/terms" className="text-red-500 underline underline-offset-2 hover:text-red-400">
                         Terms of Service
                       </Link>{" "}
                       and{" "}
-                      <Link
-                        href="/partner-agreement"
-                        className="text-primary underline underline-offset-2 hover:text-primary-hover"
-                      >
+                      <Link href="/partner-agreement" className="text-red-500 underline underline-offset-2 hover:text-red-400">
                         Vendor Agreement
                       </Link>
                     </span>
                   </label>
                   {isFieldInvalid(agreedTerms) && (
-                    <p className="mt-1 text-xs text-red-500">
-                      You must agree to the terms to continue.
-                    </p>
+                    <p className="mt-1 text-xs text-red-500">You must agree to the terms to continue.</p>
                   )}
                 </div>
 
@@ -577,16 +545,15 @@ export default function PartnerPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98] ${
-                    submitting ? "bg-primary/70 text-white cursor-not-allowed" : "bg-primary text-white hover:bg-primary-hover cursor-pointer"
+                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold rounded-xl transition-all duration-200 ${
+                    submitting
+                      ? "bg-red-600/70 text-white cursor-not-allowed"
+                      : "bg-gradient-to-r from-red-600 to-red-500 text-white shadow-[0_10px_30px_-10px_rgba(220,38,38,0.5)] hover:shadow-[0_14px_36px_-10px_rgba(220,38,38,0.6)] active:scale-[0.98] cursor-pointer"
                   }`}
                 >
                   {submitting ? (
                     <>
-                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
+                      <Spinner />
                       Submitting...
                     </>
                   ) : (
@@ -598,16 +565,13 @@ export default function PartnerPage() {
                 </button>
 
                 {/* Login Link */}
-                <p className="text-center text-sm text-muted">
+                <p className="text-center text-sm text-[var(--text-muted)]">
                   Already a vendor?{" "}
-                  <Link
-                    href="/login"
-                    className="text-primary font-medium hover:text-primary-hover underline underline-offset-2"
-                  >
+                  <Link href="/login" className="text-red-500 font-medium hover:text-red-400 underline underline-offset-2">
                     Login here
                   </Link>
                 </p>
-              </form>
+              </motion.form>
             </div>
           </div>
         </div>
@@ -616,72 +580,64 @@ export default function PartnerPage() {
       <Footer />
 
       {/* Success Overlay/Modal */}
-      {submitted && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="relative mx-4 w-full max-w-md glass-card-premium rounded-2xl p-8 sm:p-10 text-center animate-scale-in">
-            {/* Animated Checkmark */}
-            <div className="mx-auto mb-6 flex items-center justify-center h-20 w-20 rounded-full bg-primary-light">
-              <svg
-                className="h-10 w-10 text-primary"
-                viewBox="0 0 52 52"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle
-                  cx="26"
-                  cy="26"
-                  r="24"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  fill="none"
-                  className="animate-[circle-draw_0.6s_ease-out_forwards]"
-                  style={{
-                    strokeDasharray: 151,
-                    strokeDashoffset: 151,
-                    animation: "circle-draw 0.6s ease-out forwards",
-                  }}
-                />
-                <path
-                  d="M15 27l7 7 15-15"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                  style={{
-                    strokeDasharray: 40,
-                    strokeDashoffset: 40,
-                    animation: "check-draw 0.4s ease-out 0.5s forwards",
-                  }}
-                />
-              </svg>
-              <style>{`
-                @keyframes circle-draw {
-                  to { stroke-dashoffset: 0; }
-                }
-                @keyframes check-draw {
-                  to { stroke-dashoffset: 0; }
-                }
-              `}</style>
-            </div>
-
-            <h3 className="text-2xl font-bold text-foreground">
-              Application Submitted!
-            </h3>
-            <p className="mt-3 text-secondary text-sm sm:text-base leading-relaxed">
-              Thank you for registering. Our team will review your application
-              and get back to you within 24-48 hours.
-            </p>
-
-            <Link
-              href="/"
-              className="mt-8 inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-primary text-white text-base font-semibold rounded-lg transition-all duration-200 hover:bg-primary-hover shadow-sm hover:shadow-md active:scale-[0.98]"
+      <AnimatePresence>
+        {submitted && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative mx-4 w-full max-w-md glass-panel rounded-2xl p-8 sm:p-10 text-center"
             >
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      )}
+              {/* Animated Checkmark */}
+              <div className="mx-auto mb-6 flex items-center justify-center h-20 w-20 rounded-full bg-red-500/10">
+                <svg
+                  className="h-10 w-10 text-red-500"
+                  viewBox="0 0 52 52"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="26" cy="26" r="24"
+                    stroke="currentColor" strokeWidth="3" fill="none"
+                    style={{ strokeDasharray: 151, strokeDashoffset: 151, animation: "circle-draw 0.6s ease-out forwards" }}
+                  />
+                  <path
+                    d="M15 27l7 7 15-15"
+                    stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"
+                    style={{ strokeDasharray: 40, strokeDashoffset: 40, animation: "check-draw 0.4s ease-out 0.5s forwards" }}
+                  />
+                </svg>
+                <style>{`
+                  @keyframes circle-draw { to { stroke-dashoffset: 0; } }
+                  @keyframes check-draw { to { stroke-dashoffset: 0; } }
+                `}</style>
+              </div>
+
+              <h3 className="text-2xl font-bold text-[var(--text-primary)]">
+                Application Submitted!
+              </h3>
+              <p className="mt-3 text-[var(--text-secondary)] text-sm sm:text-base leading-relaxed">
+                Thank you for registering. Our team will review your application
+                and get back to you within 24-48 hours.
+              </p>
+
+              <Link
+                href="/"
+                className="mt-8 inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 text-white text-base font-semibold rounded-xl transition-all duration-200 shadow-[0_10px_30px_-10px_rgba(220,38,38,0.5)] hover:shadow-[0_14px_36px_-10px_rgba(220,38,38,0.6)] active:scale-[0.98]"
+              >
+                Back to Home
+              </Link>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

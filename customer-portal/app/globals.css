@@ -1,81 +1,85 @@
 @import "tailwindcss";
 
-@property --border-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
+/* ================================================================== */
+/*  Design Tokens — Light Mode                                         */
+/* ================================================================== */
 
 :root {
-  --background: #ffffff;
-  --foreground: #1A1A1B;
-  --primary: #E63946;
-  --primary-hover: #CF2F3D;
-  --primary-light: #fef2f2;
-  --primary-muted: #F5A3AA;
-  --secondary: #4b5563;
-  --muted: #9ca3af;
-  --edge: #e5e7eb;
-  --edge-light: #f3f4f6;
-  --dim: #F1F1F1;
-  --hover: #f3f4f6;
-  --accent: #2563eb;
-  --accent-light: #eff6ff;
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.3);
-  --card-bg: #ffffff;
-  --glow-color: rgba(230, 57, 70, 0.4);
+  --bg-primary: #fafafa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f5f5f5;
+  --bg-glass: rgba(255, 255, 255, 0.75);
+  --bg-glass-hover: rgba(255, 255, 255, 0.9);
+  --bg-glass-strong: rgba(255, 255, 255, 0.92);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-glass: rgba(0, 0, 0, 0.06);
+  --text-primary: #0a0a0a;
+  --text-secondary: #404040;
+  --text-tertiary: #737373;
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --shadow-glass-lg: 0 16px 48px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 20px rgba(220, 38, 38, 0.12);
+  --gradient-primary: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  --gradient-accent: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  --gradient-bg: linear-gradient(135deg, #fafafa 0%, #f5f5f5 50%, #fafafa 100%);
 }
+
+/* ================================================================== */
+/*  Design Tokens — Dark Mode                                          */
+/* ================================================================== */
 
 .dark {
-  --background: #121212;
-  --foreground: #E0E0E0;
-  --primary: #E63946;
-  --primary-hover: #FF4D5A;
-  --primary-light: rgba(230, 57, 70, 0.12);
-  --primary-muted: #F5A3AA;
-  --secondary: #A0A0A0;
-  --muted: #6B6B6B;
-  --edge: #2A2A2A;
-  --edge-light: #2A2A2A;
-  --dim: #1E1E1E;
-  --hover: #2A2A2A;
-  --accent: #3b82f6;
-  --accent-light: rgba(59, 130, 246, 0.1);
-  --glass-bg: rgba(30, 30, 30, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --card-bg: #1E1E1E;
-  --glow-color: rgba(230, 57, 70, 0.6);
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #121212;
+  --bg-tertiary: #1a1a1a;
+  --bg-glass: rgba(18, 18, 18, 0.8);
+  --bg-glass-hover: rgba(26, 26, 26, 0.9);
+  --bg-glass-strong: rgba(18, 18, 18, 0.92);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-glass: rgba(255, 255, 255, 0.06);
+  --text-primary: #fafafa;
+  --text-secondary: #a3a3a3;
+  --text-tertiary: #525252;
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glass-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(220, 38, 38, 0.2);
+  --gradient-primary: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  --gradient-accent: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  --gradient-bg: linear-gradient(135deg, #0a0a0a 0%, #0f0f0f 50%, #0a0a0a 100%);
 }
 
+/* ================================================================== */
+/*  Tailwind Theme Integration                                         */
+/* ================================================================== */
+
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
-  --color-primary-light: var(--primary-light);
-  --color-primary-muted: var(--primary-muted);
-  --color-secondary: var(--secondary);
-  --color-muted: var(--muted);
-  --color-edge: var(--edge);
-  --color-edge-light: var(--edge-light);
-  --color-dim: var(--dim);
-  --color-hover: var(--hover);
-  --color-accent: var(--accent);
-  --color-accent-light: var(--accent-light);
-  --color-glass-bg: var(--glass-bg);
-  --color-glass-border: var(--glass-border);
-  --color-card-bg: var(--card-bg);
-  --color-glow: var(--glow-color);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-primary: #dc2626;
+  --color-primary-hover: #b91c1c;
+  --color-primary-light: #fef2f2;
+  --color-accent: #ef4444;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
 
   --animate-fade-in: fade-in 0.5s ease-out both;
   --animate-slide-up: slide-up 0.5s ease-out both;
   --animate-slide-right: slide-right 0.5s ease-out both;
   --animate-scale-in: scale-in 0.4s ease-out both;
-  --animate-bounce-slow: bounce-slow 2s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-drift-1: drift-1 18s ease-in-out infinite;
+  --animate-drift-2: drift-2 22s ease-in-out infinite;
+  --animate-drift-3: drift-3 20s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 3s ease-in-out infinite;
+  --animate-marquee: marquee 38s linear infinite;
 }
+
+/* ================================================================== */
+/*  Keyframe Animations                                                */
+/* ================================================================== */
 
 @keyframes fade-in {
   from { opacity: 0; }
@@ -93,208 +97,258 @@
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
-@keyframes bounce-slow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(10px); }
-}
-@keyframes button-glow {
-  0%, 100% { box-shadow: 0 0 15px rgba(230, 57, 70, 0.3), 0 0 30px rgba(230, 57, 70, 0.1); }
-  50% { box-shadow: 0 0 25px rgba(230, 57, 70, 0.5), 0 0 50px rgba(230, 57, 70, 0.2); }
-}
-@keyframes border-revolve {
-  from { --border-angle: 0deg; }
-  to { --border-angle: 360deg; }
-}
-@keyframes icon-lift {
-  from { transform: translateY(0); }
-  to { transform: translateY(-4px); }
-}
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes drift-1 {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(40px, -30px, 0); }
+}
+@keyframes drift-2 {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  33% { transform: translate3d(-30px, 20px, 0); }
+  66% { transform: translate3d(20px, -40px, 0); }
+}
+@keyframes drift-3 {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-40px, -20px, 0); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(220, 38, 38, 0.15); }
+  50% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.35); }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-33.333%); }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
-}
+/* ================================================================== */
+/*  Base Styles                                                        */
+/* ================================================================== */
 
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Glassmorphism utilities                                            */
-/* ------------------------------------------------------------------ */
+body {
+  background: var(--gradient-bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* ================================================================== */
+/*  Glass Panel — Heavy, prominent sections                            */
+/* ================================================================== */
+
+.glass-panel {
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid var(--border-glass);
+  box-shadow:
+    0 24px 60px -20px rgba(0, 0, 0, 0.18),
+    0 8px 24px -8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  border-radius: 1.5rem;
+  position: relative;
+}
+
+.dark .glass-panel {
+  box-shadow:
+    0 24px 60px -20px rgba(0, 0, 0, 0.5),
+    0 8px 24px -8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 50%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.dark .glass-panel::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 50%);
+}
+
+/* ================================================================== */
+/*  Glass Card — Lighter, reusable cards                               */
+/* ================================================================== */
 
 .glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--border-glass);
+  box-shadow:
+    0 12px 32px -16px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border-radius: 1.25rem;
+  transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
 }
 
-.glass-bg {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+.dark .glass-card {
+  box-shadow:
+    0 12px 32px -16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
-/* ------------------------------------------------------------------ */
-/*  Button glow effect                                                 */
-/* ------------------------------------------------------------------ */
-
-.btn-glow {
-  transition: box-shadow 0.3s ease-in-out;
-}
-.btn-glow:hover {
-  animation: button-glow 2s ease-in-out infinite;
+.glass-card:hover {
+  border-color: rgba(220, 38, 38, 0.3);
+  box-shadow:
+    0 24px 60px -24px rgba(220, 38, 38, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transform: translateY(-3px);
 }
 
-/* ------------------------------------------------------------------ */
-/*  Border revolve for service cards                                   */
-/* ------------------------------------------------------------------ */
+.dark .glass-card:hover {
+  border-color: rgba(220, 38, 38, 0.4);
+  box-shadow:
+    0 24px 60px -24px rgba(220, 38, 38, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
 
-.border-revolve {
+/* ================================================================== */
+/*  Glass Strong — Ultra-thick backdrop                                */
+/* ================================================================== */
+
+.glass-strong {
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-glass);
+}
+
+/* ================================================================== */
+/*  Utility Classes                                                    */
+/* ================================================================== */
+
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow {
+  box-shadow: var(--shadow-glow);
+}
+
+/* Sheen hover sweep effect */
+.sheen {
   position: relative;
+  overflow: hidden;
 }
 
-.border-revolve::before {
+.sheen::after {
   content: '';
   position: absolute;
-  inset: -2px;
-  background: conic-gradient(
-    from var(--border-angle, 0deg),
-    transparent 0%,
-    var(--primary) 10%,
-    transparent 20%
-  );
-  border-radius: inherit;
-  z-index: 0;
-  opacity: 0;
-  transition: opacity 0.3s ease-in-out;
-  pointer-events: none;
-}
-
-.border-revolve::after {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  background: var(--card-bg);
-  border-radius: inherit;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.border-revolve > * {
-  position: relative;
-  z-index: 1;
-}
-
-.border-revolve:hover::before {
-  opacity: 1;
-  animation: border-revolve 3s linear infinite;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Icon shift on group hover                                          */
-/* ------------------------------------------------------------------ */
-
-.icon-shift-up {
-  transition: transform 0.3s ease-in-out;
-}
-
-.group:hover .icon-shift-up {
-  transform: translateY(-4px);
-}
-
-/* ------------------------------------------------------------------ */
-/*  Page gradient backgrounds                                          */
-/* ------------------------------------------------------------------ */
-
-.page-gradient {
-  background: linear-gradient(135deg, var(--background) 0%, var(--dim) 50%, var(--background) 100%);
-  position: relative;
-}
-
-.page-gradient::before {
-  content: '';
-  position: fixed;
-  top: -50%;
-  right: -30%;
-  width: 60%;
-  height: 60%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(230, 57, 70, 0.04) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.page-gradient::after {
-  content: '';
-  position: fixed;
-  bottom: -30%;
-  left: -20%;
+  top: 0;
+  left: -75%;
   width: 50%;
-  height: 50%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(230, 57, 70, 0.03) 0%, transparent 70%);
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.20), transparent);
+  transform: skewX(-20deg);
+  transition: left .9s ease;
   pointer-events: none;
-  z-index: 0;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Premium glass card with subtle gradient border                     */
-/* ------------------------------------------------------------------ */
-
-.glass-card-premium {
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+.dark .sheen::after {
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.08), transparent);
 }
 
-.glass-card-premium:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+.sheen:hover::after {
+  left: 125%;
 }
 
-.dark .glass-card-premium {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+/* Grain texture overlay */
+.grain {
+  position: relative;
 }
 
-.dark .glass-card-premium:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+.grain::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 
-/* ------------------------------------------------------------------ */
-/*  Form panel glass effect                                            */
-/* ------------------------------------------------------------------ */
-
-.form-glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+.dark .grain::after {
+  opacity: 0.06;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Section divider gradient                                           */
-/* ------------------------------------------------------------------ */
-
-.section-gradient-top {
-  background: linear-gradient(180deg, var(--dim) 0%, var(--background) 100%);
+/* Atmospheric mesh background */
+.mesh-bg {
+  background:
+    radial-gradient(60rem 60rem at 8% -10%, rgba(220, 38, 38, 0.07), transparent 60%),
+    radial-gradient(50rem 50rem at 110% 8%, rgba(239, 68, 68, 0.06), transparent 60%),
+    radial-gradient(70rem 70rem at 50% 100%, rgba(220, 38, 38, 0.06), transparent 65%),
+    radial-gradient(40rem 40rem at -10% 60%, rgba(248, 113, 113, 0.05), transparent 65%);
 }
 
-.section-gradient-bottom {
-  background: linear-gradient(180deg, var(--background) 0%, var(--dim) 100%);
+.dark .mesh-bg {
+  background:
+    radial-gradient(60rem 60rem at 8% -10%, rgba(220, 38, 38, 0.15), transparent 60%),
+    radial-gradient(50rem 50rem at 110% 8%, rgba(239, 68, 68, 0.12), transparent 60%),
+    radial-gradient(70rem 70rem at 50% 100%, rgba(220, 38, 38, 0.12), transparent 65%),
+    radial-gradient(40rem 40rem at -10% 60%, rgba(248, 113, 113, 0.08), transparent 65%);
 }
 
-/* ------------------------------------------------------------------ */
+/* Dot grid pattern */
+.dot-grid {
+  background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.04;
+}
+
+/* Scrollbar hidden */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Skeleton loading shimmer */
+.skeleton {
+  background-color: var(--bg-tertiary);
+  background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.06) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+/* Logo dark mode adaptive */
+.logo-adaptive {
+  filter: none;
+}
+.dark .logo-adaptive {
+  filter: brightness(0) invert(1);
+}
+
+/* ================================================================== */
 /*  React DatePicker custom styles (inline mode)                       */
-/* ------------------------------------------------------------------ */
+/* ================================================================== */
 
 .book-datepicker .react-datepicker-wrapper {
   width: 100%;
@@ -307,8 +361,8 @@ html {
 /* ── Shared inline container ── */
 .book-datepicker .react-datepicker--inline {
   font-family: inherit;
-  background: var(--card-bg);
-  border: 1px solid var(--edge);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 0.75rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
   overflow: hidden;
@@ -322,8 +376,8 @@ html {
 /* Non-inline fallback */
 .book-datepicker .react-datepicker:not(.react-datepicker--inline) {
   font-family: inherit;
-  background: var(--card-bg);
-  border: 1px solid var(--edge);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 0.75rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
@@ -336,15 +390,15 @@ html {
 
 /* ── Header ── */
 .book-datepicker .react-datepicker__header {
-  background: var(--dim);
-  border-bottom: 1px solid var(--edge);
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
   padding: 0.75rem 0.5rem 0.5rem;
   border-radius: 0;
 }
 
 .book-datepicker .react-datepicker__current-month,
 .book-datepicker .react-datepicker-time__header {
-  color: var(--foreground);
+  color: var(--text-primary);
   font-weight: 700;
   font-size: 0.875rem;
   padding-bottom: 0.25rem;
@@ -356,7 +410,7 @@ html {
 }
 
 .book-datepicker .react-datepicker__day-name {
-  color: var(--secondary);
+  color: var(--text-secondary);
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -379,7 +433,7 @@ html {
 
 /* ── Day cells ── */
 .book-datepicker .react-datepicker__day {
-  color: var(--foreground);
+  color: var(--text-primary);
   width: 2.25rem;
   height: 2.25rem;
   line-height: 2.25rem;
@@ -393,38 +447,38 @@ html {
 }
 
 .book-datepicker .react-datepicker__day:hover {
-  background: var(--primary);
+  background: #dc2626;
   color: white;
   border-radius: 0.5rem;
 }
 
 .book-datepicker .react-datepicker__day--selected,
 .book-datepicker .react-datepicker__day--keyboard-selected {
-  background: var(--primary) !important;
+  background: #dc2626 !important;
   color: white !important;
   border-radius: 0.5rem;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
 }
 
 .book-datepicker .react-datepicker__day--today {
   font-weight: 700;
-  border: 1.5px solid var(--primary);
+  border: 1.5px solid #dc2626;
 }
 
 .book-datepicker .react-datepicker__day--disabled {
-  color: var(--muted) !important;
+  color: var(--text-tertiary) !important;
   opacity: 0.35;
   cursor: not-allowed;
 }
 
 .book-datepicker .react-datepicker__day--disabled:hover {
   background: transparent;
-  color: var(--muted) !important;
+  color: var(--text-tertiary) !important;
 }
 
 .book-datepicker .react-datepicker__day--outside-month {
-  color: var(--muted);
+  color: var(--text-tertiary);
   opacity: 0.25;
 }
 
@@ -434,14 +488,14 @@ html {
 }
 
 .book-datepicker .react-datepicker__navigation-icon::before {
-  border-color: var(--secondary);
+  border-color: var(--text-secondary);
   border-width: 2px 2px 0 0;
   width: 7px;
   height: 7px;
 }
 
 .book-datepicker .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
-  border-color: var(--primary);
+  border-color: #dc2626;
 }
 
 /* ── Triangle ── */
@@ -464,19 +518,19 @@ html {
 }
 
 .book-datepicker--time .react-datepicker__header--time {
-  background: var(--dim);
-  border-bottom: 1px solid var(--edge);
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
   padding: 0.625rem 0.75rem;
 }
 
 .book-datepicker--time .react-datepicker-time__header {
-  color: var(--foreground);
+  color: var(--text-primary);
   font-weight: 700;
   font-size: 0.875rem;
 }
 
 .book-datepicker--time .react-datepicker__time {
-  background: var(--card-bg);
+  background: var(--bg-secondary);
   border-radius: 0 0 0.75rem 0.75rem;
 }
 
@@ -488,7 +542,7 @@ html {
   height: 264px !important;
   padding: 0.375rem !important;
   scrollbar-width: thin;
-  scrollbar-color: var(--edge) transparent;
+  scrollbar-color: var(--border-color) transparent;
 }
 
 .book-datepicker--time .react-datepicker__time-list::-webkit-scrollbar {
@@ -500,12 +554,12 @@ html {
 }
 
 .book-datepicker--time .react-datepicker__time-list::-webkit-scrollbar-thumb {
-  background: var(--edge);
+  background: var(--border-color);
   border-radius: 999px;
 }
 
 .book-datepicker--time .react-datepicker__time-list-item {
-  color: var(--foreground) !important;
+  color: var(--text-primary) !important;
   font-size: 0.8125rem !important;
   font-weight: 500;
   padding: 0.5rem 0.875rem !important;
@@ -516,15 +570,15 @@ html {
 }
 
 .book-datepicker--time .react-datepicker__time-list-item:hover {
-  background: var(--primary) !important;
+  background: #dc2626 !important;
   color: white !important;
 }
 
 .book-datepicker--time .react-datepicker__time-list-item--selected {
-  background: var(--primary) !important;
+  background: #dc2626 !important;
   color: white !important;
   font-weight: 700 !important;
-  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
 }
 
 /* ================================================================== */
@@ -532,12 +586,12 @@ html {
 /* ================================================================== */
 
 .book-datepicker--date .react-datepicker__time-container {
-  border-left: 1px solid var(--edge);
+  border-left: 1px solid var(--border-color);
   width: auto;
 }
 
 .book-datepicker--date .react-datepicker__time {
-  background: var(--card-bg);
+  background: var(--bg-secondary);
 }
 
 .book-datepicker--date .react-datepicker__time-box {
@@ -549,7 +603,7 @@ html {
 }
 
 .book-datepicker--date .react-datepicker__time-list-item {
-  color: var(--foreground);
+  color: var(--text-primary);
   font-size: 0.8125rem;
   padding: 0.4rem 0.75rem;
   border-radius: 0.375rem;
@@ -558,12 +612,12 @@ html {
 }
 
 .book-datepicker--date .react-datepicker__time-list-item:hover {
-  background: var(--primary);
+  background: #dc2626;
   color: white;
 }
 
 .book-datepicker--date .react-datepicker__time-list-item--selected {
-  background: var(--primary) !important;
+  background: #dc2626 !important;
   color: white !important;
   font-weight: 700;
 }
