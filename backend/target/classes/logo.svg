@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" rx="32" ry="32" fill="#1a1a2e"/>
+
+  <!-- Car silhouette -->
+  <g transform="translate(100, 72)" fill="white" opacity="0.9">
+    <!-- Car body -->
+    <path d="M-52,8 L-48,-8 C-44,-16 -32,-24 -20,-24 L20,-24 C32,-24 44,-16 48,-8 L52,8 L52,16 C52,20 48,22 44,22 L-44,22 C-48,22 -52,20 -52,16 Z" fill="white"/>
+    <!-- Car roof/windshield -->
+    <path d="M-28,-24 L-18,-42 C-14,-48 -6,-50 0,-50 L0,-50 C6,-50 14,-48 18,-42 L28,-24" fill="white"/>
+    <!-- Wheels -->
+    <circle cx="-32" cy="22" r="10" fill="#1a1a2e"/>
+    <circle cx="-32" cy="22" r="6" fill="#555"/>
+    <circle cx="32" cy="22" r="10" fill="#1a1a2e"/>
+    <circle cx="32" cy="22" r="6" fill="#555"/>
+    <!-- Windows -->
+    <path d="M-22,-20 L-14,-38 C-10,-44 -4,-46 0,-46 L0,-46 C4,-46 10,-44 14,-38 L22,-20 Z" fill="#1a1a2e" opacity="0.6"/>
+  </g>
+
+  <!-- CAR text -->
+  <text x="100" y="128" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="bold" fill="white" letter-spacing="6">CAR</text>
+
+  <!-- AFFAIR text -->
+  <text x="100" y="156" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="bold" fill="white" letter-spacing="4">AFFAIR</text>
+
+  <!-- Hearts -->
+  <g transform="translate(68, 162)">
+    <path d="M4,2 C4,0 2,-1 1,0 C0,-1 -2,0 -2,2 C-2,4 1,6 1,6 C1,6 4,4 4,2Z" fill="#DC2626" transform="scale(1.2)"/>
+  </g>
+  <g transform="translate(125, 162)">
+    <path d="M4,2 C4,0 2,-1 1,0 C0,-1 -2,0 -2,2 C-2,4 1,6 1,6 C1,6 4,4 4,2Z" fill="#DC2626" transform="scale(1.2)"/>
+  </g>
+</svg>

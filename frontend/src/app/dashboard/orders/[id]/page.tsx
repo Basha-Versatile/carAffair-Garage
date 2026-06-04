@@ -35,7 +35,7 @@ import {
   ArrowLeft, Phone, Car, IndianRupee, Camera, Upload,
   CheckCircle2, CircleDot, Loader2, Trash2, Plus,
   Send, Link2, Copy, X, Fuel, Gauge, StickyNote,
-  Wrench, Package, ChevronDown, ExternalLink, AlertCircle, Search, Check, Clock, UserPlus, Download, FileText, Share2, Layers,
+  Wrench, Package, ChevronDown, ExternalLink, AlertCircle, Search, Check, Clock, UserPlus, Download, FileText, Share2, Layers, Eye,
 } from "lucide-react";
 
 // ─── Status Config ───
@@ -1473,17 +1473,24 @@ export default function OrderDetailPage() {
           )}
 
           {invoice && (
-            <div className="bg-background rounded-xl border border-edge p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+            <div className="bg-background rounded-xl border border-edge p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
                   <FileText className="w-5 h-5 text-primary" />
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{invoice.invoiceNumber}</p>
-                    <p className="text-xs text-muted">{invoice.type === "proforma" ? "Proforma Invoice" : "Tax Invoice"} &middot; {
-                      invoice.status === "paid" ? "Paid" : invoice.status === "sent" ? "Sent" : "Draft"
-                    }</p>
-                  </div>
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{invoice.invoiceNumber}</p>
+                  <p className="text-xs text-muted">{invoice.type === "proforma" ? "Proforma Invoice" : "Tax Invoice"} &middot; <span className={
+                    invoice.status === "paid" ? "text-ok font-medium" : invoice.status === "sent" ? "text-primary font-medium" : "text-muted"
+                  }>{invoice.status === "paid" ? "Paid" : invoice.status === "sent" ? "Sent" : "Draft"}</span></p>
+                </div>
+                <p className="text-sm font-bold text-foreground">{"\u20B9"} {invoice.grandTotal?.toLocaleString("en-IN")}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => router.push(`/dashboard/invoices/${invoice.id}`)}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-primary border border-primary/20 rounded-lg hover:bg-primary-light transition-colors">
+                  <Eye className="w-3.5 h-3.5" /> View Invoice
+                </button>
                 <button onClick={() => {
                   const token = getAccessToken();
                   const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -1491,7 +1498,7 @@ export default function OrderDetailPage() {
                     .then(r => r.blob())
                     .then(blob => { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${invoice.invoiceNumber}.pdf`; a.click(); URL.revokeObjectURL(a.href); });
                 }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary border border-primary/20 rounded-lg hover:bg-primary-light transition-colors">
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors">
                   <Download className="w-3.5 h-3.5" /> Download PDF
                 </button>
               </div>

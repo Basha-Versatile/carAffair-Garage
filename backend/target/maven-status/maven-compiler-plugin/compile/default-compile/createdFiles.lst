@@ -248,6 +248,7 @@ com\garrage\model\CounterSale$CSItem$CSItemBuilder.class
 com\garrage\model\ServiceEntry$ApplicableBrand.class
 com\garrage\exception\GlobalExceptionHandler.class
 com\garrage\model\CounterSale$CounterSaleBuilder.class
+com\garrage\TestPdfGen.class
 com\garrage\service\GstCalculationService.class
 com\garrage\service\TagService.class
 com\garrage\model\PurchaseOrder$PurchaseOrderBuilder.class

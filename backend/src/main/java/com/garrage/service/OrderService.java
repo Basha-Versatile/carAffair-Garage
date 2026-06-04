@@ -291,9 +291,18 @@ public class OrderService {
         if (customerEmail != null) {
             Garage garage = garageRepository.findById(garageId).orElse(null);
             String garageName = garage != null ? garage.getName() : "Car Affair";
+            // Generate estimate PDF with the same beautiful invoice design
+            byte[] pdfBytes = null;
+            if (garage != null) {
+                try {
+                    pdfBytes = invoicePdfService.generateEstimatePdf(order, garage);
+                } catch (Exception e) {
+                    log.warn("Failed to generate estimate PDF for {}: {}", order.getJobCard(), e.getMessage());
+                }
+            }
             emailService.sendEstimateEmail(customerEmail, order.getCustomerName(),
                     order.getJobCard(), garageName, order.getVehicle(),
-                    order.getGrandTotal(), token);
+                    order.getGrandTotal(), token, pdfBytes);
         }
     }
 

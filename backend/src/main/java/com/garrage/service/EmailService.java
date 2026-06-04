@@ -174,7 +174,7 @@ public class EmailService {
     @Async
     public void sendEstimateEmail(String toEmail, String customerName, String jobCard,
                                    String garageName, String vehicle, double grandTotal,
-                                   String estimateToken) {
+                                   String estimateToken, byte[] pdfBytes) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -207,6 +207,10 @@ public class EmailService {
                     + "</div></div>";
 
             helper.setText(html, true);
+            if (pdfBytes != null && pdfBytes.length > 0) {
+                helper.addAttachment("Estimate-" + jobCard + ".pdf",
+                        new ByteArrayResource(pdfBytes), "application/pdf");
+            }
             mailSender.send(message);
             log.info("Estimate email sent to {} for order {}", toEmail, jobCard);
         } catch (Exception e) {
