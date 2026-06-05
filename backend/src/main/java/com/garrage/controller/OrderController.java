@@ -203,6 +203,11 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.ok(GstCalculationService.getStates()));
     }
 
+    @GetMapping("/api/gst/cities")
+    public ResponseEntity<ApiResponse<List<String>>> getCitiesByState(@RequestParam String state) {
+        return ResponseEntity.ok(ApiResponse.ok(GstCalculationService.getCitiesByState(state)));
+    }
+
     // ─── Public endpoints (no auth) ───
 
     @GetMapping("/api/public/onboarding/{token}")

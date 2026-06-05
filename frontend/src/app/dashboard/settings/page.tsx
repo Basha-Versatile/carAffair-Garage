@@ -42,7 +42,6 @@ const GARAGE_SETTINGS: SettingCard[] = [
     iconBg: "bg-primary-light",
     iconColor: "text-primary",
     href: "/dashboard/settings/garage-profile",
-    restricted: true,
   },
   {
     label: "Garage Users",

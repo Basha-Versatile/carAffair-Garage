@@ -250,6 +250,21 @@ public class GarageService {
         return toGarageResponse(garage);
     }
 
+    /**
+     * Updates the logo file ID for a garage.
+     */
+    public GarageResponse updateGarageLogo(String garageId, String logoFileId) {
+        Garage garage = garageRepository.findById(garageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Garage not found with id: " + garageId));
+
+        garage.setLogoFileId(logoFileId);
+        garage = garageRepository.save(garage);
+
+        log.info("Garage logo updated: {} (id: {})", garage.getName(), garage.getId());
+
+        return toGarageResponse(garage);
+    }
+
     // ---- Private helpers ----
 
     private GarageResponse toGarageResponse(Garage garage) {
@@ -264,6 +279,7 @@ public class GarageService {
                 .state(garage.getState())
                 .city(garage.getCity())
                 .streetAddress(garage.getStreetAddress())
+                .logoFileId(garage.getLogoFileId())
                 .latitude(garage.getLatitude())
                 .longitude(garage.getLongitude())
                 .isActive(garage.isActive())

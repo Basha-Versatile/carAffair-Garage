@@ -33,6 +33,8 @@ public class GarageResponse {
 
     private String streetAddress;
 
+    private String logoFileId;
+
     private Double latitude;
 
     private Double longitude;

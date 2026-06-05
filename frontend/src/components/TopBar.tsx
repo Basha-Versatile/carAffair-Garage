@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { getUser, clearUser, isSuperAdmin, User } from "@/lib/auth";
 import { useSidebar } from "@/context/SidebarContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -9,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Menu, X, Sun, Moon,
   Car, User as UserIcon, FileText, ShoppingCart, Loader2,
-  LogOut, Building2, ChevronDown, ClipboardList, Palette,
+  LogOut, Building2, ChevronDown, ClipboardList, Palette, Settings,
 } from "lucide-react";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import { getCustomers, Customer } from "@/lib/api-vehicles";
@@ -267,9 +268,25 @@ export default function TopBar() {
   const [showProfile, setShowProfile] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  // garage logo
+  const [garageLogoUrl, setGarageLogoUrl] = useState<string | null>(null);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
   useEffect(() => {
     setUserState(getUser());
   }, []);
+
+  // Fetch garage logo for non-super-admin users
+  useEffect(() => {
+    if (!user || user.role === "super_admin" || !user.garageId) return;
+    api.get<{ logoFileId?: string | null }>(`/api/garages/${user.garageId}`)
+      .then((data) => {
+        if (data.logoFileId) {
+          setGarageLogoUrl(`${API_BASE_URL}/api/images/${data.logoFileId}`);
+        }
+      })
+      .catch(() => {});
+  }, [user]);
 
   // close dropdowns on outside click
   useEffect(() => {
@@ -483,10 +500,14 @@ export default function TopBar() {
                 onClick={() => setShowProfile((p) => !p)}
                 className="flex items-center gap-3 pl-3 border-l border-[var(--border-color)] hover:opacity-80 transition-opacity cursor-pointer"
               >
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center shadow-lg shadow-red-600/20">
-                  <span className="text-xs font-semibold text-white">
-                    {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                  </span>
+                <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center shadow-lg shadow-red-600/20">
+                  {garageLogoUrl ? (
+                    <Image src={garageLogoUrl} alt="Garage" width={36} height={36} className="w-full h-full object-cover" unoptimized />
+                  ) : (
+                    <span className="text-xs font-semibold text-white">
+                      {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                    </span>
+                  )}
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-medium text-[var(--surface-fg)]">{user?.name || "User"}</p>
@@ -507,10 +528,14 @@ export default function TopBar() {
                     {/* User info */}
                     <div className="px-4 py-3 border-b border-[var(--border-color)]">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center shrink-0">
-                          <span className="text-sm font-semibold text-white">
-                            {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                          </span>
+                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center shrink-0">
+                          {garageLogoUrl ? (
+                            <Image src={garageLogoUrl} alt="Garage" width={40} height={40} className="w-full h-full object-cover" unoptimized />
+                          ) : (
+                            <span className="text-sm font-semibold text-white">
+                              {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                            </span>
+                          )}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-[var(--surface-fg)] truncate">
@@ -525,12 +550,21 @@ export default function TopBar() {
 
                     {/* Actions */}
                     <div className="py-1">
+                      {user?.role !== "super_admin" && (
+                        <button
+                          onClick={() => { setShowProfile(false); router.push("/dashboard/settings/garage-profile"); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[var(--text-sec)] hover:text-[var(--surface-fg)] hover:bg-[var(--surface-hover)] transition-all cursor-pointer"
+                        >
+                          <Settings className="w-4 h-4" />
+                          <span className="text-sm font-medium">Garage Profile</span>
+                        </button>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all cursor-pointer"
                       >
                         <LogOut className="w-4 h-4" />
-                        <span className="text-sm">Logout</span>
+                        <span className="text-sm font-medium">Logout</span>
                       </button>
                     </div>
                   </motion.div>

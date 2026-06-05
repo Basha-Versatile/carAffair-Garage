@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -197,5 +199,59 @@ public class GstCalculationService {
                 "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh",
                 "Uttarakhand", "West Bengal"
         );
+    }
+
+    // State → major cities mapping
+    private static final Map<String, List<String>> STATE_CITIES_MAP;
+
+    static {
+        Map<String, List<String>> m = new LinkedHashMap<>();
+        m.put("Andaman and Nicobar Islands", List.of("Port Blair", "Diglipur", "Rangat", "Mayabunder", "Havelock"));
+        m.put("Andhra Pradesh", List.of("Amaravati", "Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", "Tirupati", "Rajahmundry", "Kakinada", "Kadapa", "Anantapur", "Eluru", "Ongole", "Srikakulam", "Chittoor"));
+        m.put("Arunachal Pradesh", List.of("Itanagar", "Naharlagun", "Tawang", "Ziro", "Pasighat", "Bomdila", "Tezu", "Along", "Roing"));
+        m.put("Assam", List.of("Guwahati", "Silchar", "Dibrugarh", "Jorhat", "Nagaon", "Tinsukia", "Tezpur", "Bongaigaon", "Karimganj", "North Lakhimpur"));
+        m.put("Bihar", List.of("Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Darbhanga", "Purnia", "Arrah", "Begusarai", "Katihar", "Munger", "Chapra", "Sasaram", "Hajipur", "Bihar Sharif", "Samastipur"));
+        m.put("Chandigarh", List.of("Chandigarh"));
+        m.put("Chhattisgarh", List.of("Raipur", "Bhilai", "Bilaspur", "Korba", "Durg", "Rajnandgaon", "Raigarh", "Jagdalpur", "Ambikapur", "Mahasamund"));
+        m.put("Dadra and Nagar Haveli and Daman and Diu", List.of("Silvassa", "Daman", "Diu", "Amli", "Naroli"));
+        m.put("Delhi", List.of("New Delhi", "Delhi", "Dwarka", "Rohini", "Saket", "Lajpat Nagar", "Karol Bagh", "Connaught Place", "Nehru Place", "Janakpuri"));
+        m.put("Goa", List.of("Panaji", "Margao", "Vasco da Gama", "Mapusa", "Ponda", "Bicholim", "Curchorem", "Cuncolim", "Sanquelim", "Quepem"));
+        m.put("Gujarat", List.of("Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Nadiad", "Morbi", "Mehsana", "Bharuch", "Navsari", "Vapi", "Gandhidham", "Porbandar", "Godhra", "Palanpur", "Bhuj"));
+        m.put("Haryana", List.of("Gurugram", "Faridabad", "Panipat", "Ambala", "Karnal", "Hisar", "Rohtak", "Sonipat", "Yamunanagar", "Panchkula", "Bhiwani", "Sirsa", "Rewari", "Jind", "Kurukshetra"));
+        m.put("Himachal Pradesh", List.of("Shimla", "Manali", "Dharamshala", "Solan", "Mandi", "Kullu", "Bilaspur", "Hamirpur", "Una", "Palampur", "Nahan", "Chamba", "Dalhousie"));
+        m.put("Jammu and Kashmir", List.of("Srinagar", "Jammu", "Anantnag", "Baramulla", "Sopore", "Kathua", "Udhampur", "Kupwara", "Pulwama", "Rajouri", "Poonch"));
+        m.put("Jharkhand", List.of("Ranchi", "Jamshedpur", "Dhanbad", "Bokaro", "Hazaribagh", "Deoghar", "Giridih", "Ramgarh", "Dumka", "Chaibasa"));
+        m.put("Karnataka", List.of("Bengaluru", "Mysuru", "Hubballi", "Mangaluru", "Belgaum", "Davangere", "Ballari", "Tumkur", "Shimoga", "Raichur", "Bidar", "Gulbarga", "Hassan", "Udupi", "Dharwad", "Mandya"));
+        m.put("Kerala", List.of("Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam", "Palakkad", "Alappuzha", "Kannur", "Kottayam", "Malappuram", "Kasaragod", "Pathanamthitta", "Idukki", "Wayanad"));
+        m.put("Ladakh", List.of("Leh", "Kargil", "Diskit", "Padum"));
+        m.put("Lakshadweep", List.of("Kavaratti", "Agatti", "Minicoy", "Amini", "Andrott"));
+        m.put("Madhya Pradesh", List.of("Bhopal", "Indore", "Jabalpur", "Gwalior", "Ujjain", "Sagar", "Satna", "Rewa", "Dewas", "Ratlam", "Murwara", "Singrauli", "Burhanpur", "Khandwa", "Chhindwara", "Vidisha"));
+        m.put("Maharashtra", List.of("Mumbai", "Pune", "Nagpur", "Thane", "Nashik", "Aurangabad", "Solapur", "Kolhapur", "Amravati", "Navi Mumbai", "Sangli", "Latur", "Dhule", "Ahmednagar", "Akola", "Chandrapur", "Jalgaon", "Satara", "Ratnagiri", "Parbhani"));
+        m.put("Manipur", List.of("Imphal", "Thoubal", "Bishnupur", "Churachandpur", "Ukhrul", "Senapati", "Tamenglong"));
+        m.put("Meghalaya", List.of("Shillong", "Tura", "Jowai", "Nongstoin", "Williamnagar", "Baghmara", "Resubelpara"));
+        m.put("Mizoram", List.of("Aizawl", "Lunglei", "Champhai", "Serchhip", "Kolasib", "Lawngtlai", "Saiha"));
+        m.put("Nagaland", List.of("Kohima", "Dimapur", "Mokokchung", "Tuensang", "Wokha", "Zunheboto", "Mon"));
+        m.put("Odisha", List.of("Bhubaneswar", "Cuttack", "Rourkela", "Berhampur", "Sambalpur", "Puri", "Balasore", "Baripada", "Bhadrak", "Jharsuguda", "Jeypore", "Angul", "Koraput"));
+        m.put("Puducherry", List.of("Puducherry", "Karaikal", "Mahe", "Yanam"));
+        m.put("Punjab", List.of("Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda", "Mohali", "Pathankot", "Hoshiarpur", "Batala", "Moga", "Abohar", "Malerkotla", "Khanna", "Phagwara", "Muktsar", "Barnala", "Rajpura", "Firozpur"));
+        m.put("Rajasthan", List.of("Jaipur", "Jodhpur", "Kota", "Bikaner", "Ajmer", "Udaipur", "Bhilwara", "Alwar", "Sikar", "Bharatpur", "Pali", "Sri Ganganagar", "Tonk", "Kishangarh", "Beawar", "Hanumangarh", "Chittorgarh", "Jhunjhunu"));
+        m.put("Sikkim", List.of("Gangtok", "Namchi", "Mangan", "Gyalshing", "Rangpo", "Singtam", "Jorethang"));
+        m.put("Tamil Nadu", List.of("Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tirunelveli", "Erode", "Vellore", "Thoothukudi", "Dindigul", "Thanjavur", "Tiruppur", "Ranipet", "Sivakasi", "Karur", "Nagercoil", "Kanchipuram", "Hosur"));
+        m.put("Telangana", List.of("Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Khammam", "Ramagundam", "Mahbubnagar", "Nalgonda", "Adilabad", "Suryapet", "Siddipet", "Miryalaguda", "Mancherial"));
+        m.put("Tripura", List.of("Agartala", "Dharmanagar", "Udaipur", "Kailashahar", "Belonia", "Ambassa", "Khowai", "Sabroom"));
+        m.put("Uttar Pradesh", List.of("Lucknow", "Kanpur", "Agra", "Varanasi", "Meerut", "Prayagraj", "Ghaziabad", "Noida", "Bareilly", "Aligarh", "Moradabad", "Gorakhpur", "Saharanpur", "Jhansi", "Muzaffarnagar", "Mathura", "Firozabad", "Ayodhya", "Shahjahanpur", "Rampur"));
+        m.put("Uttarakhand", List.of("Dehradun", "Haridwar", "Rishikesh", "Haldwani", "Rudrapur", "Kashipur", "Roorkee", "Nainital", "Mussoorie", "Pithoragarh", "Almora", "Kotdwar"));
+        m.put("West Bengal", List.of("Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri", "Bardhaman", "Malda", "Baharampur", "Haldia", "Kharagpur", "Raiganj", "Krishnanagar", "Nabadwip", "Medinipur", "Darjeeling"));
+        STATE_CITIES_MAP = Collections.unmodifiableMap(m);
+    }
+
+    /**
+     * Get cities for a given state.
+     */
+    public static List<String> getCitiesByState(String state) {
+        if (state == null || state.isBlank()) {
+            return List.of();
+        }
+        return STATE_CITIES_MAP.getOrDefault(state.trim(), List.of());
     }
 }

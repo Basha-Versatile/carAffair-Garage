@@ -1,5 +1,6 @@
 package com.garrage.controller;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +13,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.garrage.dto.request.CreateGarageRequest;
 import com.garrage.dto.response.ApiResponse;
@@ -20,6 +23,7 @@ import com.garrage.dto.response.GarageResponse;
 import com.garrage.exception.UnauthorizedException;
 import com.garrage.security.UserPrincipal;
 import com.garrage.service.GarageService;
+import com.garrage.service.ImageStorageService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 public class GarageController {
 
     private final GarageService garageService;
+    private final ImageStorageService imageStorageService;
 
     /**
      * GET /api/garages
@@ -106,6 +111,19 @@ public class GarageController {
     public ResponseEntity<ApiResponse<GarageResponse>> toggleGarageActive(@PathVariable String id) {
         requireRole("super_admin");
         GarageResponse garage = garageService.toggleGarageActive(id);
+        return ResponseEntity.ok(ApiResponse.ok(garage));
+    }
+
+    /**
+     * POST /api/garages/{id}/logo
+     * Upload a logo for a garage.
+     */
+    @PostMapping("/{id}/logo")
+    public ResponseEntity<ApiResponse<GarageResponse>> uploadGarageLogo(
+            @PathVariable String id,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        List<String> fileIds = imageStorageService.storeImages(List.of(file), id, "garage-logo");
+        GarageResponse garage = garageService.updateGarageLogo(id, fileIds.get(0));
         return ResponseEntity.ok(ApiResponse.ok(garage));
     }
 

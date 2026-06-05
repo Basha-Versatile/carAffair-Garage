@@ -75,6 +75,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/models").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/garage-registrations").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/gst/states").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/gst/cities").permitAll()
 
                         // Public booking flow endpoints
                         .requestMatchers(HttpMethod.POST, "/api/public/rc-lookup").permitAll()
@@ -96,8 +97,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/brand-requests").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
                         .requestMatchers("/api/brand-requests/**").hasRole("SUPER_ADMIN")
 
-                        // Super Admin only
-                        .requestMatchers("/api/garages/**").hasRole("SUPER_ADMIN")
+                        // Garages — admin can view/edit own, super admin manages all
+                        .requestMatchers("/api/garages/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/garage-registrations/**").hasRole("SUPER_ADMIN")
 
                         // Customer endpoints

@@ -216,7 +216,7 @@ export default function BookServicePage() {
   const selectedTimeDisplay = formatTime12h(selectedTime);
 
   const inputBase =
-    "w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] text-sm transition-all duration-200 outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 backdrop-blur-sm";
+    "w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl form-input text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] text-sm transition-all duration-200 outline-none";
 
   return (
     <div className="relative min-h-screen flex flex-col grain">
@@ -346,7 +346,7 @@ export default function BookServicePage() {
                       </div>
 
                       <div className="glass-card !rounded-xl overflow-hidden" style={{ transform: "none" }}>
-                        <div className="px-3.5 sm:px-4 py-3 sm:py-3.5 border-b border-[var(--border-glass)] bg-gradient-to-r from-red-500/[0.06] to-transparent">
+                        <div className="px-3.5 sm:px-4 py-3 sm:py-3.5 border-b border-gray-200 dark:border-white/10 bg-gradient-to-r from-red-500/[0.06] to-transparent">
                           <div className="flex items-center gap-3">
                             <div className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-red-500/10 shrink-0">
                               <Car className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
@@ -360,7 +360,7 @@ export default function BookServicePage() {
 
                         <div className="p-3.5 sm:p-4">
                           {ownerName && (
-                            <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-[var(--border-glass)]">
+                            <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-gray-200 dark:border-white/10">
                               <User className="h-3.5 w-3.5 text-red-500 shrink-0" />
                               <div>
                                 <p className="text-[9px] sm:text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider font-semibold">Owner</p>
@@ -378,7 +378,7 @@ export default function BookServicePage() {
                               ...(rcData.color ? [{ label: "Color", value: rcData.color }] : []),
                               ...(rcData.bodyType ? [{ label: "Body Type", value: rcData.bodyType }] : []),
                             ].map((item) => (
-                              <div key={item.label} className="rounded-lg border border-[var(--border-glass)] bg-[var(--bg-glass)] backdrop-blur-sm p-2.5 sm:p-3">
+                              <div key={item.label} className="rounded-lg border border-gray-200 dark:border-white/15 bg-gray-50 dark:bg-white/5 p-2.5 sm:p-3">
                                 <div className="flex items-center gap-1 mb-0.5">
                                   {item.icon && <item.icon className="h-2.5 w-2.5 text-red-500/70" />}
                                   <p className="text-[9px] sm:text-[10px] text-red-500/70 uppercase tracking-wider font-semibold">{item.label}</p>
