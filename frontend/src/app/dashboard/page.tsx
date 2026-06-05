@@ -2,25 +2,22 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { tabs, TabKey, getOrders, getOrdersByStatus, getOrderCounts, Order } from "@/lib/api-orders";
+import { getOrders, getOrderCounts, Order } from "@/lib/api-orders";
 import { getCustomers } from "@/lib/api-customers";
 import { getParts, Part } from "@/lib/api-inventory";
-import { canManage, isGarageStaff, isSuperAdmin, getUser } from "@/lib/auth";
+import { isGarageStaff, isSuperAdmin, getUser } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { updateAssignmentStatus, type ServiceAssignment } from "@/lib/api-orders";
 import {
-  Plus, FileText, Phone, Car, Calendar, IndianRupee, LayoutGrid, List,
+  Car, IndianRupee,
   TrendingUp, TrendingDown, Users, AlertTriangle, ClipboardList,
   Wrench, CheckCircle2, Clock, Loader2, Building2, Palette,
-  ChevronRight, XCircle, CheckCircle, ArrowRight,
+  ChevronRight, ArrowRight,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from "recharts";
-import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
-
-type ViewMode = "cards" | "table";
 
 /* ── KPI card ─────────────────────────────────────── */
 
@@ -64,61 +61,6 @@ function KpiCard({
             <span className="text-muted"> &middot; {change.label}</span>
           )}
         </p>
-      </div>
-    </div>
-  );
-}
-
-/* ── Order card (existing) ────────────────────────── */
-
-function OrderCard({ order, onClick }: { order: Order; onClick?: () => void }) {
-  const statusStyles: Record<string, string> = {
-    open: "bg-primary-light text-primary",
-    wip: "bg-warn-light text-warn",
-    payment_due: "bg-orange-100 text-orange-600",
-    completed: "bg-ok-light text-ok",
-    cancelled: "bg-bad-light text-bad",
-  };
-
-  return (
-    <div onClick={onClick} className="glass-card-light p-4 hover:shadow-theme-lg transition-shadow cursor-pointer">
-      <div className="flex items-start justify-between mb-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">{order.customerName || "-"}</p>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <Phone className="w-3 h-3 text-muted" />
-            <span className="text-xs text-muted">{order.phone || "-"}</span>
-          </div>
-        </div>
-        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0 ${statusStyles[order.status] ?? ""}`}>
-          {(order.status ?? "").replace("_", " ").toUpperCase()}
-        </span>
-      </div>
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2 text-sm text-secondary">
-          <FileText className="w-3.5 h-3.5 text-muted" />
-          <span className="font-medium">{order.jobCard || "-"}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-secondary">
-          <Car className="w-3.5 h-3.5 text-muted" />
-          <span>{order.vehicle || "-"}</span>
-          <span className="text-muted">{order.vehicleNumber || "-"}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-muted">
-          <Calendar className="w-3.5 h-3.5" />
-          {order.date || "-"}
-        </div>
-      </div>
-      <div className="mt-3 pt-3 border-t border-edge-light flex items-center justify-between">
-        <div className="flex flex-wrap gap-1">
-          {(order.services || []).map((s) => (
-            <span key={s} className="text-[11px] bg-dim text-muted px-2 py-0.5 rounded">{s}</span>
-          ))}
-        </div>
-        <div className="flex items-center gap-0.5 text-sm font-semibold text-foreground">
-          <IndianRupee className="w-3.5 h-3.5" />
-          {(order.amount ?? 0).toLocaleString("en-IN")}
-        </div>
       </div>
     </div>
   );
@@ -680,23 +622,12 @@ export default function DashboardPage() {
 }
 
 function AdminDashboard() {
-  const router = useRouter();
-
   // ─── Analytics state ───
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [customerCount, setCustomerCount] = useState(0);
   const [lowStockParts, setLowStockParts] = useState<Part[]>([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
-
-  // ─── Orders list state (existing) ───
-  const [activeTab, setActiveTab] = useState<TabKey>("open");
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [counts, setCounts] = useState<Record<TabKey, number>>({ open: 0, wip: 0, payment_due: 0, completed: 0, cancelled: 0 });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("table");
-  const [orderPage, setOrderPage] = useState(1);
-  const [orderPageSize, setOrderPageSize] = useState<PageSize>(PAGE_SIZES[0]);
+  const [counts, setCounts] = useState<Record<string, number>>({ open: 0, wip: 0, payment_due: 0, completed: 0, cancelled: 0 });
 
   // ─── Fetch analytics data once on mount ───
   useEffect(() => {
@@ -718,17 +649,6 @@ function AdminDashboard() {
       .catch(() => {})
       .finally(() => setAnalyticsLoading(false));
   }, []);
-
-  // ─── Fetch orders for active tab ───
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-    setOrderPage(1);
-    getOrdersByStatus(activeTab)
-      .then((data) => setOrders(data || []))
-      .catch(() => setError("Failed to load orders."))
-      .finally(() => setLoading(false));
-  }, [activeTab]);
 
   // ─── Computed analytics ───
 
@@ -794,33 +714,6 @@ function AdminDashboard() {
   return (
     <div className="p-5 space-y-6">
       {/* ═══ Quick Actions ═══ */}
-      {(canManage("ORDERS") || canManage("INVOICES")) && (
-        <div className="flex justify-center gap-4">
-          {canManage("ORDERS") && (
-            <button
-              onClick={() => router.push("/dashboard/create-order")}
-              className="flex-1 max-w-xs flex items-center justify-center gap-3 bg-brand-500/90 backdrop-blur-sm text-white py-3.5 rounded-xl hover:bg-brand-600 transition-colors shadow-theme-md border border-white/10"
-            >
-              <div className="bg-white/20 p-1.5 rounded">
-                <Plus className="w-4 h-4" />
-              </div>
-              <span className="text-sm font-medium">Create Repair Order</span>
-            </button>
-          )}
-          {canManage("INVOICES") && (
-            <button
-              onClick={() => router.push("/dashboard/create-invoice")}
-              className="flex-1 max-w-xs flex items-center justify-center gap-3 bg-brand-500/90 backdrop-blur-sm text-white py-3.5 rounded-xl hover:bg-brand-600 transition-colors shadow-theme-md border border-white/10"
-            >
-              <div className="bg-white/20 p-1.5 rounded">
-                <FileText className="w-4 h-4" />
-              </div>
-              <span className="text-sm font-medium">Create Invoice</span>
-            </button>
-          )}
-        </div>
-      )}
-
       {/* ═══ KPI Cards ═══ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard
@@ -967,195 +860,6 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* ═══ Recent Orders ═══ */}
-      <div>
-        <div className="border-b border-edge mb-5">
-          <div className="flex items-center justify-between">
-            <div className="flex">
-              {tabs.map((tab) => {
-                const count = counts?.[tab.key] ?? 0;
-                const isActive = activeTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
-                      isActive ? "text-primary" : "text-muted hover:text-secondary"
-                    }`}
-                  >
-                    {tab.label}
-                    {count > 0 && (
-                      <span
-                        className={`ml-1.5 text-[11px] tabular-nums px-1.5 py-px rounded-full ${
-                          isActive
-                            ? "bg-primary-light text-primary"
-                            : "bg-hover text-muted"
-                        }`}
-                      >
-                        {count}
-                      </span>
-                    )}
-                    {isActive && (
-                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex items-center border border-edge rounded-lg overflow-hidden mr-1 mb-1">
-              <button
-                onClick={() => setViewMode("cards")}
-                className={`p-2 transition-colors ${
-                  viewMode === "cards"
-                    ? "bg-primary text-white"
-                    : "text-muted hover:bg-hover"
-                }`}
-                title="Card view"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                className={`p-2 transition-colors ${
-                  viewMode === "table"
-                    ? "bg-primary text-white"
-                    : "text-muted hover:bg-hover"
-                }`}
-                title="Table view"
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        {loading ? (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center bg-hover p-4 rounded-full mb-3 animate-spin">
-              <svg
-                className="w-7 h-7 text-primary"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            </div>
-            <p className="text-sm text-muted">Loading orders...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-20">
-            <p className="text-sm text-bad">{error}</p>
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center bg-hover p-4 rounded-full mb-3">
-              <FileText className="w-7 h-7 text-muted" />
-            </div>
-            <p className="text-sm text-muted">No orders in this category</p>
-          </div>
-        ) : (() => {
-          const totalPages = Math.max(1, Math.ceil(orders.length / orderPageSize));
-          const safePage = Math.min(orderPage, totalPages);
-          const start = (safePage - 1) * orderPageSize;
-          const pagedOrders = orders.slice(start, start + orderPageSize);
-          return viewMode === "cards" ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {pagedOrders.map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    onClick={() => router.push(`/dashboard/orders/${order.id}`)}
-                  />
-                ))}
-              </div>
-              <div className="glass-card overflow-hidden mt-3">
-                <Pagination
-                  total={orders.length}
-                  page={safePage}
-                  pageSize={orderPageSize}
-                  onPageChange={setOrderPage}
-                  onPageSizeChange={setOrderPageSize}
-                />
-              </div>
-            </>
-          ) : (
-            <div className="glass-card overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-dim border-b border-edge">
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Job Card</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Customer</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Phone</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Vehicle</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Date</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Services</th>
-                    <th className="text-left px-4 py-3 font-medium text-secondary">Status</th>
-                    <th className="text-right px-4 py-3 font-medium text-secondary">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-edge-light">
-                  {pagedOrders.map((order) => {
-                    const statusStyles: Record<string, string> = {
-                      open: "bg-primary-light text-primary",
-                      wip: "bg-warn-light text-warn",
-                      completed: "bg-ok-light text-ok",
-                      cancelled: "bg-bad-light text-bad",
-                    };
-                    return (
-                      <tr
-                        key={order.id}
-                        onClick={() => router.push(`/dashboard/orders/${order.id}`)}
-                        className="hover:bg-hover transition-colors cursor-pointer"
-                      >
-                        <td className="px-4 py-3 font-medium text-foreground">{order.jobCard || "-"}</td>
-                        <td className="px-4 py-3 text-secondary">{order.customerName || "-"}</td>
-                        <td className="px-4 py-3 text-muted">{order.phone || "-"}</td>
-                        <td className="px-4 py-3 text-secondary">
-                          {order.vehicle || "-"}{" "}
-                          <span className="text-muted">{order.vehicleNumber || ""}</span>
-                        </td>
-                        <td className="px-4 py-3 text-muted">{order.date || "-"}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-wrap gap-1">
-                            {(order.services || []).map((s) => (
-                              <span key={s} className="text-[11px] bg-dim text-muted px-2 py-0.5 rounded">
-                                {s}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                              statusStyles[order.status] ?? ""
-                            }`}
-                          >
-                            {(order.status ?? "").replace("_", " ").toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right font-semibold text-foreground">
-                          {(order.amount ?? 0).toLocaleString("en-IN")}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <Pagination
-                total={orders.length}
-                page={safePage}
-                pageSize={orderPageSize}
-                onPageChange={setOrderPage}
-                onPageSizeChange={setOrderPageSize}
-              />
-            </div>
-          );
-        })()}
-      </div>
     </div>
   );
 }

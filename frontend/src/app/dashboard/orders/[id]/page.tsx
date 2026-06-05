@@ -17,7 +17,7 @@ import { getTaxProfiles, createTaxProfile, type TaxProfile } from "@/lib/api-tax
 import { getParts, addPart, type Part } from "@/lib/api-inventory";
 import { getManufacturers, createManufacturer, type Manufacturer } from "@/lib/api-manufacturers";
 import { getPartCategories, createPartCategory, type PartCategoryItem } from "@/lib/api-part-categories";
-import { getBrands, getModelsByBrand, type VehicleBrand, type VehicleModel } from "@/lib/api-vehicles";
+import { getBrands, getModelsByBrand, getCustomerById, type VehicleBrand, type VehicleModel, type Customer } from "@/lib/api-vehicles";
 import { isGarageOwner, getAccessToken, getUser } from "@/lib/auth";
 import {
   getDepartments,
@@ -35,7 +35,7 @@ import {
   ArrowLeft, Phone, Car, IndianRupee, Camera, Upload,
   CheckCircle2, CircleDot, Loader2, Trash2, Plus,
   Send, Link2, Copy, X, Fuel, Gauge, StickyNote,
-  Wrench, Package, ChevronDown, ExternalLink, AlertCircle, Search, Check, Clock, UserPlus, Download, FileText, Share2, Layers, Eye,
+  Wrench, Package, ChevronDown, ExternalLink, AlertCircle, Search, Check, Clock, UserPlus, Download, FileText, Share2, Layers, Eye, Mail, MapPin, Building2,
 } from "lucide-react";
 
 // ─── Status Config ───
@@ -274,6 +274,9 @@ export default function OrderDetailPage() {
   const [staffDropdownOpen, setStaffDropdownOpen] = useState<string | null>(null);
   const [assignConfirm, setAssignConfirm] = useState<{ lineItemId: string; serviceName: string; staff: StaffMember } | null>(null);
 
+  // Customer
+  const [customer, setCustomer] = useState<Customer | null>(null);
+
   // Invoice
   const [invoice, setInvoice] = useState<Invoice | null>(null);
 
@@ -319,6 +322,13 @@ export default function OrderDetailPage() {
   useEffect(() => { loadOrder(); }, [loadOrder]);
   useEffect(() => { if (id) getInvoiceByOrderId(id).then(setInvoice).catch(() => {}); }, [id]);
 
+  // Load full customer details
+  useEffect(() => {
+    if (order?.customerId) {
+      getCustomerById(order.customerId).then((c) => { if (c) setCustomer(c); }).catch(() => {});
+    }
+  }, [order?.customerId]);
+
   // Load department data
   useEffect(() => {
     if (garageId) setDeptList(getDepartments(garageId));
@@ -360,7 +370,7 @@ export default function OrderDetailPage() {
 
   function showSuccess(msg: string) {
     setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(""), 3000);
+    setTimeout(() => setSuccessMsg(""), 4000);
   }
 
   // Close staff dropdown on outside click
@@ -714,17 +724,44 @@ export default function OrderDetailPage() {
 
           {/* ─── Order Info Card ─── */}
           <div className="bg-background rounded-xl border border-edge p-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted uppercase">Customer</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {/* Customer Details */}
+              <div className="space-y-3">
+                <p className="text-xs font-medium text-muted uppercase tracking-wide">Customer</p>
                 <p className="text-sm font-semibold text-foreground">{order.customerName}</p>
-                <div className="flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-muted" />
-                  <span className="text-sm text-secondary">{order.phone || order.customerPhone || "-"}</span>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-muted shrink-0" />
+                    <a href={`tel:${order.phone || order.customerPhone || ""}`} className="text-sm text-secondary hover:text-primary transition-colors">
+                      {order.phone || order.customerPhone || "-"}
+                    </a>
+                  </div>
+                  {(customer?.email) && (
+                    <div className="flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-muted shrink-0" />
+                      <a href={`mailto:${customer.email}`} className="text-sm text-secondary hover:text-primary transition-colors truncate">
+                        {customer.email}
+                      </a>
+                    </div>
+                  )}
+                  {(customer?.address) && (
+                    <div className="flex items-start gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-muted shrink-0 mt-0.5" />
+                      <span className="text-sm text-secondary">{customer.address}</span>
+                    </div>
+                  )}
+                  {(customer?.gstin) && (
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-muted shrink-0" />
+                      <span className="text-xs font-mono text-secondary">{customer.gstin}</span>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted uppercase">Vehicle</p>
+
+              {/* Vehicle Details */}
+              <div className="space-y-3">
+                <p className="text-xs font-medium text-muted uppercase tracking-wide">Vehicle</p>
                 <div className="flex items-center gap-1.5">
                   <Car className="w-3.5 h-3.5 text-muted" />
                   <span className="text-sm font-semibold text-foreground">{order.vehicle || "-"}</span>

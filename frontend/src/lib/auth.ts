@@ -104,7 +104,7 @@ export function canManage(module: string): boolean {
 /** Route order for staff — used to find the first accessible page after login. */
 const MODULE_ROUTES: { module: string; path: string }[] = [
   { module: "DASHBOARD", path: "/dashboard" },
-  { module: "ORDERS", path: "/dashboard/order-search" },
+  { module: "ORDERS", path: "/dashboard/orders" },
   { module: "INVOICES", path: "/dashboard/invoices" },
   { module: "INVENTORY", path: "/dashboard/inventory" },
   { module: "ACCOUNTS", path: "/dashboard/accounts" },

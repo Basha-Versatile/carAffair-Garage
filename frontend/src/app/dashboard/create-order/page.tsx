@@ -12,6 +12,7 @@ import {
   FuelType, VehicleCategory, VehicleBrand, VehicleModel,
 } from "@/lib/api-vehicles";
 import { addOrder, uploadOrderImages } from "@/lib/api-orders";
+import { searchCustomers } from "@/lib/api-customers";
 import { submitBrandRequest } from "@/lib/api-brand-requests";
 
 type Step = "search" | "form" | "inspection";
@@ -82,6 +83,50 @@ export default function CreateOrderPage() {
   const [inspectionNotes, setInspectionNotes] = useState("");
   const [notifyCustomer, setNotifyCustomer] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Track existing customer/vehicle when selecting from search
+  const [existingCustomerId, setExistingCustomerId] = useState<string | null>(null);
+  const [existingVehicleId, setExistingVehicleId] = useState<string | null>(null);
+  const [matchedCustomerName, setMatchedCustomerName] = useState<string | null>(null);
+
+  // Live phone lookup — auto-detect existing customer when 10 digits entered
+  useEffect(() => {
+    const phone = form.mobile.trim();
+    // Only search when exactly 10 digits and no existing customer already set from vehicle selection
+    if (phone.length !== 10 || existingVehicleId) return;
+
+    let cancelled = false;
+    searchCustomers(phone).then((matches) => {
+      if (cancelled) return;
+      const exact = matches.find((c) => c.phone === phone);
+      if (exact) {
+        setExistingCustomerId(exact.id);
+        setMatchedCustomerName(exact.name);
+        setForm((prev) => ({
+          ...prev,
+          customerName: exact.name || prev.customerName,
+          email: exact.email || prev.email,
+          address: exact.address || prev.address,
+          gstin: exact.gstin || prev.gstin,
+        }));
+      } else {
+        setExistingCustomerId(null);
+        setMatchedCustomerName(null);
+      }
+    }).catch(() => {});
+
+    return () => { cancelled = true; };
+  }, [form.mobile, existingVehicleId]);
+
+  // Clear matched customer if phone changes away from 10 digits
+  useEffect(() => {
+    if (form.mobile.trim().length !== 10) {
+      if (matchedCustomerName && !existingVehicleId) {
+        setExistingCustomerId(null);
+        setMatchedCustomerName(null);
+      }
+    }
+  }, [form.mobile, matchedCustomerName, existingVehicleId]);
 
   // Add brand request
   const [addBrandModalOpen, setAddBrandModalOpen] = useState(false);
@@ -246,6 +291,8 @@ export default function CreateOrderPage() {
   }
 
   async function handleSelectVehicle(v: VehicleResult) {
+    setExistingVehicleId(v.id);
+    setExistingCustomerId(v.customerId || null);
     setForm({
       ...emptyForm,
       regNumber: v.registrationNumber,
@@ -281,6 +328,8 @@ export default function CreateOrderPage() {
   function handleAddAsNew() {
     const reg = searchReg.trim().toUpperCase();
     if (exactDuplicate) return;
+    setExistingCustomerId(null);
+    setExistingVehicleId(null);
     setForm({ ...emptyForm, regNumber: reg });
     setRcData(null);
     setRcError("");
@@ -425,19 +474,43 @@ export default function CreateOrderPage() {
 
     setSubmitting(true);
     try {
-      const customer = await addCustomer({
-        name: form.customerName.trim(), phone: form.mobile.trim(),
-        email: form.email.trim() || undefined, address: form.address.trim() || undefined,
-        gstin: form.gstin.trim() || undefined,
-      });
-      const vehicle = await addVehicle({
-        registrationNumber: form.regNumber, brandId: form.brandId, modelId: form.modelId,
-        customerId: customer.id, purchaseDate: form.purchaseDate || undefined,
-        engineNumber: form.engineNumber || undefined, vinNumber: form.vinNumber || undefined,
-        insuranceProvider: form.insuranceProvider || undefined, insurerGstin: form.insurerGstin || undefined,
-        insurerAddress: form.insurerAddress || undefined, policyNumber: form.policyNumber || undefined,
-        insuranceExpiry: form.insuranceExpiry || undefined,
-      });
+      let customerId = existingCustomerId;
+      let vehicleId = existingVehicleId;
+
+      // Resolve or create customer
+      if (!customerId) {
+        // Search for existing customer by phone number
+        const phone = form.mobile.trim();
+        try {
+          const matches = await searchCustomers(phone);
+          const exactMatch = matches.find((c) => c.phone === phone);
+          if (exactMatch) {
+            customerId = exactMatch.id;
+          }
+        } catch { /* ignore search errors, will create new */ }
+
+        if (!customerId) {
+          const newCustomer = await addCustomer({
+            name: form.customerName.trim(), phone,
+            email: form.email.trim() || undefined, address: form.address.trim() || undefined,
+            gstin: form.gstin.trim() || undefined,
+          });
+          customerId = newCustomer.id;
+        }
+      }
+
+      // Resolve or create vehicle
+      if (!vehicleId) {
+        const newVehicle = await addVehicle({
+          registrationNumber: form.regNumber, brandId: form.brandId, modelId: form.modelId,
+          customerId, purchaseDate: form.purchaseDate || undefined,
+          engineNumber: form.engineNumber || undefined, vinNumber: form.vinNumber || undefined,
+          insuranceProvider: form.insuranceProvider || undefined, insurerGstin: form.insurerGstin || undefined,
+          insurerAddress: form.insurerAddress || undefined, policyNumber: form.policyNumber || undefined,
+          insuranceExpiry: form.insuranceExpiry || undefined,
+        });
+        vehicleId = newVehicle.id;
+      }
 
       const brand = await getBrandById(form.brandId);
       const model = await getModelById(form.modelId);
@@ -448,8 +521,8 @@ export default function CreateOrderPage() {
         phone: form.mobile.trim(),
         vehicle: vehicleName,
         vehicleNumber: form.regNumber,
-        customerId: customer.id,
-        vehicleId: vehicle.id,
+        customerId,
+        vehicleId,
         status: "open",
         amount: 0,
         date: new Date().toISOString().split("T")[0],
@@ -466,7 +539,7 @@ export default function CreateOrderPage() {
         await uploadOrderImages(order.id, imageFiles);
       }
 
-      router.push("/dashboard");
+      router.push("/dashboard/orders");
     } catch(err) { setErrors({ submit: err instanceof Error ? err.message : "Failed to create order" }); }
     finally { setSubmitting(false); }
   }
@@ -482,7 +555,7 @@ export default function CreateOrderPage() {
         <button onClick={() => {
           if (step === "inspection") { setStep("form"); }
           else if (step === "form") { setStep("search"); resetRcState(); }
-          else { router.push("/dashboard"); }
+          else { router.push("/dashboard/orders"); }
         }}
           className="p-1.5 text-muted hover:text-foreground hover:bg-hover rounded-md transition-colors">
           <ArrowLeft className="w-5 h-5" />
@@ -533,50 +606,45 @@ export default function CreateOrderPage() {
 
             {/* Live results — found vehicles */}
             {hasQuery && !vehiclesLoading && filtered.length > 0 && rcPhase === "idle" && (
-              <div className="space-y-2.5">
-                <p className="text-xs text-muted">
+              <div>
+                <p className="text-xs text-muted mb-2">
                   {filtered.length} vehicle{filtered.length > 1 ? "s" : ""} found
                 </p>
-                {filtered.map((v) => (
-                  <button
-                    key={v.id}
-                    onClick={() => handleSelectVehicle(v)}
-                    className="w-full bg-background rounded-lg border border-edge p-4 hover:border-primary hover:shadow-md transition-all text-left"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="min-w-0">
-                        <span className="inline-flex items-center gap-1.5 bg-primary-light text-primary px-2.5 py-0.5 rounded text-sm font-semibold tracking-wider">
-                          <Car className="w-3.5 h-3.5" />{v.registrationNumber}
-                        </span>
-                        <div className="flex items-center gap-4 mt-2 text-sm">
-                          <span className="flex items-center gap-1.5 text-foreground">
-                            <User className="w-3.5 h-3.5 text-muted shrink-0" />
-                            {v.customerName || "Unknown"}
+                <div className="max-h-[340px] overflow-y-auto space-y-2.5 pr-1" style={{ scrollbarWidth: "thin" }}>
+                  {filtered.map((v) => (
+                    <button
+                      key={v.id}
+                      onClick={() => handleSelectVehicle(v)}
+                      className="w-full bg-background rounded-lg border border-edge p-4 hover:border-primary hover:shadow-md transition-all text-left"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="min-w-0">
+                          <span className="inline-flex items-center gap-1.5 bg-primary-light text-primary px-2.5 py-0.5 rounded text-sm font-semibold tracking-wider">
+                            <Car className="w-3.5 h-3.5" />{v.registrationNumber}
                           </span>
-                          {v.customerPhone && (
-                            <span className="flex items-center gap-1.5 text-muted">
-                              <Phone className="w-3.5 h-3.5 shrink-0" />
-                              {v.customerPhone}
-                            </span>
+                          {(v.brandName || v.modelName) && (
+                            <p className="text-sm font-medium text-foreground mt-2">
+                              {[v.brandName, v.modelName].filter(Boolean).join(" ")}
+                            </p>
                           )}
+                          <div className="flex items-center gap-4 mt-1.5 text-sm">
+                            <span className="flex items-center gap-1.5 text-foreground">
+                              <User className="w-3.5 h-3.5 text-muted shrink-0" />
+                              {v.customerName || "Unknown"}
+                            </span>
+                            {v.customerPhone && (
+                              <span className="flex items-center gap-1.5 text-muted">
+                                <Phone className="w-3.5 h-3.5 shrink-0" />
+                                {v.customerPhone}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                        <span className="text-xs text-primary font-medium shrink-0 mt-1">Select &rarr;</span>
                       </div>
-                      <span className="text-xs text-primary font-medium shrink-0 mt-1">Select →</span>
-                    </div>
-                  </button>
-                ))}
-                <div className="flex items-center gap-3 pt-1">
-                  <div className="flex-1 border-t border-edge-light" />
-                  <span className="text-xs text-muted">or</span>
-                  <div className="flex-1 border-t border-edge-light" />
+                    </button>
+                  ))}
                 </div>
-                <button
-                  onClick={handleAddAsNew}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add &quot;{searchReg}&quot; as New Vehicle
-                </button>
               </div>
             )}
 
@@ -809,6 +877,14 @@ export default function CreateOrderPage() {
                     <label className={labelCls}>Mobile Number <span className="text-bad">*</span></label>
                     <input type="tel" maxLength={10} value={form.mobile} onChange={(e) => updateForm("mobile", e.target.value.replace(/\D/g, ""))} placeholder="Enter mobile number" className={inputCls} />
                     {errors.mobile && <p className="text-xs text-bad mt-1">{errors.mobile}</p>}
+                    {matchedCustomerName && !existingVehicleId && (
+                      <div className="flex items-center gap-1.5 mt-1.5 px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span className="text-xs text-emerald-700 dark:text-emerald-400">
+                          Existing customer found: <span className="font-semibold">{matchedCustomerName}</span> — new vehicle will be linked to this customer
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div>

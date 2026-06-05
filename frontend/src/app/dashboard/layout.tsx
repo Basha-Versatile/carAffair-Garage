@@ -27,7 +27,7 @@ const ROUTE_MODULE_MAP: Record<string, string> = {
   "/dashboard/invoices": "INVOICES",
   "/dashboard/inventory": "INVENTORY",
   "/dashboard/accounts": "ACCOUNTS",
-  "/dashboard/order-search": "ORDERS",
+  "/dashboard/orders": "ORDERS",
   "/dashboard/cancelled-orders": "ORDERS",
   "/dashboard/customers": "CUSTOMERS",
   "/dashboard/vendors": "VENDORS",
@@ -113,7 +113,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <Backdrop />
       <div
         className={`flex-1 flex flex-col overflow-hidden min-w-0 transition-all duration-300
-          ${showFull ? "xl:ml-[240px]" : "xl:ml-[72px]"}`}
+          ${showFull ? "xl:ml-[280px]" : "xl:ml-[84px]"}`}
       >
         <TopBar />
         <main className="flex-1 overflow-y-auto relative">

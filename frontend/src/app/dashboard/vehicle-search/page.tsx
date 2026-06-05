@@ -143,7 +143,7 @@ export default function VehicleSearchPage() {
       {/* Header */}
       <div className="bg-background border-b border-edge px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-base font-semibold text-foreground">Vehicle Search</h1>
+          <h1 className="text-base font-semibold text-foreground">Vehicles</h1>
           <span className="bg-hover text-muted text-xs font-medium px-2 py-0.5 rounded-full">
             {vehicles.length}
           </span>

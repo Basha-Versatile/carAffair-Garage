@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getUser, clearUser, isSuperAdmin, User } from "@/lib/auth";
 import { useSidebar } from "@/context/SidebarContext";
 import { useTheme } from "@/context/ThemeContext";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Menu, X, Sun, Moon,
   Car, User as UserIcon, FileText, ShoppingCart, Loader2,
@@ -365,12 +366,12 @@ export default function TopBar() {
       : user?.staffTitle || "Staff";
 
   return (
-      <header className="sticky top-0 z-10 flex w-full bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl backdrop-saturate-150 border-b border-white/50 dark:border-gray-800/50">
+      <header className="sticky top-0 z-30 glass-strong border-b border-[var(--border-glass)]">
         <div className="flex items-center justify-between w-full px-4 py-3 xl:px-6">
           {/* Left -- hamburger + info */}
           <div className="flex items-center gap-3 min-w-0">
             <button
-              className="flex items-center justify-center w-10 h-10 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 xl:border xl:border-gray-200 xl:dark:border-gray-800"
+              className="flex items-center justify-center w-10 h-10 rounded-xl glass hover:bg-[var(--bg-glass-hover)] text-[var(--text-tertiary)] transition-all xl:hidden"
               onClick={handleToggle}
               aria-label="Toggle Sidebar"
             >
@@ -382,11 +383,11 @@ export default function TopBar() {
             </button>
 
             <div className="hidden sm:flex items-center gap-2 min-w-0">
-              <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+              <span className="text-sm font-semibold text-[var(--surface-fg)] truncate">
                 {user?.garageName || (superAdmin ? "Super Admin" : "My Garage")}
               </span>
-              <span className="text-gray-300 dark:text-gray-600 select-none">/</span>
-              <span className="text-sm text-gray-500 dark:text-gray-400 truncate">
+              <span className="text-[var(--text-tertiary)] select-none">/</span>
+              <span className="text-sm text-[var(--text-sec)] truncate">
                 {user?.name || "User"}
               </span>
             </div>
@@ -395,7 +396,7 @@ export default function TopBar() {
           {/* Center -- search (desktop only) */}
           <div className="hidden xl:block flex-1 max-w-md mx-6" ref={searchRef}>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)]" />
               <input
                 ref={inputRef}
                 type="text"
@@ -403,116 +404,138 @@ export default function TopBar() {
                 onChange={(e) => handleInputChange(e.target.value)}
                 onFocus={() => { if (query.trim() && results.length > 0) setShowDropdown(true); }}
                 onKeyDown={handleKeyDown}
-                placeholder={superAdmin ? "Search garages, requests, brands..." : "Search name, jobcard, phone, vehicle..."}
-                className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 rounded-lg text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-3 focus:ring-brand-500/10 focus:border-brand-300 dark:focus:border-brand-800 transition-shadow"
+                placeholder={superAdmin ? "Search garages, requests, brands..." : "Search anything..."}
+                className="w-full pl-10 pr-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-xl text-sm text-[var(--surface-fg)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-red-500/30 transition-all"
               />
               {searchLoading && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-tertiary)] animate-spin" />
               )}
 
               {/* Search Dropdown */}
-              {showDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-[400px] overflow-y-auto z-[99999]">
-                  {results.length === 0 && !searchLoading ? (
-                    <div className="px-4 py-6 text-center">
-                      <Search className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500 dark:text-gray-400">No results found for &quot;{query}&quot;</p>
-                    </div>
-                  ) : (
-                    <div className="py-1.5">
-                      {results.map((r) => {
-                        const meta = TYPE_META[r.type];
-                        const Icon = meta.icon;
-                        return (
-                          <button
-                            key={r.id}
-                            onClick={() => handleResultClick(r)}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
-                          >
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${meta.color}`}>
-                              <Icon className="w-4 h-4" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{r.title}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{r.subtitle}</p>
-                            </div>
-                            <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider shrink-0">
-                              {meta.label}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
+              <AnimatePresence>
+                {showDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-0 right-0 mt-1.5 glass-strong rounded-2xl border border-[var(--border-color)] shadow-2xl max-h-[400px] overflow-y-auto z-[99999]"
+                  >
+                    {results.length === 0 && !searchLoading ? (
+                      <div className="px-4 py-6 text-center">
+                        <Search className="w-8 h-8 text-[var(--text-tertiary)] opacity-30 mx-auto mb-2" />
+                        <p className="text-sm text-[var(--text-tertiary)]">No results found for &quot;{query}&quot;</p>
+                      </div>
+                    ) : (
+                      <div className="py-1.5">
+                        {results.map((r) => {
+                          const meta = TYPE_META[r.type];
+                          const Icon = meta.icon;
+                          return (
+                            <button
+                              key={r.id}
+                              onClick={() => handleResultClick(r)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--bg-tertiary)] transition-colors text-left"
+                            >
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${meta.color}`}>
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-[var(--surface-fg)] truncate">{r.title}</p>
+                                <p className="text-xs text-[var(--text-tertiary)] truncate">{r.subtitle}</p>
+                              </div>
+                              <span className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider shrink-0">
+                                {meta.label}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
           {/* Right -- actions */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-3">
             {/* Theme toggle */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={toggleTheme}
-              className="flex items-center justify-center w-10 h-10 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+              className="p-2.5 rounded-xl glass hover:bg-[var(--bg-glass-hover)] transition-all cursor-pointer"
               aria-label="Toggle theme"
             >
               {theme === "dark" ? (
-                <Sun className="w-5 h-5" />
+                <Sun className="w-4 h-4 text-amber-400" />
               ) : (
-                <Moon className="w-5 h-5" />
+                <Moon className="w-4 h-4 text-[var(--text-sec)]" />
               )}
-            </button>
+            </motion.button>
 
             <NotificationDropdown />
 
             {/* Profile dropdown */}
-            <div className="relative ml-1" ref={profileRef}>
+            <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setShowProfile((p) => !p)}
-                className="flex items-center gap-1.5 rounded-full hover:ring-2 hover:ring-gray-200 dark:hover:ring-gray-700 transition-all"
+                className="flex items-center gap-3 pl-3 border-l border-[var(--border-color)] hover:opacity-80 transition-opacity cursor-pointer"
               >
-                <div className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center shadow-lg shadow-red-600/20">
                   <span className="text-xs font-semibold text-white">
                     {user?.name?.charAt(0)?.toUpperCase() || "U"}
                   </span>
                 </div>
-                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${showProfile ? "rotate-180" : ""}`} />
+                <div className="hidden sm:block text-left">
+                  <p className="text-sm font-medium text-[var(--surface-fg)]">{user?.name || "User"}</p>
+                  <p className="text-xs text-[var(--text-tertiary)] truncate">{user?.phone} - {roleLabel}</p>
+                </div>
+                <ChevronDown className={`w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-200 hidden sm:block ${showProfile ? "rotate-180" : ""}`} />
               </button>
 
-              {showProfile && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-[99999] overflow-hidden">
-                  {/* User info */}
-                  <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-brand-500 flex items-center justify-center shrink-0">
-                        <span className="text-sm font-semibold text-white">
-                          {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {user?.name || "User"}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {user?.phone} - {roleLabel}
-                        </p>
+              <AnimatePresence>
+                {showProfile && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-64 glass-strong rounded-2xl border border-[var(--border-color)] shadow-xl z-[99999] overflow-hidden"
+                  >
+                    {/* User info */}
+                    <div className="px-4 py-3 border-b border-[var(--border-color)]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center shrink-0">
+                          <span className="text-sm font-semibold text-white">
+                            {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[var(--surface-fg)] truncate">
+                            {user?.name || "User"}
+                          </p>
+                          <p className="text-xs text-[var(--text-tertiary)] truncate">
+                            {user?.phone} - {roleLabel}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="py-1.5">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4 text-red-500" />
-                      <span className="text-sm text-red-600 dark:text-red-400">Logout</span>
-                    </button>
-                  </div>
-                </div>
-              )}
+                    {/* Actions */}
+                    <div className="py-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all cursor-pointer"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span className="text-sm">Logout</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
