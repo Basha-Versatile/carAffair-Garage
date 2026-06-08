@@ -1,0 +1,516 @@
+@import "tailwindcss";
+
+/* ================================================================== */
+/*  Design Tokens                                                      */
+/* ================================================================== */
+
+:root {
+  --crank-red: #CC0000;
+  --crank-red-dark: #A30000;
+  --crank-red-light: #D32F2F;
+  --crank-black: #1A1A1A;
+  --crank-gray: #17080A;
+  --crank-white: #ffffff;
+  --crank-border: #E1E1E1;
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #F5F5F5;
+  --bg-tertiary: #EEEEEE;
+  --bg-dark: #1A1A1A;
+  --bg-dark-secondary: #252525;
+  --border-color: #E1E1E1;
+  --text-primary: #1A1A1A;
+  --text-secondary: #555555;
+  --text-tertiary: #888888;
+  --text-light: #aaaaaa;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.1);
+  --shadow-red: 0 12px 32px -8px rgba(204, 0, 0, 0.35);
+
+  --glass-bg: rgba(0, 0, 0, 0.05);
+  --glass-border: rgba(0, 0, 0, 0.12);
+  --glass-hover: rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #171717;
+  --bg-tertiary: #1f1f1f;
+  --bg-dark: #0a0a0a;
+  --bg-dark-secondary: #141414;
+  --border-color: #2a2a2a;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #666666;
+  --text-light: #444444;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --shadow-red: 0 12px 32px -8px rgba(204, 0, 0, 0.4);
+
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-hover: rgba(255, 255, 255, 0.08);
+}
+
+/* ================================================================== */
+/*  Tailwind Theme                                                     */
+/* ================================================================== */
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-montserrat);
+  --color-primary: #CC0000;
+  --color-primary-hover: #A30000;
+  --color-primary-light: #fef1f3;
+
+  --animate-fade-in: fade-in 0.5s ease-out both;
+  --animate-slide-up: slide-up 0.5s ease-out both;
+  --animate-slide-right: slide-right 0.5s ease-out both;
+  --animate-scale-in: scale-in 0.4s ease-out both;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-shine: shine 1.5s ease-in-out;
+  --animate-pulse-ring: pulse-ring 2s ease-out infinite;
+  --animate-gradient-x: gradient-x 3s ease infinite;
+}
+
+/* ================================================================== */
+/*  Keyframes                                                          */
+/* ================================================================== */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-right {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes shine {
+  0% { left: -75%; }
+  100% { left: 125%; }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 0; }
+  100% { transform: scale(0.8); opacity: 0; }
+}
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ================================================================== */
+/*  Base                                                               */
+/* ================================================================== */
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  color-scheme: light dark;
+}
+
+body,
+.card,
+.card-flat,
+header,
+footer,
+main,
+section {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans), "Inter", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), "Montserrat", system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+/* ================================================================== */
+/*  Section Tag                                                        */
+/* ================================================================== */
+
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--crank-red);
+}
+
+.section-tag::before {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 2px;
+  background: var(--crank-red);
+  border-radius: 1px;
+}
+
+/* ================================================================== */
+/*  Cards                                                              */
+/* ================================================================== */
+
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-6px);
+  border-color: var(--crank-red);
+}
+
+.card-flat {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+/* ================================================================== */
+/*  Buttons                                                            */
+/* ================================================================== */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  background: linear-gradient(135deg, var(--crank-red) 0%, var(--crank-red-light) 100%);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 4px 14px -2px rgba(204, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -75%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.btn-primary:hover::after {
+  opacity: 1;
+  animation: shine 0.8s ease-in-out;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--crank-red-dark) 0%, var(--crank-red) 100%);
+  box-shadow: 0 6px 20px -2px rgba(204, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--border-color);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-outline:hover {
+  border-color: var(--crank-red);
+  color: var(--crank-red);
+  box-shadow: 0 4px 12px rgba(204, 0, 0, 0.1);
+}
+
+.btn-white {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  background: #ffffff;
+  color: var(--crank-black);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.btn-white:hover {
+  background: var(--crank-red);
+  color: #ffffff;
+  box-shadow: 0 6px 20px -2px rgba(204, 0, 0, 0.4);
+}
+
+/* ================================================================== */
+/*  Gradient Text                                                      */
+/* ================================================================== */
+
+.gradient-text {
+  background: linear-gradient(135deg, #CC0000 0%, #D32F2F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-animated {
+  background: linear-gradient(90deg, var(--crank-red) 0%, #ff4444 25%, var(--crank-red-light) 50%, #ff4444 75%, var(--crank-red) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-x 4s ease infinite;
+}
+
+/* ================================================================== */
+/*  Glass                                                              */
+/* ================================================================== */
+
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  background: var(--glass-hover);
+}
+
+/* ================================================================== */
+/*  Form                                                               */
+/* ================================================================== */
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1.125rem;
+  background: var(--bg-primary);
+  border: 1.5px solid var(--border-color);
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.dark .form-input {
+  background: var(--bg-tertiary);
+  border-color: #333;
+}
+
+.form-input:focus {
+  border-color: var(--crank-red);
+  box-shadow: 0 0 0 3px rgba(204, 0, 0, 0.1);
+}
+
+.form-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* ================================================================== */
+/*  Navbar                                                             */
+/* ================================================================== */
+
+.nav-glass {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+.dark .nav-glass {
+  background: rgba(15, 15, 15, 0.82);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ================================================================== */
+/*  Footer                                                             */
+/* ================================================================== */
+
+.footer-link {
+  position: relative;
+  transition: color 0.2s ease, padding-left 0.3s ease;
+}
+.footer-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 2px;
+  background: var(--crank-red);
+  border-radius: 1px;
+  transition: width 0.3s ease;
+}
+.footer-link:hover {
+  color: var(--crank-red) !important;
+  padding-left: 14px;
+}
+.footer-link:hover::before {
+  width: 8px;
+}
+
+.social-icon {
+  transition: all 0.3s ease;
+}
+.social-icon:hover {
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 6px 20px -4px rgba(204, 0, 0, 0.5);
+}
+
+/* ================================================================== */
+/*  Section Divider                                                    */
+/* ================================================================== */
+
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--crank-red), transparent);
+  opacity: 0.2;
+}
+
+/* ================================================================== */
+/*  Focus                                                              */
+/* ================================================================== */
+
+:focus-visible {
+  outline: 2px solid var(--crank-red);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ================================================================== */
+/*  Dark Mode                                                          */
+/* ================================================================== */
+
+.dark .card {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark .card:hover {
+  box-shadow: 0 8px 32px rgba(204, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.4);
+  border-color: rgba(204, 0, 0, 0.4);
+  background: var(--bg-tertiary);
+}
+
+.dark .card-flat {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+.dark .btn-white {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.dark .btn-white:hover {
+  background: var(--crank-red);
+  color: #ffffff;
+  border-color: var(--crank-red);
+}
+
+.dark .btn-outline {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.dark .btn-outline:hover {
+  border-color: var(--crank-red);
+  color: var(--crank-red);
+}
+
+.section-dark {
+  background: var(--bg-dark);
+  color: #ffffff;
+}
+
+.section-dark h1,
+.section-dark h2,
+.section-dark h3 {
+  color: #ffffff;
+}
+
+.section-dark p {
+  color: #bbbbbb;
+}
+
+.section-light {
+  background: var(--bg-secondary);
+}
+
+/* ================================================================== */
+/*  Icon Ring                                                          */
+/* ================================================================== */
+
+.icon-ring {
+  position: relative;
+}
+.icon-ring::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid var(--crank-red);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.icon-ring:hover::before {
+  opacity: 1;
+  animation: pulse-ring 1.5s ease-out infinite;
+}

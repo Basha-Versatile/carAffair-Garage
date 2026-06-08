@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import AtmosphericBackground from "@/components/AtmosphericBackground";
 import { publicPost } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import DatePicker from "react-datepicker";
@@ -169,14 +168,10 @@ export default function BookServicePage() {
   // Validation
   const canProceed = (): boolean => {
     switch (step) {
-      case 1:
-        return rcFetched && brand !== "";
-      case 2:
-        return selectedDate !== null && selectedTime !== null;
-      case 3:
-        return name.trim() !== "" && phone.trim().length >= 10 && email.trim() !== "";
-      default:
-        return true;
+      case 1: return rcFetched && brand !== "";
+      case 2: return selectedDate !== null && selectedTime !== null;
+      case 3: return name.trim() !== "" && phone.trim().length >= 10 && email.trim() !== "";
+      default: return true;
     }
   };
 
@@ -216,32 +211,38 @@ export default function BookServicePage() {
   const selectedTimeDisplay = formatTime12h(selectedTime);
 
   const inputBase =
-    "w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl form-input text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] text-sm transition-all duration-200 outline-none";
+    "w-full px-4 py-3 rounded-lg form-input text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600 text-sm transition-all duration-200 outline-none";
 
   return (
-    <div className="relative min-h-screen flex flex-col grain">
-      <AtmosphericBackground />
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-[#0f0f0f]">
       <Navbar />
 
-      <main className="relative flex-1 pt-8">
-        {/* Hero Header */}
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 text-center">
-          <nav className="flex items-center justify-center gap-1.5 text-xs text-[var(--text-tertiary)] mb-2 sm:mb-3">
-            <Link href="/" className="hover:text-red-500 transition-colors">Home</Link>
-            <ChevronRight className="h-3 w-3" />
-            <span className="text-[var(--text-primary)] font-medium">Book a Service</span>
-          </nav>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--text-primary)] tracking-tight mb-1.5 sm:mb-2">
-            Book a Service
-          </h1>
-          <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-sm mx-auto">
-            Schedule your vehicle service in just a few steps
-          </p>
+      <main className="flex-1">
+        {/* Banner Header with Breadcrumbs — white in light, dark in dark mode */}
+        <div className="relative bg-white dark:bg-[#0f0f0f] py-14 sm:py-20 overflow-hidden border-b border-gray-100 dark:border-white/5">
+          {/* Decorative background elements */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-[rgba(204,0,0,0.04)] dark:bg-[rgba(204,0,0,0.06)] blur-3xl translate-x-1/3 -translate-y-1/3" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full bg-[rgba(15,34,71,0.04)] dark:bg-[rgba(15,34,71,0.1)] blur-3xl -translate-x-1/3 translate-y-1/3" />
+          </div>
+          <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
+            <nav className="flex items-center justify-center gap-2 text-sm text-gray-400 dark:text-white/40 mb-5">
+              <Link href="/" className="hover:text-gray-800 dark:hover:text-white transition-colors">Home</Link>
+              <ChevronRight className="h-3.5 w-3.5" />
+              <span className="text-[#CC0000] font-medium">Booking</span>
+            </nav>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white font-[family-name:var(--font-montserrat)]">
+              Book a Service
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-white/50 mt-3 max-w-md mx-auto">
+              Schedule your vehicle service in just a few steps
+            </p>
+          </div>
         </div>
 
         {/* Step Indicator */}
-        <div className="relative mx-auto max-w-3xl px-3 sm:px-6 lg:px-8 -mt-1 mb-4 sm:mb-6">
-          <div className="glass-panel !rounded-xl sm:!rounded-2xl p-2.5 sm:p-3">
+        <div className="relative z-10 mx-auto max-w-3xl px-4 sm:px-6 -mt-6 mb-6 sm:mb-8">
+          <div className="bg-white dark:bg-[#0f0f0f] border border-gray-200 dark:border-[#2a2a2a] rounded-xl p-3 sm:p-4 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
             <div className="flex items-center justify-between">
               {stepLabels.map((label, idx) => {
                 const stepNum = idx + 1;
@@ -250,28 +251,26 @@ export default function BookServicePage() {
                 const Icon = stepIcons[idx];
                 return (
                   <div key={label} className="flex items-center flex-1 last:flex-none">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className={`flex items-center justify-center h-7 w-7 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl text-xs font-bold transition-all duration-500 ${
+                    <div className="flex flex-col items-center gap-1.5">
+                      <div className={`flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-lg text-xs font-bold transition-all duration-300 ${
                         isCompleted
-                          ? "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-md shadow-red-500/30"
+                          ? "bg-[#CC0000] text-white"
                           : isActive
-                            ? "bg-gradient-to-r from-red-600 to-red-700 text-white ring-2 ring-red-500/20 shadow-md shadow-red-500/20"
-                            : "glass-card text-[var(--text-tertiary)] !rounded-lg sm:!rounded-xl"
-                      }`} style={!isCompleted && !isActive ? { transform: "none" } : undefined}>
-                        {isCompleted ? <Check className="h-3 w-3 sm:h-4 sm:w-4" /> : <Icon className="h-3 w-3 sm:h-4 sm:w-4" />}
+                            ? "bg-[#CC0000] text-white ring-2 ring-[rgba(204,0,0,0.2)]"
+                            : "bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-[#2a2a2a] text-gray-400 dark:text-gray-500"
+                      }`}>
+                        {isCompleted ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                       </div>
-                      <span className={`text-[9px] sm:text-xs font-semibold transition-colors duration-300 ${
-                        isActive || isCompleted ? "text-red-500" : "text-[var(--text-tertiary)]"
+                      <span className={`text-[10px] sm:text-xs font-semibold transition-colors ${
+                        isActive || isCompleted ? "text-[#CC0000]" : "text-gray-400 dark:text-gray-500"
                       }`}>
                         {label}
                       </span>
                     </div>
                     {idx < stepLabels.length - 1 && (
-                      <div className="flex-1 mx-1 sm:mx-3">
+                      <div className="flex-1 mx-2 sm:mx-4">
                         <div className={`h-0.5 rounded-full transition-all duration-500 ${
-                          step > stepNum
-                            ? "bg-gradient-to-r from-red-600 to-red-600/70"
-                            : "bg-[var(--border-glass)]"
+                          step > stepNum ? "bg-[#CC0000]" : "bg-gray-200 dark:bg-[#2a2a2a]"
                         }`} />
                       </div>
                     )}
@@ -283,8 +282,8 @@ export default function BookServicePage() {
         </div>
 
         {/* Step Content */}
-        <div className="mx-auto max-w-3xl px-3 sm:px-6 lg:px-8 pb-6 sm:pb-10">
-          <div className="glass-panel !rounded-xl sm:!rounded-2xl p-3.5 sm:p-5 md:p-6 lg:p-8">
+        <div className="relative z-10 mx-auto max-w-3xl px-4 sm:px-6 pb-10 sm:pb-16">
+          <div className="bg-white dark:bg-[#0f0f0f] border border-gray-200 dark:border-[#2a2a2a] rounded-xl p-5 sm:p-6 md:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
             <AnimatePresence mode="wait">
               <motion.div
                 key={confirmed ? "success" : step}
@@ -294,22 +293,22 @@ export default function BookServicePage() {
                 transition={{ duration: 0.3 }}
               >
 
-            {/* ─── Step 1: Vehicle Number ─── */}
+            {/* Step 1: Vehicle Number */}
             {step === 1 && (
               <div>
-                <div className="text-center mb-4 sm:mb-6">
-                  <div className="inline-flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-red-500/10 mb-2 sm:mb-3">
-                    <Car className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-[rgba(204,0,0,0.08)] mb-3">
+                    <Car className="h-6 w-6 text-[#CC0000]" />
                   </div>
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--text-primary)] mb-1">Vehicle Details</h2>
-                  <p className="text-xs sm:text-sm text-[var(--text-secondary)]">Enter your vehicle registration number to get started</p>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 font-[family-name:var(--font-montserrat)] mb-1">Vehicle Details</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Enter your vehicle registration number to get started</p>
                 </div>
 
-                <div className="w-full space-y-4">
+                <div className="space-y-4">
                   <div>
-                    <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] mb-1.5">
-                      <Car className="h-3.5 w-3.5 text-red-500" />
-                      Registration Number <span className="text-red-500">*</span>
+                    <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      <Car className="h-3.5 w-3.5 text-[#CC0000]" />
+                      Registration Number <span className="text-[#CC0000]">*</span>
                     </label>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input
@@ -322,14 +321,14 @@ export default function BookServicePage() {
                       <button
                         onClick={handleRcLookup}
                         disabled={rcLoading || !regNumber.trim()}
-                        className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl text-xs sm:text-sm font-bold hover:from-red-500 hover:to-red-600 disabled:opacity-40 flex items-center justify-center gap-1.5 whitespace-nowrap transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(220,38,38,0.5)] active:scale-[0.98]"
+                        className="btn-primary !py-3 !px-5 !text-sm !rounded-lg disabled:opacity-40 w-full sm:w-auto"
                       >
-                        {rcLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                        {rcLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                         {rcLoading ? "Fetching..." : "Fetch Details"}
                       </button>
                     </div>
                     {rcError && (
-                      <p className="flex items-center gap-1.5 text-xs text-red-500 mt-2 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg">
+                      <p className="flex items-center gap-1.5 text-xs mt-2 status-error px-3 py-2 rounded-lg">
                         <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {rcError}
                       </p>
                     )}
@@ -338,38 +337,38 @@ export default function BookServicePage() {
                   {/* Vehicle Details display */}
                   {rcFetched && brand && rcData && (
                     <div className="animate-scale-in space-y-3">
-                      <div className="flex items-center gap-2.5 p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-500/10 dark:to-emerald-500/10 border border-green-200/50 dark:border-green-500/20">
-                        <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-green-500 text-white shrink-0 shadow-sm shadow-green-500/30">
+                      <div className="flex items-center gap-2.5 p-3 rounded-lg status-success">
+                        <div className="flex items-center justify-center h-7 w-7 rounded-md bg-green-500 text-white shrink-0">
                           <Check className="h-3.5 w-3.5" />
                         </div>
-                        <p className="text-xs sm:text-sm font-semibold text-green-700 dark:text-green-300">Vehicle details fetched successfully!</p>
+                        <p className="text-sm font-semibold">Vehicle details fetched successfully!</p>
                       </div>
 
-                      <div className="glass-card !rounded-xl overflow-hidden" style={{ transform: "none" }}>
-                        <div className="px-3.5 sm:px-4 py-3 sm:py-3.5 border-b border-gray-200 dark:border-white/10 bg-gradient-to-r from-red-500/[0.06] to-transparent">
+                      <div className="border border-gray-200 dark:border-[#2a2a2a] rounded-xl overflow-hidden">
+                        <div className="px-4 py-3.5 border-b border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#171717]">
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-red-500/10 shrink-0">
-                              <Car className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+                            <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-[rgba(204,0,0,0.08)] shrink-0">
+                              <Car className="h-5 w-5 text-[#CC0000]" />
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm sm:text-base font-bold text-[var(--text-primary)]">{brand} {model}</p>
-                              <p className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{regNumber} {fuelType && `· ${fuelType}`} {year && `· ${year}`}</p>
+                              <p className="text-base font-bold text-gray-900 dark:text-gray-100">{brand} {model}</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500">{regNumber} {fuelType && `· ${fuelType}`} {year && `· ${year}`}</p>
                             </div>
                           </div>
                         </div>
 
-                        <div className="p-3.5 sm:p-4">
+                        <div className="p-4">
                           {ownerName && (
-                            <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-gray-200 dark:border-white/10">
-                              <User className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                            <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-gray-200 dark:border-[#2a2a2a]">
+                              <User className="h-3.5 w-3.5 text-[#CC0000] shrink-0" />
                               <div>
-                                <p className="text-[9px] sm:text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider font-semibold">Owner</p>
-                                <p className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">{ownerName}</p>
+                                <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold">Owner</p>
+                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{ownerName}</p>
                               </div>
                             </div>
                           )}
 
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                             {[
                               { label: "Brand", value: brand },
                               { label: "Model", value: model },
@@ -378,12 +377,12 @@ export default function BookServicePage() {
                               ...(rcData.color ? [{ label: "Color", value: rcData.color }] : []),
                               ...(rcData.bodyType ? [{ label: "Body Type", value: rcData.bodyType }] : []),
                             ].map((item) => (
-                              <div key={item.label} className="rounded-lg border border-gray-200 dark:border-white/15 bg-gray-50 dark:bg-white/5 p-2.5 sm:p-3">
+                              <div key={item.label} className="rounded-lg bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-[#2a2a2a] p-3">
                                 <div className="flex items-center gap-1 mb-0.5">
-                                  {item.icon && <item.icon className="h-2.5 w-2.5 text-red-500/70" />}
-                                  <p className="text-[9px] sm:text-[10px] text-red-500/70 uppercase tracking-wider font-semibold">{item.label}</p>
+                                  {item.icon && <item.icon className="h-2.5 w-2.5 text-[#CC0000]" />}
+                                  <p className="text-[10px] text-[#CC0000] uppercase tracking-wider font-semibold">{item.label}</p>
                                 </div>
-                                <p className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">{item.value}</p>
+                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{item.value}</p>
                               </div>
                             ))}
                           </div>
@@ -395,23 +394,23 @@ export default function BookServicePage() {
               </div>
             )}
 
-            {/* ─── Step 2: Date & Time ─── */}
+            {/* Step 2: Date & Time */}
             {step === 2 && (
               <div>
-                <div className="text-center mb-4 sm:mb-6">
-                  <div className="inline-flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-red-500/10 mb-2 sm:mb-3">
-                    <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-[rgba(204,0,0,0.08)] mb-3">
+                    <CalendarDays className="h-6 w-6 text-[#CC0000]" />
                   </div>
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--text-primary)] mb-1">Pick Date & Time</h2>
-                  <p className="text-xs sm:text-sm text-[var(--text-secondary)]">Choose your preferred appointment schedule</p>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 font-[family-name:var(--font-montserrat)] mb-1">Pick Date & Time</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Choose your preferred appointment schedule</p>
                 </div>
 
-                <div className="w-full space-y-3 sm:space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] mb-1.5">
-                        <CalendarDays className="h-3.5 w-3.5 text-red-500" />
-                        Preferred Date <span className="text-red-500">*</span>
+                      <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                        <CalendarDays className="h-3.5 w-3.5 text-[#CC0000]" />
+                        Preferred Date <span className="text-[#CC0000]">*</span>
                       </label>
                       <div className="book-datepicker">
                         <DatePicker
@@ -428,9 +427,9 @@ export default function BookServicePage() {
                     </div>
 
                     <div>
-                      <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] mb-1.5">
-                        <Clock className="h-3.5 w-3.5 text-red-500" />
-                        Preferred Time <span className="text-red-500">*</span>
+                      <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                        <Clock className="h-3.5 w-3.5 text-[#CC0000]" />
+                        Preferred Time <span className="text-[#CC0000]">*</span>
                       </label>
                       <div className="book-datepicker">
                         <DatePicker
@@ -451,11 +450,11 @@ export default function BookServicePage() {
                   </div>
 
                   {selectedDate && selectedTime && (
-                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-500/10 dark:to-emerald-500/10 border border-green-200/50 dark:border-green-500/20 animate-scale-in">
-                      <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-green-500 text-white shrink-0 shadow-sm shadow-green-500/30">
+                    <div className="flex items-center gap-2.5 p-3 rounded-lg status-success animate-scale-in">
+                      <div className="flex items-center justify-center h-7 w-7 rounded-md bg-green-500 text-white shrink-0">
                         <Check className="h-3.5 w-3.5" />
                       </div>
-                      <p className="text-xs sm:text-sm text-green-800 dark:text-green-300 font-semibold">
+                      <p className="text-sm font-semibold">
                         {selectedDateDisplay} at {selectedTimeDisplay}
                       </p>
                     </div>
@@ -464,158 +463,157 @@ export default function BookServicePage() {
               </div>
             )}
 
-            {/* ─── Step 3: Customer Details ─── */}
+            {/* Step 3: Customer Details */}
             {step === 3 && (
               <div>
-                <div className="text-center mb-4 sm:mb-6">
-                  <div className="inline-flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-red-500/10 mb-2 sm:mb-3">
-                    <User className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-[rgba(204,0,0,0.08)] mb-3">
+                    <User className="h-6 w-6 text-[#CC0000]" />
                   </div>
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--text-primary)] mb-1">Your Details</h2>
-                  <p className="text-xs sm:text-sm text-[var(--text-secondary)]">We need your contact info to confirm the appointment</p>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 font-[family-name:var(--font-montserrat)] mb-1">Your Details</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">We need your contact info to confirm the appointment</p>
                 </div>
 
-                <div className="w-full space-y-3 sm:space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] mb-1.5">
-                        <User className="h-3.5 w-3.5 text-red-500" /> Full Name <span className="text-red-500">*</span>
+                      <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                        <User className="h-3.5 w-3.5 text-[#CC0000]" /> Full Name <span className="text-[#CC0000]">*</span>
                       </label>
                       <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" className={inputBase} />
                     </div>
-
                     <div>
-                      <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] mb-1.5">
-                        <Phone className="h-3.5 w-3.5 text-red-500" /> Phone Number <span className="text-red-500">*</span>
+                      <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                        <Phone className="h-3.5 w-3.5 text-[#CC0000]" /> Phone Number <span className="text-[#CC0000]">*</span>
                       </label>
                       <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit phone number" maxLength={10} className={inputBase} />
                     </div>
                   </div>
 
                   <div>
-                    <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] mb-1.5">
-                      <Mail className="h-3.5 w-3.5 text-red-500" /> Email Address <span className="text-red-500">*</span>
+                    <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      <Mail className="h-3.5 w-3.5 text-[#CC0000]" /> Email Address <span className="text-[#CC0000]">*</span>
                     </label>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" className={inputBase} />
-                    <p className="text-[10px] sm:text-xs text-[var(--text-tertiary)] mt-1 ml-0.5">Booking confirmation will be sent to this email</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">Booking confirmation will be sent to this email</p>
                   </div>
 
                   <div>
-                    <label className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-primary)] mb-1.5">
-                      <MessageSquare className="h-3.5 w-3.5 text-red-500" /> What do you need help with?
+                    <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      <MessageSquare className="h-3.5 w-3.5 text-[#CC0000]" /> What do you need help with?
                     </label>
                     <textarea
                       value={customerMessage}
                       onChange={(e) => setCustomerMessage(e.target.value)}
-                      placeholder="Describe the issue or service you need — e.g., AC not cooling, oil change, brake noise..."
+                      placeholder="Describe the issue or service you need..."
                       rows={3}
                       className={inputBase + " resize-none"}
                     />
                   </div>
 
                   {/* Pickup & Drop */}
-                  <div className="flex items-center justify-between gap-2 p-3 sm:p-4 rounded-xl glass-card" style={{ transform: "none" }}>
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-red-500/10 shrink-0">
-                        <Truck className="h-4 w-4 text-red-500" />
+                  <div className="flex items-center justify-between gap-3 p-4 rounded-lg bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-[#2a2a2a]">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-[rgba(204,0,0,0.08)] shrink-0">
+                        <Truck className="h-5 w-5 text-[#CC0000]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">Pickup & Drop</p>
-                        <p className="text-[10px] sm:text-xs text-[var(--text-tertiary)] truncate">We&apos;ll pick up and deliver your vehicle</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pickup & Drop</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">We&apos;ll pick up and deliver your vehicle</p>
                       </div>
                     </div>
                     <button
                       onClick={() => setPickDrop(!pickDrop)}
-                      className={`relative w-10 h-5 sm:w-11 sm:h-6 rounded-full transition-all duration-300 shrink-0 ${pickDrop ? "bg-red-600 shadow-sm shadow-red-500/30" : "bg-[var(--border-color)]"}`}
+                      className={`relative w-11 h-6 rounded-full transition-all duration-300 shrink-0 ${pickDrop ? "bg-[#CC0000]" : "bg-gray-200 dark:bg-[#2a2a2a]"}`}
                     >
-                      <span className={`absolute top-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white shadow transition-all duration-300 ${pickDrop ? "left-[calc(100%-1.125rem)] sm:left-[calc(100%-1.375rem)]" : "left-0.5"}`} />
+                      <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-300 ${pickDrop ? "left-[calc(100%-1.375rem)]" : "left-0.5"}`} />
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ─── Step 4: Review & Confirm ─── */}
+            {/* Step 4: Review & Confirm */}
             {step === 4 && !confirmed && (
               <div>
-                <div className="text-center mb-4 sm:mb-6">
-                  <div className="inline-flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-red-500/10 mb-2 sm:mb-3">
-                    <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-red-500" />
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-[rgba(204,0,0,0.08)] mb-3">
+                    <Shield className="h-6 w-6 text-[#CC0000]" />
                   </div>
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--text-primary)] mb-1">Review & Confirm</h2>
-                  <p className="text-xs sm:text-sm text-[var(--text-secondary)]">Please verify your booking details before submitting</p>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 font-[family-name:var(--font-montserrat)] mb-1">Review & Confirm</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Please verify your booking details before submitting</p>
                 </div>
 
-                <div className="w-full space-y-2.5 sm:space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
-                    <div className="glass-card !rounded-xl p-3 sm:p-4" style={{ transform: "none" }}>
-                      <p className="text-[9px] sm:text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider font-semibold mb-2">Vehicle</p>
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-red-500/10 shrink-0">
-                          <Car className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-lg bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-[#2a2a2a] p-4">
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold mb-2">Vehicle</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-[rgba(204,0,0,0.08)] shrink-0">
+                          <Car className="h-5 w-5 text-[#CC0000]" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm sm:text-base font-bold text-[var(--text-primary)] truncate">{brand} {model}</p>
-                          <p className="text-[10px] sm:text-xs text-[var(--text-tertiary)] truncate">{regNumber} {fuelType && `\u00B7 ${fuelType}`} {year && `\u00B7 ${year}`}</p>
+                          <p className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">{brand} {model}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{regNumber} {fuelType && `\u00B7 ${fuelType}`} {year && `\u00B7 ${year}`}</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="glass-card !rounded-xl p-3 sm:p-4" style={{ transform: "none" }}>
-                      <p className="text-[9px] sm:text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider font-semibold mb-2">Appointment</p>
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-red-500/10 shrink-0">
-                          <CalendarDays className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+                    <div className="rounded-lg bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-[#2a2a2a] p-4">
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold mb-2">Appointment</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-[rgba(204,0,0,0.08)] shrink-0">
+                          <CalendarDays className="h-5 w-5 text-[#CC0000]" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm sm:text-base font-bold text-[var(--text-primary)] truncate">{selectedDateDisplay}</p>
-                          <p className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">at {selectedTimeDisplay}</p>
+                          <p className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">{selectedDateDisplay}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">at {selectedTimeDisplay}</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="glass-card !rounded-xl p-3 sm:p-4" style={{ transform: "none" }}>
-                    <p className="text-[9px] sm:text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider font-semibold mb-2">Contact Details</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
-                      <div className="flex items-center gap-2 text-xs sm:text-sm">
-                        <User className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                        <span className="text-[var(--text-primary)] font-semibold truncate">{name}</span>
+                  <div className="rounded-lg bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-[#2a2a2a] p-4">
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold mb-2">Contact Details</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <User className="h-3.5 w-3.5 text-[#CC0000] shrink-0" />
+                        <span className="text-gray-900 dark:text-gray-100 font-semibold truncate">{name}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs sm:text-sm">
-                        <Phone className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                        <span className="text-[var(--text-primary)] font-semibold">{phone}</span>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-3.5 w-3.5 text-[#CC0000] shrink-0" />
+                        <span className="text-gray-900 dark:text-gray-100 font-semibold">{phone}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs sm:text-sm">
-                        <Mail className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                        <span className="text-[var(--text-primary)] font-semibold truncate">{email}</span>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-3.5 w-3.5 text-[#CC0000] shrink-0" />
+                        <span className="text-gray-900 dark:text-gray-100 font-semibold truncate">{email}</span>
                       </div>
                       {pickDrop && (
-                        <div className="flex items-center gap-2 text-xs sm:text-sm">
-                          <Truck className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                          <span className="text-red-500 font-semibold">Pickup & Drop</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Truck className="h-3.5 w-3.5 text-[#CC0000] shrink-0" />
+                          <span className="text-[#CC0000] font-semibold">Pickup & Drop</span>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {customerMessage && (
-                    <div className="glass-card !rounded-xl p-3 sm:p-4" style={{ transform: "none" }}>
-                      <p className="text-[9px] sm:text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider font-semibold mb-1">Your Message</p>
-                      <p className="text-xs sm:text-sm text-[var(--text-primary)] leading-relaxed">{customerMessage}</p>
+                    <div className="rounded-lg bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-[#2a2a2a] p-4">
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold mb-1">Your Message</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">{customerMessage}</p>
                     </div>
                   )}
 
                   {submitError && (
-                    <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-3">
-                      <p className="text-xs text-red-600 dark:text-red-400">{submitError}</p>
+                    <div className="status-error rounded-lg p-3">
+                      <p className="text-xs">{submitError}</p>
                     </div>
                   )}
 
                   <button
                     onClick={handleConfirm}
                     disabled={submitting}
-                    className="w-full py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl text-sm sm:text-base font-bold hover:from-red-500 hover:to-red-600 disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 shadow-[0_10px_30px_-10px_rgba(220,38,38,0.5)] active:scale-[0.99]"
+                    className="btn-primary w-full !rounded-lg !py-3.5 disabled:opacity-50"
                   >
                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                     {submitting ? "Submitting..." : "Confirm Booking"}
@@ -624,23 +622,23 @@ export default function BookServicePage() {
               </div>
             )}
 
-            {/* ─── Success ─── */}
+            {/* Success */}
             {confirmed && (
-              <div className="text-center py-5 sm:py-8">
-                <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mb-3 sm:mb-5 shadow-lg shadow-green-500/30">
-                  <Check className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+              <div className="text-center py-8">
+                <div className="mx-auto w-16 h-16 rounded-xl bg-green-500 flex items-center justify-center mb-5 shadow-lg">
+                  <Check className="h-8 w-8 text-white" />
                 </div>
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--text-primary)] mb-1.5 sm:mb-2">Booking Submitted!</h2>
-                <p className="text-xs sm:text-sm text-[var(--text-secondary)] mb-4 sm:mb-5 max-w-xs mx-auto leading-relaxed">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 font-[family-name:var(--font-montserrat)] mb-2">Booking Submitted!</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto leading-relaxed">
                   We will confirm availability within 2 hours. A confirmation will be sent to{" "}
-                  <span className="font-semibold text-[var(--text-primary)]">{email}</span>.
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">{email}</span>.
                 </p>
-                <div className="inline-block glass-card !rounded-xl px-5 py-2.5 sm:px-6 sm:py-3 mb-4 sm:mb-6" style={{ transform: "none" }}>
-                  <p className="text-[9px] sm:text-[10px] text-[var(--text-tertiary)] uppercase tracking-wider font-semibold mb-0.5">Booking ID</p>
-                  <p className="text-lg sm:text-xl font-bold text-red-500">{bookingIdFromApi}</p>
+                <div className="inline-block bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-[#2a2a2a] rounded-lg px-6 py-3 mb-6">
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold mb-0.5">Booking ID</p>
+                  <p className="text-xl font-bold text-[#CC0000]">{bookingIdFromApi}</p>
                 </div>
                 <div>
-                  <Link href="/" className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-red-500 hover:underline transition-colors">
+                  <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#CC0000] hover:underline transition-colors">
                     <ArrowLeft className="h-3.5 w-3.5" /> Back to Home
                   </Link>
                 </div>
@@ -651,21 +649,21 @@ export default function BookServicePage() {
             </AnimatePresence>
           </div>
 
-          {/* ─── Navigation Buttons ─── */}
+          {/* Navigation Buttons */}
           {!confirmed && step <= 4 && (
-            <div className="flex justify-between mt-3 sm:mt-5">
+            <div className="flex justify-between mt-5">
               {step > 1 ? (
-                <button onClick={handleBack} className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-glass)] transition-all duration-300">
-                  <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> Back
+                <button onClick={handleBack} className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-[#171717] border border-gray-200 dark:border-[#2a2a2a] transition-all">
+                  <ChevronLeft className="h-4 w-4" /> Back
                 </button>
               ) : <div />}
               {step < 4 && (
                 <button
                   onClick={handleNext}
                   disabled={!canProceed()}
-                  className="flex items-center gap-1.5 px-5 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl text-xs sm:text-sm font-bold hover:from-red-500 hover:to-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(220,38,38,0.5)] active:scale-[0.98]"
+                  className="btn-primary !py-2.5 !px-6 !rounded-lg !text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Next <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  Next <ChevronRight className="h-4 w-4" />
                 </button>
               )}
             </div>

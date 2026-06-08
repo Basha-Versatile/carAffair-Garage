@@ -1,24 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Wrench, Phone, Mail, MapPin, ArrowRight } from "lucide-react";
 
 const quickLinks = [
   { label: "Home", href: "/" },
-  { label: "About Us", href: "/about" },
-  { label: "Services", href: "#services" },
-  { label: "Book Service", href: "/book" },
-  { label: "Become a Partner", href: "/partner" },
+  { label: "Features", href: "#features" },
+  { label: "Pricing", href: "#pricing" },
+  { label: "Register Garage", href: "/register-garage" },
+  { label: "Book a Demo", href: "/demo" },
 ];
 
-const services = [
-  { label: "General Service", href: "/book" },
-  { label: "AC Service", href: "/book" },
-  { label: "Wheel Care", href: "/book" },
-  { label: "Denting & Painting", href: "/book" },
-  { label: "Battery", href: "/book" },
-  { label: "Insurance Claims", href: "/book" },
+const platformFeatures = [
+  { label: "Job Card Management", href: "#features" },
+  { label: "Invoice & Billing", href: "#features" },
+  { label: "Customer Portal", href: "#features" },
+  { label: "Inventory Tracking", href: "#features" },
+  { label: "Staff Management", href: "#features" },
+  { label: "Analytics Dashboard", href: "#features" },
 ];
 
 const contactInfo = [
@@ -28,13 +27,10 @@ const contactInfo = [
 ];
 
 export default function Footer() {
-  const pathname = usePathname();
-  const isBookPage = pathname === "/book";
-
   return (
     <footer>
-      {/* Booking CTA Strip — hidden on /book page */}
-      {!isBookPage && <div className="bg-(--crank-red) relative overflow-hidden">
+      {/* CTA Strip */}
+      <div className="bg-[var(--crank-red)] relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/5 rounded-full" />
           <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-white/5 rounded-full" />
@@ -42,27 +38,27 @@ export default function Footer() {
         <div className="relative max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <h3 className="text-xl sm:text-2xl font-bold text-white font-[family-name:var(--font-montserrat)]">
-              Ready to Book Your Service?
+              Ready to Digitize Your Garage?
             </h3>
             <p className="text-white/75 text-sm mt-1">
-              Get transparent pricing, certified mechanics, and a 90-day warranty on every service.
+              Join hundreds of garages already using Car Affair to grow their business.
             </p>
           </div>
           <Link
-            href="/book"
-            className="btn-white rounded-lg! shrink-0 py-3.5! px-8! group/book"
+            href="/register-garage"
+            className="btn-white rounded-lg! shrink-0 py-3.5! px-8! group/cta"
           >
-            Book Now
-            <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/book:translate-x-1" />
+            Register Now
+            <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/cta:translate-x-1" />
           </Link>
         </div>
-      </div>}
+      </div>
 
       {/* Main Footer */}
       <div className="bg-[var(--bg-dark)] text-white/80">
         <div className="max-w-7xl mx-auto px-6 py-14">
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Column 1: Brand */}
+            {/* Brand */}
             <div className="sm:col-span-2 lg:col-span-1">
               <Link href="/" className="inline-flex items-center gap-2.5 group">
                 <div className="flex items-center justify-center h-10 w-10 rounded-full bg-[var(--crank-red)] text-white shadow-[0_4px_12px_-2px_rgba(204,0,0,0.4)]">
@@ -73,16 +69,14 @@ export default function Footer() {
                     Car Affair
                   </span>
                   <span className="text-[10px] text-white/50 uppercase tracking-[0.15em] -mt-0.5">
-                    Auto Care
+                    Garage Management
                   </span>
                 </div>
               </Link>
               <p className="mt-5 text-sm leading-relaxed text-white/60 max-w-xs">
-                Your trusted car care partner. We connect you with verified
-                garages for transparent, hassle-free servicing and repairs.
+                The complete garage management platform. Streamline operations, delight customers, and grow your automotive business.
               </p>
 
-              {/* Social Icons */}
               <div className="mt-6 flex items-center gap-3">
                 {[
                   {
@@ -96,10 +90,6 @@ export default function Footer() {
                   {
                     label: "Twitter",
                     path: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z",
-                  },
-                  {
-                    label: "YouTube",
-                    path: "M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z",
                   },
                 ].map((social) => (
                   <a
@@ -116,7 +106,7 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Column 2: Quick Links */}
+            {/* Quick Links */}
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wider text-white mb-5">
                 Quick Links
@@ -135,26 +125,26 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Column 3: Services */}
+            {/* Platform */}
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wider text-white mb-5">
-                Services
+                Platform
               </h3>
               <ul className="space-y-3">
-                {services.map((service) => (
-                  <li key={service.label}>
+                {platformFeatures.map((f) => (
+                  <li key={f.label}>
                     <Link
-                      href={service.href}
+                      href={f.href}
                       className="footer-link text-sm text-white/55"
                     >
-                      {service.label}
+                      {f.label}
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Column 4: Contact */}
+            {/* Contact */}
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wider text-white mb-5">
                 Contact Us

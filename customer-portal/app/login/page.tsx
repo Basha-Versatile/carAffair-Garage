@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import AtmosphericBackground from "@/components/AtmosphericBackground";
 import { publicPost } from "@/lib/api";
 import { setAuth } from "@/lib/auth";
 import {
@@ -18,10 +17,6 @@ import {
   ChevronRight,
   ArrowLeft,
 } from "lucide-react";
-
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
 
 export default function LoginPage() {
   const router = useRouter();
@@ -89,8 +84,6 @@ export default function LoginPage() {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-
-    // Auto-focus next input
     if (value && index < 5) {
       const nextInput = document.getElementById(`otp-${index + 1}`);
       nextInput?.focus();
@@ -113,7 +106,6 @@ export default function LoginPage() {
       newOtp[i] = pastedData[i];
     }
     setOtp(newOtp);
-    // Focus the input after the last pasted digit
     const focusIndex = Math.min(pastedData.length, 5);
     const nextInput = document.getElementById(`otp-${focusIndex}`);
     nextInput?.focus();
@@ -134,7 +126,6 @@ export default function LoginPage() {
         role: string;
       }>("/api/auth/verify-otp", { phone: phoneNumber, otp: otp.join(""), role });
 
-      // Guard: ensure required auth fields are present before proceeding
       if (!data?.userId || !data?.accessToken) {
         setError("Login failed. Unexpected response from server. Please try again.");
         return;
@@ -145,7 +136,6 @@ export default function LoginPage() {
         accessToken: data.accessToken,
         refreshToken: data.refreshToken || "",
       });
-      // Redirect based on role
       router.push("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to verify OTP");
@@ -162,7 +152,6 @@ export default function LoginPage() {
 
   const isOtpComplete = otp.every((digit) => digit !== "");
 
-  /* Spinner SVG reusable */
   const Spinner = () => (
     <svg
       className="animate-spin h-4 w-4 text-current"
@@ -176,19 +165,31 @@ export default function LoginPage() {
   );
 
   return (
-    <div className="relative min-h-screen flex flex-col grain">
-      <AtmosphericBackground />
+    <div className="relative min-h-screen flex flex-col bg-[var(--bg-primary)]">
       <Navbar />
 
-      <main className="flex-1 pt-24 flex items-center justify-center px-4 py-12 sm:py-16">
+      {/* Page Header */}
+      <section className="bg-[var(--crank-black)] pt-28 pb-14">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="section-tag text-white/60 mb-3">Account Access</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white font-[family-name:var(--font-montserrat)]">
+            Login to Your Account
+          </h1>
+          <p className="mt-3 text-white/50 text-sm max-w-md mx-auto">
+            Access your bookings, service history, and more
+          </p>
+        </div>
+      </section>
+
+      <main className="flex-1 flex items-start justify-center px-4 py-12 sm:py-16 bg-[var(--bg-secondary)]">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="relative z-10 w-full max-w-md"
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-md -mt-8"
         >
           {/* Card */}
-          <div className="glass-panel rounded-2xl overflow-hidden">
+          <div className="bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-sm overflow-hidden">
             {/* Tab Header */}
             <div className="flex border-b border-[var(--border-color)]">
               <button
@@ -196,8 +197,8 @@ export default function LoginPage() {
                 onClick={() => setActiveTab("customer")}
                 className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-semibold transition-all duration-200 cursor-pointer ${
                   activeTab === "customer"
-                    ? "text-red-500 border-b-2 border-red-500 bg-red-500/10"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-glass)]"
+                    ? "text-[var(--crank-red)] border-b-2 border-[var(--crank-red)] bg-[var(--crank-red)]/5"
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
                 }`}
               >
                 <User className="h-4 w-4" />
@@ -208,8 +209,8 @@ export default function LoginPage() {
                 onClick={() => setActiveTab("partner")}
                 className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-semibold transition-all duration-200 cursor-pointer ${
                   activeTab === "partner"
-                    ? "text-red-500 border-b-2 border-red-500 bg-red-500/10"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-glass)]"
+                    ? "text-[var(--crank-red)] border-b-2 border-[var(--crank-red)] bg-[var(--crank-red)]/5"
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"
                 }`}
               >
                 <Building2 className="h-4 w-4" />
@@ -221,16 +222,16 @@ export default function LoginPage() {
             <div className="p-6 sm:p-8">
               {/* Header */}
               <div className="text-center mb-8">
-                <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 text-white mb-4 shadow-[0_8px_24px_-6px_rgba(220,38,38,0.4)]">
+                <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-xl bg-[var(--crank-red)] text-white mb-4">
                   {activeTab === "customer" ? (
                     <User className="h-7 w-7" />
                   ) : (
                     <Building2 className="h-7 w-7" />
                   )}
                 </div>
-                <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] font-[family-name:var(--font-montserrat)]">
                   {activeTab === "customer" ? "Welcome Back" : "Vendor Login"}
-                </h1>
+                </h2>
                 <p className="mt-2 text-sm text-[var(--text-secondary)]">
                   {activeTab === "customer"
                     ? "Login to manage your bookings and service history"
@@ -254,7 +255,7 @@ export default function LoginPage() {
                         htmlFor="loginPhone"
                         className="flex items-center gap-1.5 text-sm font-medium text-[var(--text-primary)] mb-1.5"
                       >
-                        <Phone className="h-4 w-4 text-[var(--text-muted)]" />
+                        <Phone className="h-4 w-4 text-[var(--text-tertiary)]" />
                         Phone Number
                       </label>
                       <div className="flex">
@@ -271,7 +272,7 @@ export default function LoginPage() {
                           }}
                           placeholder="Enter your mobile number"
                           maxLength={10}
-                          className="flex-1 px-4 py-3 rounded-r-lg border border-[var(--border-color)] bg-[var(--bg-glass)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm transition-all duration-200 outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50"
+                          className="form-input flex-1 !rounded-l-none !rounded-r-lg"
                           onKeyDown={(e) => {
                             if (e.key === "Enter") handleSendOtp();
                           }}
@@ -293,10 +294,10 @@ export default function LoginPage() {
                       type="button"
                       onClick={handleSendOtp}
                       disabled={phoneNumber.trim().length < 10 || sendingOtp}
-                      className={`w-full flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
+                      className={`w-full flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold rounded-lg transition-all duration-200 ${
                         phoneNumber.trim().length >= 10 && !sendingOtp
-                          ? "bg-gradient-to-r from-red-600 to-red-500 text-white shadow-[0_10px_30px_-10px_rgba(220,38,38,0.5)] hover:shadow-[0_14px_36px_-10px_rgba(220,38,38,0.6)] active:scale-[0.98] cursor-pointer"
-                          : "bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed"
+                          ? "btn-primary !w-full justify-center"
+                          : "bg-[var(--bg-secondary)] text-[var(--text-tertiary)] cursor-not-allowed border border-[var(--border-color)]"
                       }`}
                     >
                       {sendingOtp ? (
@@ -312,7 +313,7 @@ export default function LoginPage() {
                       )}
                     </button>
 
-                    <p className="text-center text-xs text-[var(--text-muted)] leading-relaxed">
+                    <p className="text-center text-xs text-[var(--text-tertiary)] leading-relaxed">
                       We will send a 6-digit verification code to your phone number via SMS.
                     </p>
                   </motion.div>
@@ -328,11 +329,10 @@ export default function LoginPage() {
                     transition={{ duration: 0.3 }}
                     className="space-y-5"
                   >
-                    {/* Back to phone */}
                     <button
                       type="button"
                       onClick={handleBackToPhone}
-                      className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-red-500 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--crank-red)] transition-colors cursor-pointer"
                     >
                       <ArrowLeft className="h-3.5 w-3.5" />
                       Change number
@@ -345,7 +345,7 @@ export default function LoginPage() {
                           +91 {phoneNumber}
                         </span>
                       </p>
-                      <p className="text-xs text-[var(--text-muted)]">
+                      <p className="text-xs text-[var(--text-tertiary)]">
                         Enter the 6-digit code below
                       </p>
                     </div>
@@ -363,10 +363,10 @@ export default function LoginPage() {
                           onChange={(e) => handleOtpChange(idx, e.target.value.replace(/\D/g, ""))}
                           onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                           onPaste={idx === 0 ? handleOtpPaste : undefined}
-                          className={`w-11 h-12 sm:w-12 sm:h-13 text-center text-lg font-bold rounded-xl border-2 bg-[var(--bg-glass)] text-[var(--text-primary)] transition-all duration-200 outline-none ${
+                          className={`w-11 h-12 sm:w-12 sm:h-13 text-center text-lg font-bold rounded-lg border-2 bg-[var(--bg-primary)] text-[var(--text-primary)] transition-all duration-200 outline-none ${
                             digit
-                              ? "border-red-500 bg-red-500/10 shadow-[0_0_12px_-3px_rgba(220,38,38,0.3)]"
-                              : "border-[var(--border-color)] focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                              ? "border-[var(--crank-red)] bg-[var(--crank-red)]/5"
+                              : "border-[var(--border-color)] focus:border-[var(--crank-red)] focus:ring-2 focus:ring-[var(--crank-red)]/20"
                           }`}
                         />
                       ))}
@@ -387,10 +387,10 @@ export default function LoginPage() {
                       type="button"
                       onClick={handleVerifyOtp}
                       disabled={!isOtpComplete || verifying}
-                      className={`w-full flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
+                      className={`w-full flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold rounded-lg transition-all duration-200 ${
                         isOtpComplete && !verifying
-                          ? "bg-gradient-to-r from-red-600 to-red-500 text-white shadow-[0_10px_30px_-10px_rgba(220,38,38,0.5)] hover:shadow-[0_14px_36px_-10px_rgba(220,38,38,0.6)] active:scale-[0.98] cursor-pointer"
-                          : "bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed"
+                          ? "btn-primary !w-full justify-center"
+                          : "bg-[var(--bg-secondary)] text-[var(--text-tertiary)] cursor-not-allowed border border-[var(--border-color)]"
                       }`}
                     >
                       {verifying ? (
@@ -409,7 +409,7 @@ export default function LoginPage() {
                     {/* Resend */}
                     <div className="text-center">
                       {resendTimer > 0 ? (
-                        <p className="text-xs text-[var(--text-muted)]">
+                        <p className="text-xs text-[var(--text-tertiary)]">
                           Resend OTP in{" "}
                           <span className="font-semibold text-[var(--text-secondary)]">
                             {resendTimer}s
@@ -419,7 +419,7 @@ export default function LoginPage() {
                         <button
                           type="button"
                           onClick={handleResendOtp}
-                          className="text-xs text-red-500 font-medium hover:text-red-400 transition-colors cursor-pointer underline underline-offset-2"
+                          className="text-xs text-[var(--crank-red)] font-medium hover:text-[var(--crank-red)]/80 transition-colors cursor-pointer underline underline-offset-2"
                         >
                           Resend OTP
                         </button>
@@ -438,11 +438,11 @@ export default function LoginPage() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-6 text-center"
           >
-            <p className="text-sm text-[var(--text-muted)] mb-3">New here?</p>
+            <p className="text-sm text-[var(--text-tertiary)] mb-3">New here?</p>
             <div className="flex items-center justify-center gap-4">
               <Link
                 href="/book"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-red-500 hover:text-red-400 transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--crank-red)] hover:text-[var(--crank-red-dark)] transition-colors"
               >
                 <Wrench className="h-4 w-4" />
                 Book a Service
@@ -451,7 +451,7 @@ export default function LoginPage() {
               <span className="w-px h-4 bg-[var(--border-color)]" />
               <Link
                 href="/partner"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-red-500 hover:text-red-400 transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--crank-red)] hover:text-[var(--crank-red-dark)] transition-colors"
               >
                 <Building2 className="h-4 w-4" />
                 Become a Vendor

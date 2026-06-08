@@ -16,9 +16,9 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Car Affair — Car Service & Maintenance Booking",
+  title: "Car Affair — Garage Management Software",
   description:
-    "Book car service, maintenance, and repair appointments online. Trusted garages, transparent pricing, and hassle-free experience.",
+    "The complete garage management platform. Streamline operations, manage invoices, track inventory, and delight customers — all in one place.",
 };
 
 export default function RootLayout({

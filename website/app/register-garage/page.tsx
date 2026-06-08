@@ -5,7 +5,6 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import AtmosphericBackground from "@/components/AtmosphericBackground";
 import { publicPost, publicGet } from "@/lib/api";
 import {
   Building2,
@@ -22,16 +21,15 @@ import {
 } from "lucide-react";
 
 const benefits = [
-  "Get discovered by thousands of car owners",
-  "Manage bookings & invoices digitally",
-  "Access inventory and billing tools",
-  "Track service reminders automatically",
-  "Dedicated support team for your garage",
+  "Manage bookings, invoices & job cards digitally",
+  "Get your own branded customer booking portal",
+  "Track staff attendance, work, and performance",
+  "Access inventory, billing, and analytics tools",
+  "Dedicated onboarding support for your team",
 ];
 
-/* shared input classes */
 const inputBase =
-  "w-full px-4 py-2.5 rounded-xl border bg-[var(--bg-glass)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm transition-all duration-200 outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50";
+  "w-full px-4 py-2.5 rounded-lg border bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] text-sm transition-all duration-200 outline-none focus:ring-2 focus:ring-[var(--crank-red)]/20 focus:border-[var(--crank-red)]";
 const inputBorder = "border-[var(--border-color)]";
 const inputError = "border-red-500";
 const labelBase = "flex items-center gap-1.5 text-sm font-medium text-[var(--text-primary)] mb-1.5";
@@ -51,7 +49,6 @@ export default function RegisterGaragePage() {
   const [city, setCity] = useState("");
   const [streetAddress, setStreetAddress] = useState("");
 
-  // State dropdown
   const [states, setStates] = useState<string[]>([]);
   const [stateOpen, setStateOpen] = useState(false);
   const [stateFilter, setStateFilter] = useState("");
@@ -134,37 +131,37 @@ export default function RegisterGaragePage() {
   );
 
   return (
-    <div className="relative min-h-screen flex flex-col grain">
-      <AtmosphericBackground />
+    <div className="relative min-h-screen flex flex-col bg-[var(--bg-primary)]">
       <Navbar />
 
-      <main className="relative z-10 flex-1 pt-16">
-        <div className="flex flex-col lg:flex-row min-h-[calc(100vh-4rem)]">
+      <main className="flex-1 pt-[72px]">
+        <div className="flex flex-col lg:flex-row min-h-[calc(100vh-72px)]">
           {/* Left Info Panel */}
-          <div className="relative lg:w-[45%] xl:w-[42%] bg-gradient-to-br from-red-600 to-red-900 text-white px-6 py-12 sm:px-10 sm:py-16 lg:px-12 lg:py-20 xl:px-16 flex flex-col justify-center overflow-hidden">
-            <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/5 rounded-full" />
-            <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-white/5 rounded-full" />
-            <div className="absolute top-1/2 -right-16 w-48 h-48 bg-white/5 rounded-full" />
+          <div className="relative lg:w-[45%] xl:w-[42%] bg-[var(--crank-black)] text-white px-6 py-12 sm:px-10 sm:py-16 lg:px-12 lg:py-20 xl:px-16 flex flex-col justify-center overflow-hidden">
+            <div className="absolute -top-24 -left-24 w-64 h-64 bg-[var(--crank-red)]/5 rounded-full" />
+            <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-[var(--crank-red)]/5 rounded-full" />
+            <div className="absolute top-1/2 -right-16 w-48 h-48 bg-[var(--crank-red)]/5 rounded-full" />
 
             <div className="relative z-10 max-w-lg mx-auto lg:mx-0">
-              <motion.h1
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="text-3xl sm:text-4xl lg:text-[2.5rem] xl:text-5xl font-bold leading-tight tracking-tight"
               >
-                Register Your
-                <br />
-                Garage
-              </motion.h1>
+                <p className="section-tag text-white/60 mb-4">Get Started</p>
+                <h1 className="text-3xl sm:text-4xl lg:text-[2.5rem] xl:text-5xl font-bold leading-tight font-[family-name:var(--font-montserrat)]">
+                  Register Your
+                  <br />
+                  <span className="text-[var(--crank-red)]">Garage</span>
+                </h1>
+              </motion.div>
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className="mt-4 text-base sm:text-lg text-red-100 leading-relaxed"
+                className="mt-4 text-base sm:text-lg text-white/60 leading-relaxed"
               >
-                Join Car Affair and grow your business with our digital garage
-                management platform.
+                Join Car Affair and transform your garage operations with our all-in-one management platform.
               </motion.p>
 
               <motion.ul
@@ -175,8 +172,8 @@ export default function RegisterGaragePage() {
               >
                 {benefits.map((benefit, idx) => (
                   <li key={idx} className="flex items-start gap-3">
-                    <CheckCircle2 className="h-5 w-5 mt-0.5 text-red-300 shrink-0" />
-                    <span className="text-sm sm:text-base text-red-50 leading-snug">
+                    <CheckCircle2 className="h-5 w-5 mt-0.5 text-[var(--crank-red)] shrink-0" />
+                    <span className="text-sm sm:text-base text-white/75 leading-snug">
                       {benefit}
                     </span>
                   </li>
@@ -189,13 +186,13 @@ export default function RegisterGaragePage() {
                 transition={{ duration: 0.6, delay: 0.3 }}
                 className="mt-10 flex gap-4"
               >
-                <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl px-5 py-3">
-                  <div className="text-2xl sm:text-3xl font-bold">500+</div>
-                  <div className="text-sm text-red-200 mt-1">Registered Garages</div>
+                <div className="border border-white/10 rounded-xl px-5 py-3">
+                  <div className="text-2xl sm:text-3xl font-bold font-[family-name:var(--font-montserrat)]">500+</div>
+                  <div className="text-sm text-white/50 mt-1">Registered Garages</div>
                 </div>
-                <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-xl px-5 py-3">
-                  <div className="text-2xl sm:text-3xl font-bold">50,000+</div>
-                  <div className="text-sm text-red-200 mt-1">Customers Served</div>
+                <div className="border border-white/10 rounded-xl px-5 py-3">
+                  <div className="text-2xl sm:text-3xl font-bold font-[family-name:var(--font-montserrat)]">50,000+</div>
+                  <div className="text-sm text-white/50 mt-1">Jobs Managed</div>
                 </div>
               </motion.div>
 
@@ -203,19 +200,19 @@ export default function RegisterGaragePage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="mt-10 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-5"
+                className="mt-10 border border-white/10 rounded-xl p-5"
               >
-                <p className="text-sm sm:text-base italic text-red-100 leading-relaxed">
+                <p className="text-sm sm:text-base italic text-white/70 leading-relaxed">
                   &ldquo;Car Affair helped us digitize our entire garage
                   operations in just one week.&rdquo;
                 </p>
                 <div className="mt-3 flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-red-600 flex items-center justify-center text-sm font-semibold">
+                  <div className="h-9 w-9 rounded-lg bg-[var(--crank-red)] flex items-center justify-center text-sm font-semibold text-white">
                     SK
                   </div>
                   <div>
                     <div className="text-sm font-medium text-white">Suresh Kumar</div>
-                    <div className="text-xs text-red-200">Kumar Auto Works</div>
+                    <div className="text-xs text-white/50">Kumar Auto Works</div>
                   </div>
                 </div>
               </motion.div>
@@ -223,13 +220,13 @@ export default function RegisterGaragePage() {
           </div>
 
           {/* Right Form Panel */}
-          <div className="flex-1 px-4 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16 xl:px-20 bg-[var(--bg-primary)]/80 backdrop-blur-sm overflow-y-auto">
+          <div className="flex-1 px-4 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16 xl:px-20 bg-[var(--bg-secondary)] overflow-y-auto">
             <div className="max-w-xl mx-auto lg:mx-0">
               <motion.h2
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight"
+                className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] font-[family-name:var(--font-montserrat)]"
               >
                 Register Your Garage
               </motion.h2>
@@ -253,7 +250,7 @@ export default function RegisterGaragePage() {
                 {/* Garage Name */}
                 <div>
                   <label htmlFor="garageName" className={labelBase}>
-                    <Building2 className="h-4 w-4 text-[var(--text-muted)]" />
+                    <Building2 className="h-4 w-4 text-[var(--text-tertiary)]" />
                     Garage Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -272,7 +269,7 @@ export default function RegisterGaragePage() {
                 {/* Owner Name */}
                 <div>
                   <label htmlFor="ownerName" className={labelBase}>
-                    <User className="h-4 w-4 text-[var(--text-muted)]" />
+                    <User className="h-4 w-4 text-[var(--text-tertiary)]" />
                     Owner Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -288,14 +285,14 @@ export default function RegisterGaragePage() {
                   )}
                 </div>
 
-                {/* Phone Number */}
+                {/* Phone */}
                 <div>
                   <label htmlFor="phone" className={labelBase}>
-                    <Phone className="h-4 w-4 text-[var(--text-muted)]" />
+                    <Phone className="h-4 w-4 text-[var(--text-tertiary)]" />
                     Phone Number <span className="text-red-500">*</span>
                   </label>
                   <div className="flex">
-                    <span className="inline-flex items-center px-3.5 rounded-l-xl border border-r-0 border-[var(--border-color)] bg-[var(--bg-secondary)] text-sm text-[var(--text-secondary)] font-medium">
+                    <span className="inline-flex items-center px-3.5 rounded-l-lg border border-r-0 border-[var(--border-color)] bg-[var(--bg-primary)] text-sm text-[var(--text-secondary)] font-medium">
                       +91
                     </span>
                     <input
@@ -305,7 +302,7 @@ export default function RegisterGaragePage() {
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="9876543210"
                       maxLength={10}
-                      className={`flex-1 px-4 py-2.5 rounded-r-xl border bg-[var(--bg-glass)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm transition-all duration-200 outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 ${
+                      className={`flex-1 px-4 py-2.5 rounded-r-lg border bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] text-sm transition-all duration-200 outline-none focus:ring-2 focus:ring-[var(--crank-red)]/20 focus:border-[var(--crank-red)] ${
                         isFieldInvalid(phone) ? inputError : inputBorder
                       }`}
                     />
@@ -315,10 +312,10 @@ export default function RegisterGaragePage() {
                   )}
                 </div>
 
-                {/* Email Address */}
+                {/* Email */}
                 <div>
                   <label htmlFor="email" className={labelBase}>
-                    <Mail className="h-4 w-4 text-[var(--text-muted)]" />
+                    <Mail className="h-4 w-4 text-[var(--text-tertiary)]" />
                     Email Address <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -334,10 +331,10 @@ export default function RegisterGaragePage() {
                   )}
                 </div>
 
-                {/* GST Number */}
+                {/* GST */}
                 <div>
                   <label htmlFor="gstNumber" className={labelBase}>
-                    <FileText className="h-4 w-4 text-[var(--text-muted)]" />
+                    <FileText className="h-4 w-4 text-[var(--text-tertiary)]" />
                     GST Number
                   </label>
                   <input
@@ -354,31 +351,31 @@ export default function RegisterGaragePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div ref={stateRef} className="relative">
                     <label className={labelBase}>
-                      <MapPin className="h-4 w-4 text-[var(--text-muted)]" />
+                      <MapPin className="h-4 w-4 text-[var(--text-tertiary)]" />
                       State
                     </label>
                     <button
                       type="button"
                       onClick={() => { setStateOpen(!stateOpen); setStateFilter(""); }}
-                      className={`w-full px-4 py-2.5 rounded-xl border ${inputBorder} bg-[var(--bg-glass)] text-sm text-left flex items-center justify-between transition-all duration-200 outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50`}
+                      className={`w-full px-4 py-2.5 rounded-lg border ${inputBorder} bg-[var(--bg-primary)] text-sm text-left flex items-center justify-between transition-all duration-200 outline-none focus:ring-2 focus:ring-[var(--crank-red)]/20 focus:border-[var(--crank-red)]`}
                     >
-                      <span className={state ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"}>
+                      <span className={state ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}>
                         {state || "Select state..."}
                       </span>
-                      <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
+                      <ChevronDown className="w-4 h-4 text-[var(--text-tertiary)]" />
                     </button>
                     {stateOpen && (
-                      <div className="absolute z-50 top-full left-0 mt-1 w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] shadow-xl max-h-60 flex flex-col overflow-hidden">
+                      <div className="absolute z-50 top-full left-0 mt-1 w-full rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] shadow-xl max-h-60 flex flex-col overflow-hidden">
                         <div className="p-2 border-b border-[var(--border-color)]">
                           <div className="relative">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-tertiary)]" />
                             <input
                               type="text"
                               value={stateFilter}
                               onChange={(e) => setStateFilter(e.target.value)}
                               placeholder="Search state..."
                               autoFocus
-                              className="w-full pl-8 pr-3 py-1.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-red-500/30"
+                              className="w-full pl-8 pr-3 py-1.5 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--crank-red)]/20"
                             />
                           </div>
                         </div>
@@ -389,7 +386,7 @@ export default function RegisterGaragePage() {
                               type="button"
                               onClick={() => { setState(s); setStateOpen(false); }}
                               className={`w-full text-left px-3 py-2 text-sm hover:bg-[var(--bg-secondary)] flex items-center justify-between ${
-                                state === s ? "bg-red-500/10 text-red-500 font-medium" : "text-[var(--text-primary)]"
+                                state === s ? "bg-[var(--crank-red)]/5 text-[var(--crank-red)] font-medium" : "text-[var(--text-primary)]"
                               }`}
                             >
                               {s}
@@ -397,7 +394,7 @@ export default function RegisterGaragePage() {
                             </button>
                           ))}
                           {filteredStates.length === 0 && (
-                            <p className="text-sm text-[var(--text-muted)] text-center py-4">No states found</p>
+                            <p className="text-sm text-[var(--text-tertiary)] text-center py-4">No states found</p>
                           )}
                         </div>
                       </div>
@@ -427,19 +424,17 @@ export default function RegisterGaragePage() {
                   />
                 </div>
 
-                {/* Submit Error */}
                 {submitError && (
                   <p className="text-sm text-red-500 text-center">{submitError}</p>
                 )}
 
-                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={submitting}
-                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold rounded-xl transition-all duration-200 ${
+                  className={`w-full flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold rounded-lg transition-all duration-200 ${
                     submitting
-                      ? "bg-red-600/70 text-white cursor-not-allowed"
-                      : "bg-gradient-to-r from-red-600 to-red-500 text-white shadow-[0_10px_30px_-10px_rgba(220,38,38,0.5)] hover:shadow-[0_14px_36px_-10px_rgba(220,38,38,0.6)] active:scale-[0.98] cursor-pointer"
+                      ? "bg-[var(--crank-red)]/70 text-white cursor-not-allowed"
+                      : "bg-[var(--crank-red)] text-white hover:bg-[var(--crank-red-dark)] active:scale-[0.98] cursor-pointer"
                   }`}
                 >
                   {submitting ? (
@@ -454,14 +449,6 @@ export default function RegisterGaragePage() {
                     </>
                   )}
                 </button>
-
-                {/* Login Link */}
-                <p className="text-center text-sm text-[var(--text-muted)]">
-                  Already registered?{" "}
-                  <Link href="/login" className="text-red-500 font-medium hover:text-red-400 underline underline-offset-2">
-                    Login here
-                  </Link>
-                </p>
               </motion.form>
             </div>
           </div>
@@ -470,25 +457,25 @@ export default function RegisterGaragePage() {
 
       <Footer />
 
-      {/* Success Overlay/Modal */}
+      {/* Success Modal */}
       <AnimatePresence>
         {submitted && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative mx-4 w-full max-w-md glass-panel rounded-2xl p-8 sm:p-10 text-center"
+              className="relative mx-4 w-full max-w-md bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl p-8 sm:p-10 text-center"
             >
-              <div className="mx-auto mb-6 flex items-center justify-center h-20 w-20 rounded-full bg-red-500/10">
+              <div className="mx-auto mb-6 flex items-center justify-center h-20 w-20 rounded-full bg-[var(--crank-red)]/10">
                 <svg
-                  className="h-10 w-10 text-red-500"
+                  className="h-10 w-10 text-[var(--crank-red)]"
                   viewBox="0 0 52 52"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -510,7 +497,7 @@ export default function RegisterGaragePage() {
                 `}</style>
               </div>
 
-              <h3 className="text-2xl font-bold text-[var(--text-primary)]">
+              <h3 className="text-2xl font-bold text-[var(--text-primary)] font-[family-name:var(--font-montserrat)]">
                 Registration Submitted!
               </h3>
               <p className="mt-3 text-[var(--text-secondary)] text-sm sm:text-base leading-relaxed">
@@ -520,7 +507,7 @@ export default function RegisterGaragePage() {
 
               <Link
                 href="/"
-                className="mt-8 inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 text-white text-base font-semibold rounded-xl transition-all duration-200 shadow-[0_10px_30px_-10px_rgba(220,38,38,0.5)] hover:shadow-[0_14px_36px_-10px_rgba(220,38,38,0.6)] active:scale-[0.98]"
+                className="mt-8 inline-flex items-center justify-center gap-2 w-full px-6 py-3 bg-[var(--crank-red)] text-white text-base font-semibold rounded-lg transition-all duration-200 hover:bg-[var(--crank-red-dark)] active:scale-[0.98]"
               >
                 Back to Home
               </Link>
