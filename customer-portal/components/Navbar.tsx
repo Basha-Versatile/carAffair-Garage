@@ -12,7 +12,6 @@ const navLinks = [
   { label: "About Us", href: "/about" },
   { label: "Services", href: "#services" },
   { label: "Book Now", href: "/book" },
-  { label: "Become a Partner", href: "/partner" },
 ];
 
 export default function Navbar() {
@@ -74,10 +73,7 @@ export default function Navbar() {
             <span className={isHomeTop ? "text-white/50" : "text-gray-400 dark:text-white/50"}>Mon - Sat: 9:00 AM - 7:00 PM</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/partner" className={cn(
-              "transition-colors",
-              isHomeTop ? "text-white/60 hover:text-white" : "text-gray-500 dark:text-white/60 hover:text-gray-900 dark:hover:text-white"
-            )}>Partner with Us</Link>
+            <span className={isHomeTop ? "text-white/50" : "text-gray-400 dark:text-white/50"}>Trusted Auto Care</span>
           </div>
         </div>
       </div>

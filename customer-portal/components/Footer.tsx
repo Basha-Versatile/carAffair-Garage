@@ -9,7 +9,6 @@ const quickLinks = [
   { label: "About Us", href: "/about" },
   { label: "Services", href: "#services" },
   { label: "Book Service", href: "/book" },
-  { label: "Become a Partner", href: "/partner" },
 ];
 
 const services = [

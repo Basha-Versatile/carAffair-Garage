@@ -448,15 +448,6 @@ export default function LoginPage() {
                 Book a Service
                 <ChevronRight className="h-3.5 w-3.5" />
               </Link>
-              <span className="w-px h-4 bg-[var(--border-color)]" />
-              <Link
-                href="/partner"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--crank-red)] hover:text-[var(--crank-red-dark)] transition-colors"
-              >
-                <Building2 className="h-4 w-4" />
-                Become a Vendor
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Link>
             </div>
           </motion.div>
         </motion.div>

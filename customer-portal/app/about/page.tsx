@@ -302,12 +302,6 @@ export default function AboutPage() {
                 Book a Service
                 <ArrowRight className="h-5 w-5" />
               </Link>
-              <Link
-                href="/partner"
-                className="btn-outline !border-white/20 !text-white hover:!bg-white/10 text-base !py-3.5 !px-8"
-              >
-                Partner With Us
-              </Link>
             </div>
           </AnimateOnScroll>
         </div>
