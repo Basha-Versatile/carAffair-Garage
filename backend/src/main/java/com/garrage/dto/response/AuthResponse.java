@@ -32,6 +32,9 @@ public class AuthResponse {
     /** Only populated for garage_staff users */
     private List<String> permissions;
 
+    /** Modules where this role can see financial data. Only for garage_staff. */
+    private List<String> financialModules;
+
     /** Only populated for garage_staff users */
     private String garageRoleId;
 

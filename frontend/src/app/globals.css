@@ -30,6 +30,25 @@
   --shadow-glass-lg: 0 16px 48px rgba(0, 0, 0, 0.1);
   --shadow-glow: 0 0 20px rgba(220, 38, 38, 0.12);
   --gradient-primary: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+
+  /* ─── Sidebar palette (light) ─── */
+  --sb-grad-start: #ffffff;
+  --sb-grad-mid: #fff5f5;
+  --sb-grad-end: #fee2e2;
+  --sb-text-primary: #18181b;
+  --sb-text-secondary: #52525b;
+  --sb-text-muted: #a1a1aa;
+  --sb-border: rgba(220, 38, 38, 0.08);
+  --sb-border-strong: rgba(220, 38, 38, 0.14);
+  --sb-hover: rgba(220, 38, 38, 0.05);
+  --sb-active-bg: rgba(220, 38, 38, 0.08);
+  --sb-active-border: rgba(220, 38, 38, 0.18);
+  --sb-icon-bg: rgba(220, 38, 38, 0.06);
+  --sb-icon-bg-hover: rgba(220, 38, 38, 0.12);
+  --sb-glow: rgba(220, 38, 38, 0.12);
+  --sb-mesh-1: rgba(220, 38, 38, 0.04);
+  --sb-mesh-2: rgba(251, 113, 133, 0.04);
+  --sb-mesh-3: rgba(99, 102, 241, 0.02);
 }
 
 .dark {
@@ -56,6 +75,25 @@
   --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4);
   --shadow-glass-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 20px rgba(220, 38, 38, 0.2);
+
+  /* ─── Sidebar palette (dark) ─── */
+  --sb-grad-start: #100c14;
+  --sb-grad-mid: #140f18;
+  --sb-grad-end: #18101a;
+  --sb-text-primary: rgba(255, 255, 255, 0.92);
+  --sb-text-secondary: rgba(255, 255, 255, 0.55);
+  --sb-text-muted: rgba(255, 255, 255, 0.28);
+  --sb-border: rgba(255, 255, 255, 0.06);
+  --sb-border-strong: rgba(255, 255, 255, 0.1);
+  --sb-hover: rgba(255, 255, 255, 0.04);
+  --sb-active-bg: rgba(239, 68, 68, 0.12);
+  --sb-active-border: rgba(239, 68, 68, 0.2);
+  --sb-icon-bg: rgba(255, 255, 255, 0.06);
+  --sb-icon-bg-hover: rgba(239, 68, 68, 0.12);
+  --sb-glow: rgba(239, 68, 68, 0.25);
+  --sb-mesh-1: rgba(239, 68, 68, 0.06);
+  --sb-mesh-2: rgba(251, 113, 133, 0.04);
+  --sb-mesh-3: rgba(99, 102, 241, 0.03);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -579,4 +617,76 @@
   background-size: 200% 100%;
   animation: shimmer 1.6s ease-in-out infinite;
   border-radius: 0.5rem;
+}
+
+/* ═══════════════════════════════════════════════════
+   Sidebar CTA shimmer sweep
+   ═══════════════════════════════════════════════════ */
+@keyframes sidebar-cta-sweep {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(350%) skewX(-15deg); }
+}
+
+.sidebar-cta-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.12) 40%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.12) 60%,
+    transparent 100%
+  );
+  animation: sidebar-cta-sweep 3s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.sidebar-cta-btn:hover .sidebar-cta-shimmer {
+  animation-duration: 1.5s;
+}
+
+/* ─── Sidebar interaction states ─── */
+.sidebar-nav-item:hover {
+  background: var(--sb-hover) !important;
+}
+.sidebar-nav-item:hover .sidebar-nav-icon {
+  background: var(--sb-icon-bg-hover) !important;
+}
+.sidebar-nav-item:hover .sidebar-nav-icon svg {
+  color: #ef4444 !important;
+}
+/* Don't override active item hover */
+.sidebar-nav-item:has(+ [data-active]) { }
+
+/* Section button — default + hover */
+.sidebar-section-btn .sidebar-section-label {
+  color: var(--sb-text-muted);
+}
+.sidebar-section-btn .sidebar-section-dot {
+  background: var(--sb-border-strong);
+}
+.sidebar-section-btn .sidebar-section-chevron {
+  color: var(--sb-text-muted);
+}
+.sidebar-section-btn {
+  border-radius: 0.5rem;
+  transition: background 0.2s ease;
+}
+.sidebar-section-btn:hover {
+  background: var(--sb-hover);
+}
+.sidebar-section-btn:hover .sidebar-section-label {
+  color: #ef4444 !important;
+}
+.sidebar-section-btn:hover .sidebar-section-dot {
+  background: #ef4444 !important;
+}
+.sidebar-section-btn:hover .sidebar-section-chevron {
+  color: #ef4444 !important;
+}
+
+.sidebar-logout-btn:hover {
+  background: var(--sb-icon-bg-hover) !important;
+}
+.sidebar-logout-btn:hover svg {
+  color: #ef4444 !important;
 }

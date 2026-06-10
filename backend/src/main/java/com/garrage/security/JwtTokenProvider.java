@@ -29,11 +29,12 @@ public class JwtTokenProvider {
 
     /** Backward-compatible overload (no permissions). */
     public String generateAccessToken(String userId, String role, String garageId, String garageName, String phone) {
-        return generateAccessToken(userId, role, garageId, garageName, phone, null);
+        return generateAccessToken(userId, role, garageId, garageName, phone, null, null);
     }
 
     public String generateAccessToken(String userId, String role, String garageId,
-                                       String garageName, String phone, List<String> permissions) {
+                                       String garageName, String phone,
+                                       List<String> permissions, List<String> financialModules) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getAccessTokenExpiry());
 
@@ -47,9 +48,13 @@ public class JwtTokenProvider {
                 .expiration(expiryDate)
                 .signWith(getSigningKey());
 
-        // Only embed permissions in JWT for garage_staff (keeps token small for other roles)
-        if ("garage_staff".equals(role) && permissions != null && !permissions.isEmpty()) {
-            builder.claim("permissions", permissions);
+        if ("garage_staff".equals(role)) {
+            if (permissions != null && !permissions.isEmpty()) {
+                builder.claim("permissions", permissions);
+            }
+            if (financialModules != null && !financialModules.isEmpty()) {
+                builder.claim("financialModules", financialModules);
+            }
         }
 
         return builder.compact();

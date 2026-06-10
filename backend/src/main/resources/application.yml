@@ -38,4 +38,4 @@ app:
     token: ${SUREPASS_TOKEN:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc2OTY4MTE3MCwianRpIjoiYzJmODVkZDgtZmNiNi00ZDI5LWJjYjktYzAxM2ZjNzA5MmVmIiwidHlwZSI6ImFjY2VzcyIsImlkZW50aXR5IjoiZGV2LmNhcmFmZmFpckBzdXJlcGFzcy5pbyIsIm5iZiI6MTc2OTY4MTE3MCwiZXhwIjoyNDAwNDAxMTcwLCJlbWFpbCI6ImNhcmFmZmFpckBzdXJlcGFzcy5pbyIsInRlbmFudF9pZCI6Im1haW4iLCJ1c2VyX2NsYWltcyI6eyJzY29wZXMiOlsidXNlciJdfX0.j5EZyr7_NuqWeGFmsnk6xNk_Kk_5crMBHkdBWN2VKfo}
     base-url: ${SUREPASS_BASE_URL:https://kyc-api.surepass.io}
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3002,http://localhost:8080}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3002,http://localhost:3003,http://localhost:8080}

@@ -561,7 +561,7 @@ export default function CreateOrderPage() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-base font-semibold text-foreground">
-          {step === "search" ? "Customer (Repair Order)" : step === "form" ? "Add Vehicle & Customer" : "Inspection & Remarks"}
+          {step === "search" ? "Customer (Job Card)" : step === "form" ? "Add Vehicle & Customer" : "Inspection & Remarks"}
         </h1>
       </div>
 

@@ -13,7 +13,7 @@ import {
   Filter, IndianRupee, MapPin, Hash, LayoutGrid, List, Upload,
   ChevronRight,
 } from "lucide-react";
-import { getAccessToken, canManage } from "@/lib/auth";
+import { getAccessToken, canManage, canViewFinancial } from "@/lib/auth";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 
 type ViewMode = "cards" | "table";
@@ -58,18 +58,18 @@ const partColumns: DataColumn<Part>[] = [
     ),
     sortValue: (p) => p.stockQty ?? 0,
   },
-  {
+  ...(canViewFinancial("INVENTORY") ? [{
     key: "mrp",
     header: "MRP",
-    align: "right",
-    render: (p) => (
+    align: "right" as const,
+    render: (p: Part) => (
       <span className="text-foreground whitespace-nowrap inline-flex items-center gap-0.5">
         <IndianRupee className="w-3 h-3" />
         {(p.mrp ?? 0).toLocaleString("en-IN")}
       </span>
     ),
-    sortValue: (p) => p.mrp ?? 0,
-  },
+    sortValue: (p: Part) => p.mrp ?? 0,
+  }] : []),
   {
     key: "rack",
     header: "Rack No",
@@ -139,13 +139,13 @@ const poColumns: DataColumn<PurchaseOrder>[] = [
     ),
     filterValue: (po) => po.status,
   },
-  {
+  ...(canViewFinancial("INVENTORY") ? [{
     key: "total",
     header: "Total",
-    align: "right",
-    render: (po) => <span className="font-semibold text-foreground">{(po.grandTotal ?? 0).toLocaleString("en-IN")}</span>,
-    sortValue: (po) => po.grandTotal ?? 0,
-  },
+    align: "right" as const,
+    render: (po: PurchaseOrder) => <span className="font-semibold text-foreground">{(po.grandTotal ?? 0).toLocaleString("en-IN")}</span>,
+    sortValue: (po: PurchaseOrder) => po.grandTotal ?? 0,
+  }] : []),
 ];
 
 const stockInColumns: DataColumn<StockInRecord>[] = [
@@ -192,13 +192,13 @@ const stockInColumns: DataColumn<StockInRecord>[] = [
       ),
     filterValue: (r) => (r.isGstBill ? "Yes" : "No"),
   },
-  {
+  ...(canViewFinancial("INVENTORY") ? [{
     key: "total",
     header: "Total",
-    align: "right",
-    render: (r) => <span className="font-semibold text-foreground">{(r.grandTotal ?? 0).toLocaleString("en-IN")}</span>,
-    sortValue: (r) => r.grandTotal ?? 0,
-  },
+    align: "right" as const,
+    render: (r: StockInRecord) => <span className="font-semibold text-foreground">{(r.grandTotal ?? 0).toLocaleString("en-IN")}</span>,
+    sortValue: (r: StockInRecord) => r.grandTotal ?? 0,
+  }] : []),
 ];
 
 function csPaymentStyle(status: CounterSale["paymentStatus"]) {
@@ -251,13 +251,13 @@ const csColumns: DataColumn<CounterSale>[] = [
     ),
     filterValue: (s) => s.paymentStatus,
   },
-  {
+  ...(canViewFinancial("INVENTORY") ? [{
     key: "total",
     header: "Total",
-    align: "right",
-    render: (s) => <span className="font-semibold text-foreground">{(s.grandTotal ?? 0).toLocaleString("en-IN")}</span>,
-    sortValue: (s) => s.grandTotal ?? 0,
-  },
+    align: "right" as const,
+    render: (s: CounterSale) => <span className="font-semibold text-foreground">{(s.grandTotal ?? 0).toLocaleString("en-IN")}</span>,
+    sortValue: (s: CounterSale) => s.grandTotal ?? 0,
+  }] : []),
 ];
 
 /* ─── Page ─── */
@@ -514,10 +514,14 @@ function PurchaseOrdersTab({ orders, onCreatePO, viewMode }: { orders: PurchaseO
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-xs text-muted mb-0.5">{(po.items || []).length} item{(po.items || []).length !== 1 ? "s" : ""}</p>
-                  <p className="text-sm font-semibold text-foreground flex items-center justify-end gap-0.5">
-                    <IndianRupee className="w-3.5 h-3.5" />
-                    {(po.grandTotal ?? 0).toLocaleString("en-IN")}
-                  </p>
+                  {canViewFinancial("INVENTORY") ? (
+                    <p className="text-sm font-semibold text-foreground flex items-center justify-end gap-0.5">
+                      <IndianRupee className="w-3.5 h-3.5" />
+                      {(po.grandTotal ?? 0).toLocaleString("en-IN")}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted">-</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -579,10 +583,14 @@ function StockInTab({ records, onNewStockIn, viewMode }: { records: StockInRecor
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-xs text-muted mb-0.5">{(rec.items || []).length} item{(rec.items || []).length !== 1 ? "s" : ""}</p>
-                  <p className="text-sm font-semibold text-foreground flex items-center justify-end gap-0.5">
-                    <IndianRupee className="w-3.5 h-3.5" />
-                    {(rec.grandTotal ?? 0).toLocaleString("en-IN")}
-                  </p>
+                  {canViewFinancial("INVENTORY") ? (
+                    <p className="text-sm font-semibold text-foreground flex items-center justify-end gap-0.5">
+                      <IndianRupee className="w-3.5 h-3.5" />
+                      {(rec.grandTotal ?? 0).toLocaleString("en-IN")}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted">-</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -649,10 +657,14 @@ function CounterSaleTab({ sales, onNewSale, viewMode }: { sales: CounterSale[]; 
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-foreground flex items-center justify-end gap-0.5">
-                      <IndianRupee className="w-3.5 h-3.5" />
-                      {(sale.grandTotal ?? 0).toLocaleString("en-IN")}
-                    </p>
+                    {canViewFinancial("INVENTORY") ? (
+                      <p className="text-sm font-semibold text-foreground flex items-center justify-end gap-0.5">
+                        <IndianRupee className="w-3.5 h-3.5" />
+                        {(sale.grandTotal ?? 0).toLocaleString("en-IN")}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted">-</p>
+                    )}
                   </div>
                 </div>
               </div>

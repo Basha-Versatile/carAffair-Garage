@@ -90,6 +90,9 @@ public class SecurityConfig {
                         // Public payment endpoints (token-based, no auth)
                         .requestMatchers("/api/public/payment/**").permitAll()
 
+                        // Public order status endpoints (token-based, no auth)
+                        .requestMatchers("/api/public/order-status/**").permitAll()
+
                         // Image serving (authenticated via controller)
                         .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
 
@@ -105,9 +108,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/bookings").hasAnyRole("CUSTOMER", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/bookings/**").hasAnyRole("CUSTOMER", "SUPER_ADMIN")
 
-                        // Garage role & staff management (owner only)
+                        // Garage role management (owner only)
                         .requestMatchers("/api/garage-roles/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/garage-staff/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
+                        // Staff management (owner + staff with STAFF:MANAGE permission)
+                        .requestMatchers("/api/garage-staff/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
 
                         // Activity logs (owner only)
                         .requestMatchers("/api/activity-logs/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
@@ -143,6 +147,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/tags/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
                         .requestMatchers("/api/tax-profiles/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
                         .requestMatchers("/api/packages/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
+                        .requestMatchers("/api/attendance/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
+                        .requestMatchers("/api/leaves/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
+                        .requestMatchers("/api/performance/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
 
                         .anyRequest().authenticated()
                 )
@@ -151,7 +158,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:3002,http://localhost:8080}")
+    @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:3002,http://localhost:3003,http://localhost:8080}")
     private String allowedOrigins;
 
     @Bean

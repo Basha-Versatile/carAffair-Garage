@@ -17,10 +17,12 @@ import {
   createStaffMember,
   updateStaffMember,
   removeStaffMember,
+  getAssignableRoles,
   type StaffMember,
+  type AssignableRole,
 } from "@/lib/api-staff";
-import { getRoles, type GarageRole } from "@/lib/api-roles";
 import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
+import { canManage } from "@/lib/auth";
 
 const INPUT_CLS =
   "w-full px-3 py-2 border border-edge rounded-lg text-sm text-foreground bg-background placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
@@ -45,7 +47,7 @@ export default function GarageUsersPage() {
 
   // data
   const [staff, setStaff] = useState<StaffMember[]>([]);
-  const [roles, setRoles] = useState<GarageRole[]>([]);
+  const [roles, setRoles] = useState<AssignableRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
 
@@ -79,7 +81,7 @@ export default function GarageUsersPage() {
     try {
       const [staffData, rolesData] = await Promise.all([
         getStaffMembers().catch(() => []),
-        getRoles().catch(() => []),
+        getAssignableRoles().catch(() => []),
       ]);
       setStaff(staffData || []);
       setRoles((rolesData || []).filter((r) => r.isActive));
@@ -223,13 +225,15 @@ export default function GarageUsersPage() {
             Manage staff members who can access your garage dashboard.
           </p>
         </div>
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
-        >
-          <UserPlus className="w-4 h-4" />
-          Add Staff
-        </button>
+        {canManage("STAFF") && (
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
+          >
+            <UserPlus className="w-4 h-4" />
+            Add Staff
+          </button>
+        )}
       </div>
 
       {/* Main content */}
@@ -256,13 +260,15 @@ export default function GarageUsersPage() {
             <p className="text-muted text-sm mb-5">
               Add your first staff member to start managing garage access.
             </p>
-            <button
-              onClick={openAdd}
-              className="inline-flex items-center gap-1.5 bg-primary text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors"
-            >
-              <UserPlus className="w-4 h-4" />
-              Add Staff Member
-            </button>
+            {canManage("STAFF") && (
+              <button
+                onClick={openAdd}
+                className="inline-flex items-center gap-1.5 bg-primary text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                Add Staff Member
+              </button>
+            )}
           </div>
         ) : (
           (() => {
@@ -338,21 +344,23 @@ export default function GarageUsersPage() {
                               )}
                             </td>
                             <td className="px-4 py-3">
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  onClick={() => openEdit(member)}
-                                  className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary-light px-2.5 py-1.5 rounded-md transition-colors"
-                                >
-                                  <Pencil className="w-3.5 h-3.5" />
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => openDelete(member)}
-                                  className="p-1.5 rounded-md text-muted hover:text-bad hover:bg-bad-light transition-colors"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+                              {canManage("STAFF") && (
+                                <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    onClick={() => openEdit(member)}
+                                    className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary-light px-2.5 py-1.5 rounded-md transition-colors"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => openDelete(member)}
+                                    className="p-1.5 rounded-md text-muted hover:text-bad hover:bg-bad-light transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -402,22 +410,24 @@ export default function GarageUsersPage() {
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-end gap-2 border-t border-edge pt-3">
-                        <button
-                          onClick={() => openEdit(member)}
-                          className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary-light px-2.5 py-1.5 rounded-md transition-colors"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => openDelete(member)}
-                          className="flex items-center gap-1 text-xs font-medium text-muted hover:text-bad hover:bg-bad-light px-2.5 py-1.5 rounded-md transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Remove
-                        </button>
-                      </div>
+                      {canManage("STAFF") && (
+                        <div className="flex items-center justify-end gap-2 border-t border-edge pt-3">
+                          <button
+                            onClick={() => openEdit(member)}
+                            className="flex items-center gap-1 text-xs font-medium text-primary hover:bg-primary-light px-2.5 py-1.5 rounded-md transition-colors"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => openDelete(member)}
+                            className="flex items-center gap-1 text-xs font-medium text-muted hover:text-bad hover:bg-bad-light px-2.5 py-1.5 rounded-md transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Remove
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                   <div className="bg-background rounded-lg border border-edge overflow-hidden">

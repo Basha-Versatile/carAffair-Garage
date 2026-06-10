@@ -4,18 +4,21 @@ import com.garrage.dto.request.CreateStaffRequest;
 import com.garrage.dto.request.UpdateStaffRequest;
 import com.garrage.dto.response.StaffResponse;
 import com.garrage.exception.BadRequestException;
+import com.garrage.exception.ForbiddenException;
 import com.garrage.exception.ResourceNotFoundException;
 import com.garrage.exception.UnauthorizedException;
 import com.garrage.model.GarageRole;
 import com.garrage.model.User;
 import com.garrage.repository.GarageRoleRepository;
 import com.garrage.repository.UserRepository;
+import com.garrage.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -28,6 +31,22 @@ public class GarageStaffService {
     private final GarageRoleRepository garageRoleRepository;
     private final ActivityLogService activityLogService;
 
+    /**
+     * Role hierarchy levels (lower number = higher authority).
+     * Owner (garage_admin) has implicit level 0 — handled separately.
+     * Roles not in this map get the lowest level (can't create anyone).
+     */
+    private static final Map<String, Integer> ROLE_LEVEL = Map.of(
+            "General Manager", 1,
+            "Service Advisor", 2,
+            "Accountant", 2,
+            "Front Desk Executive", 3,
+            "Technician", 4,
+            "Store Keeper", 4
+    );
+
+    private static final int LOWEST_LEVEL = 99;
+
     public List<StaffResponse> listStaff(String garageId) {
         List<User> staffUsers = userRepository.findByGarageIdAndRole(garageId, "garage_staff");
         return staffUsers.stream()
@@ -35,14 +54,18 @@ public class GarageStaffService {
                 .collect(Collectors.toList());
     }
 
-    public StaffResponse createStaff(CreateStaffRequest request, String garageId, String garageName) {
+    public StaffResponse createStaff(CreateStaffRequest request, String garageId,
+                                     String garageName, UserPrincipal principal) {
         // Validate role exists and belongs to this garage
-        GarageRole garageRole = garageRoleRepository.findByIdAndGarageId(request.getGarageRoleId(), garageId)
+        GarageRole targetRole = garageRoleRepository.findByIdAndGarageId(request.getGarageRoleId(), garageId)
                 .orElseThrow(() -> new BadRequestException("Selected role not found in your garage"));
 
-        if (!garageRole.isActive()) {
+        if (!targetRole.isActive()) {
             throw new BadRequestException("Selected role is inactive");
         }
+
+        // Enforce role hierarchy for staff callers
+        validateRoleHierarchy(principal, targetRole, garageId);
 
         // Check if phone already exists as garage_staff for this garage
         Optional<User> existingStaff = userRepository.findFirstByPhoneAndRole(request.getPhone(), "garage_staff");
@@ -70,13 +93,14 @@ public class GarageStaffService {
 
         staff = userRepository.save(staff);
         log.info("Staff created: {} (phone: {}) with role '{}' for garage {}",
-                staff.getName(), staff.getPhone(), garageRole.getName(), garageId);
+                staff.getName(), staff.getPhone(), targetRole.getName(), garageId);
         activityLogService.log("CREATE", "STAFF", staff.getId(),
-                "added staff member " + staff.getName() + " with role '" + garageRole.getName() + "'");
+                "added staff member " + staff.getName() + " with role '" + targetRole.getName() + "'");
         return toStaffResponse(staff, garageId);
     }
 
-    public StaffResponse updateStaff(String userId, UpdateStaffRequest request, String garageId) {
+    public StaffResponse updateStaff(String userId, UpdateStaffRequest request,
+                                     String garageId, UserPrincipal principal) {
         User staff = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Staff not found"));
 
@@ -90,6 +114,8 @@ public class GarageStaffService {
             if (!newRole.isActive()) {
                 throw new BadRequestException("Selected role is inactive");
             }
+            // Enforce role hierarchy for the new role being assigned
+            validateRoleHierarchy(principal, newRole, garageId);
             staff.setGarageRoleId(request.getGarageRoleId());
         }
 
@@ -104,12 +130,18 @@ public class GarageStaffService {
         return toStaffResponse(staff, garageId);
     }
 
-    public void removeStaff(String userId, String garageId) {
+    public void removeStaff(String userId, String garageId, UserPrincipal principal) {
         User staff = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Staff not found"));
 
         if (!garageId.equals(staff.getGarageId()) || !"garage_staff".equals(staff.getRole())) {
             throw new UnauthorizedException("Access denied");
+        }
+
+        // Enforce: staff can only remove someone at or below their level
+        if ("garage_staff".equals(principal.getRole()) && staff.getGarageRoleId() != null) {
+            garageRoleRepository.findByIdAndGarageId(staff.getGarageRoleId(), garageId)
+                    .ifPresent(targetRole -> validateRoleHierarchy(principal, targetRole, garageId));
         }
 
         staff.setActive(false);
@@ -118,6 +150,67 @@ public class GarageStaffService {
         activityLogService.log("DELETE", "STAFF", staff.getId(),
                 "removed staff member " + staff.getName());
     }
+
+    /**
+     * Returns the list of role IDs that a given principal is allowed to assign.
+     * Owner/super_admin can assign any role. Staff can only assign roles below their level.
+     */
+    public List<GarageRole> getAssignableRoles(String garageId, UserPrincipal principal) {
+        List<GarageRole> allRoles = garageRoleRepository.findByGarageIdAndIsActiveTrue(garageId);
+
+        // Owner / super_admin can assign any role
+        if ("garage_admin".equals(principal.getRole()) || "super_admin".equals(principal.getRole())) {
+            return allRoles;
+        }
+
+        int callerLevel = getCallerLevel(principal, garageId);
+        return allRoles.stream()
+                .filter(r -> getRoleLevel(r.getName()) > callerLevel)
+                .collect(Collectors.toList());
+    }
+
+    // ── Hierarchy helpers ──
+
+    /**
+     * Validates that the caller has sufficient authority to assign the target role.
+     * Owner/super_admin always pass. Staff must have a higher level than the target.
+     */
+    private void validateRoleHierarchy(UserPrincipal principal, GarageRole targetRole, String garageId) {
+        // Owner / super_admin can assign any role
+        if ("garage_admin".equals(principal.getRole()) || "super_admin".equals(principal.getRole())) {
+            return;
+        }
+
+        int callerLevel = getCallerLevel(principal, garageId);
+        int targetLevel = getRoleLevel(targetRole.getName());
+
+        if (targetLevel <= callerLevel) {
+            throw new ForbiddenException(
+                    "You cannot assign the role '" + targetRole.getName() + "'. " +
+                    "You can only create staff with roles below your own level.");
+        }
+    }
+
+    private int getCallerLevel(UserPrincipal principal, String garageId) {
+        // Look up the caller's garageRoleId from the User record
+        User callerUser = userRepository.findById(principal.getId()).orElse(null);
+        if (callerUser == null || callerUser.getGarageRoleId() == null) {
+            return LOWEST_LEVEL;
+        }
+        GarageRole callerRole = garageRoleRepository
+                .findByIdAndGarageId(callerUser.getGarageRoleId(), garageId)
+                .orElse(null);
+        if (callerRole == null) {
+            return LOWEST_LEVEL;
+        }
+        return getRoleLevel(callerRole.getName());
+    }
+
+    private int getRoleLevel(String roleName) {
+        return ROLE_LEVEL.getOrDefault(roleName, LOWEST_LEVEL);
+    }
+
+    // ── Response mapper ──
 
     private StaffResponse toStaffResponse(User user, String garageId) {
         String roleName = null;

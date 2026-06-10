@@ -31,7 +31,7 @@ public class FeedbackController {
     @PostMapping
     public ResponseEntity<ApiResponse<ServiceFeedback>> createFeedback(
             @RequestBody ServiceFeedback feedback) {
-        PermissionChecker.require("REMINDERS:MANAGE");
+        PermissionChecker.require("SERVICE_FEEDBACKS:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("POST /api/service-feedbacks for garage {}", garageId);
         ServiceFeedback created = feedbackService.createFeedback(feedback, garageId);

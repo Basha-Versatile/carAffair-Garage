@@ -249,16 +249,16 @@ export default function PurchaseOrderPage() {
             )}
           </div>
 
-          {/* ── Repair Order ── */}
+          {/* ── Job Card ── */}
           <div>
-            <label className={labelCls}>Repair Order</label>
+            <label className={labelCls}>Job Card</label>
             <input
               type="text"
               value={form.repairOrderId}
               onChange={(e) =>
                 setForm((f) => ({ ...f, repairOrderId: e.target.value }))
               }
-              placeholder="Link to repair order number (optional)"
+              placeholder="Link to job card number (optional)"
               className={inputCls}
             />
           </div>

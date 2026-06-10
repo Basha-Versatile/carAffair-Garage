@@ -261,7 +261,7 @@ export default function AddExpensePage() {
           {/* ── Selector rows ── */}
           <Row label="Label" value={labelName} placeholder="Select" onClick={() => setLabelModalOpen(true)} />
           <Row label="Vendor" value={vendorName} placeholder="Select" onClick={() => setVendorModalOpen(true)} />
-          <Row label="Repair Order" value={repairOrderJobCard} placeholder="Select" onClick={() => setOrderModalOpen(true)} />
+          <Row label="Job Card" value={repairOrderJobCard} placeholder="Select" onClick={() => setOrderModalOpen(true)} />
           <Row label="Payment Channel" value={paymentChannel} placeholder="Select" onClick={() => setChannelModalOpen(true)} />
 
           {/* ── Payment Date ── */}
@@ -416,7 +416,7 @@ export default function AddExpensePage() {
         </div>
       )}
 
-      <SelectModal open={orderModalOpen} title="Select Repair Order"
+      <SelectModal open={orderModalOpen} title="Select Job Card"
         items={orders.map((o) => ({ id: o.id, label: o.jobCard, sublabel: `${o.customerName} — ${o.vehicleNumber}` }))} selectedId={repairOrderId}
         onSelect={(id) => { const f = orders.find((o) => o.id === id); if (f) { setRepairOrderId(f.id); setRepairOrderJobCard(f.jobCard); } setOrderModalOpen(false); }}
         onClose={() => setOrderModalOpen(false)} />

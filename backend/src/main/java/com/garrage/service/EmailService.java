@@ -42,7 +42,7 @@ public class EmailService {
                     + "<p style='margin:0 0 8px;font-weight:600'>Quick Start:</p>"
                     + "<ul style='margin:0;padding-left:20px'>"
                     + "<li>Add your customers and vehicles</li>"
-                    + "<li>Create repair orders and invoices</li>"
+                    + "<li>Create job cards and invoices</li>"
                     + "<li>Manage your parts inventory</li>"
                     + "<li>Track service reminders</li>"
                     + "</ul>"
@@ -86,7 +86,7 @@ public class EmailService {
                     + "<p style='margin:0 0 8px;font-weight:600'>Quick Start:</p>"
                     + "<ul style='margin:0;padding-left:20px'>"
                     + "<li>Add your customers and vehicles</li>"
-                    + "<li>Create repair orders and invoices</li>"
+                    + "<li>Create job cards and invoices</li>"
                     + "<li>Manage your parts inventory</li>"
                     + "<li>Track service reminders</li>"
                     + "</ul>"
@@ -350,6 +350,81 @@ public class EmailService {
             log.info("Vehicle onboarding email sent to {} for {}", toEmail, vehicleNumber);
         } catch (Exception e) {
             log.error("Failed to send vehicle onboarding email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendWorkUpdateEmail(String toEmail, String customerName, String garageName,
+                                     String vehicle, String vehicleNumber, String updateType,
+                                     String statusToken) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress);
+            helper.setTo(toEmail);
+
+            String subject;
+            String heading;
+            String bodyText;
+            String headerColor;
+
+            switch (updateType) {
+                case "WORK_STARTED":
+                    subject = "Work Has Begun on Your Vehicle — " + garageName;
+                    heading = "Work Started";
+                    bodyText = "We have started working on your vehicle <b>" + vehicle + "</b> (" + vehicleNumber + ").";
+                    headerColor = "#2563eb";
+                    break;
+                case "TASK_COMPLETED":
+                    subject = "Service Completed for Your Vehicle — " + garageName;
+                    heading = "Service Completed";
+                    bodyText = "A service has been completed for your vehicle <b>" + vehicle + "</b> (" + vehicleNumber + ").";
+                    headerColor = "#16a34a";
+                    break;
+                case "VEHICLE_READY":
+                    subject = "Your Vehicle is Ready for Pickup! — " + garageName;
+                    heading = "Vehicle Ready!";
+                    bodyText = "All services for your vehicle <b>" + vehicle + "</b> (" + vehicleNumber + ") have been completed. Your vehicle is ready for pickup!";
+                    headerColor = "#16a34a";
+                    break;
+                default:
+                    subject = "Update on Your Vehicle — " + garageName;
+                    heading = "Vehicle Update";
+                    bodyText = "There is an update on your vehicle <b>" + vehicle + "</b> (" + vehicleNumber + ").";
+                    headerColor = "#2563eb";
+                    break;
+            }
+
+            helper.setSubject(subject);
+
+            String statusButton = "";
+            if (statusToken != null) {
+                String statusUrl = "http://localhost:3000/order-status/" + statusToken;
+                statusButton = "<div style='text-align:center;margin:24px 0'>"
+                        + "<a href='" + statusUrl + "' style='display:inline-block;padding:14px 40px;background:" + headerColor + ";color:white;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px'>View Live Status</a>"
+                        + "</div>"
+                        + "<p style='color:#64748b;font-size:13px;text-align:center'>Click above to track the progress of your vehicle service in real-time.</p>";
+            }
+
+            String html = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto'>"
+                    + "<div style='background:" + headerColor + ";color:white;padding:24px;text-align:center;border-radius:8px 8px 0 0'>"
+                    + "<h1 style='margin:0;font-size:22px'>" + heading + "</h1>"
+                    + "<p style='margin:4px 0 0;font-size:13px;opacity:0.9'>" + garageName + "</p>"
+                    + "</div>"
+                    + "<div style='padding:24px;border:1px solid #e2e8f0;border-top:0;border-radius:0 0 8px 8px'>"
+                    + "<p>Dear <b>" + customerName + "</b>,</p>"
+                    + "<p>" + bodyText + "</p>"
+                    + statusButton
+                    + "<p style='color:#64748b;font-size:13px'>If you have any questions, please contact us directly.</p>"
+                    + "<p>Thank you,<br><b>" + garageName + "</b></p>"
+                    + "</div></div>";
+
+            helper.setText(html, true);
+            mailSender.send(message);
+            log.info("Work update email ({}) sent to {} for vehicle {}", updateType, toEmail, vehicleNumber);
+        } catch (Exception e) {
+            log.error("Failed to send work update email to {}: {}", toEmail, e.getMessage());
         }
     }
 

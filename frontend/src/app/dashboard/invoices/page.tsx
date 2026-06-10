@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { canManage } from "@/lib/auth";
+import { canManage, canViewFinancial } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { getInvoices, Invoice } from "@/lib/api-invoices";
 import { Plus, FileText, IndianRupee, Calendar, LayoutGrid, List } from "lucide-react";
@@ -16,56 +16,61 @@ const STATUS_STYLES: Record<string, string> = {
   paid: "bg-ok-light text-ok",
 };
 
-const invoiceColumns: DataColumn<Invoice>[] = [
-  {
-    key: "invoiceNumber",
-    header: "Invoice #",
-    render: (inv) => (
-      <div>
-        <p className="font-medium text-foreground">{inv.invoiceNumber}</p>
-        <p className="text-xs text-muted">{inv.type === "tax" ? "Tax" : "Proforma"}</p>
-      </div>
-    ),
-  },
-  {
-    key: "customer",
-    header: "Customer",
-    render: (inv) => <span className="text-secondary">{inv.customerName}</span>,
-    filterValue: (inv) => inv.customerName,
-  },
-  {
-    key: "date",
-    header: "Date",
-    render: (inv) => <span className="text-muted">{inv.date || inv.createdAt?.split("T")[0] || "-"}</span>,
-    sortValue: (inv) => new Date(inv.date || inv.createdAt || "").getTime(),
-  },
-  {
-    key: "items",
-    header: "Items",
-    render: (inv) => <span className="text-muted">{inv.items?.length || 0}</span>,
-  },
-  {
-    key: "status",
-    header: "Status",
-    render: (inv) => (
-      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${STATUS_STYLES[inv.status] ?? "bg-hover text-muted"}`}>
-        {inv.status.toUpperCase()}
-      </span>
-    ),
-    filterValue: (inv) => inv.status,
-  },
-  {
-    key: "amount",
-    header: "Amount",
-    align: "right",
-    render: (inv) => (
-      <span className="font-semibold text-foreground">{(inv.grandTotal ?? 0).toLocaleString("en-IN")}</span>
-    ),
-    sortValue: (inv) => inv.grandTotal ?? 0,
-  },
-];
-
 export default function InvoicesPage() {
+  const showFinancials = canViewFinancial("INVOICES");
+
+  const invoiceColumns: DataColumn<Invoice>[] = [
+    {
+      key: "invoiceNumber",
+      header: "Invoice #",
+      render: (inv) => (
+        <div>
+          <p className="font-medium text-foreground">{inv.invoiceNumber}</p>
+          <p className="text-xs text-muted">{inv.type === "tax" ? "Tax" : "Proforma"}</p>
+        </div>
+      ),
+    },
+    {
+      key: "customer",
+      header: "Customer",
+      render: (inv) => <span className="text-secondary">{inv.customerName}</span>,
+      filterValue: (inv) => inv.customerName,
+    },
+    {
+      key: "date",
+      header: "Date",
+      render: (inv) => <span className="text-muted">{inv.date || inv.createdAt?.split("T")[0] || "-"}</span>,
+      sortValue: (inv) => new Date(inv.date || inv.createdAt || "").getTime(),
+    },
+    {
+      key: "items",
+      header: "Items",
+      render: (inv) => <span className="text-muted">{inv.items?.length || 0}</span>,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (inv) => (
+        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${STATUS_STYLES[inv.status] ?? "bg-hover text-muted"}`}>
+          {inv.status.toUpperCase()}
+        </span>
+      ),
+      filterValue: (inv) => inv.status,
+    },
+    ...(showFinancials
+      ? [
+          {
+            key: "amount" as const,
+            header: "Amount",
+            align: "right" as const,
+            render: (inv: Invoice) => (
+              <span className="font-semibold text-foreground">{(inv.grandTotal ?? 0).toLocaleString("en-IN")}</span>
+            ),
+            sortValue: (inv: Invoice) => inv.grandTotal ?? 0,
+          },
+        ]
+      : []),
+  ];
   const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filter, setFilter] = useState<StatusFilter>("all");
@@ -186,10 +191,14 @@ export default function InvoicesPage() {
               </div>
               <div className="mt-3 pt-3 border-t border-edge-light flex items-center justify-between">
                 <span className="text-xs text-muted">{inv.items?.length || 0} items</span>
-                <div className="flex items-center gap-0.5 text-sm font-semibold text-foreground">
-                  <IndianRupee className="w-3.5 h-3.5" />
-                  {(inv.grandTotal ?? 0).toLocaleString("en-IN")}
-                </div>
+                {showFinancials ? (
+                  <div className="flex items-center gap-0.5 text-sm font-semibold text-foreground">
+                    <IndianRupee className="w-3.5 h-3.5" />
+                    {(inv.grandTotal ?? 0).toLocaleString("en-IN")}
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted">&mdash;</span>
+                )}
               </div>
             </div>
           ))}

@@ -16,7 +16,7 @@ import {
   Package,
 } from "lucide-react";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
-import { canManage } from "@/lib/auth";
+import { canManage, canViewFinancial } from "@/lib/auth";
 
 // ── Tab config ──
 
@@ -64,7 +64,7 @@ const expenseColumns: DataColumn<Expense>[] = [
     align: "right",
     render: (e) => (
       <span className="font-semibold text-error-600 dark:text-error-400 whitespace-nowrap">
-        ₹{e.amount.toLocaleString("en-IN")}
+        {canViewFinancial("ACCOUNTS") ? `₹${e.amount.toLocaleString("en-IN")}` : "—"}
       </span>
     ),
     sortValue: (e) => e.amount,
@@ -127,7 +127,7 @@ const purchaseColumns: DataColumn<PartPurchase>[] = [
   },
   {
     key: "repairOrder",
-    header: "Repair Order",
+    header: "Job Card",
     render: (p) => <span className="text-foreground">{p.repairOrderJobCard || "\u2014"}</span>,
   },
   {
@@ -136,7 +136,7 @@ const purchaseColumns: DataColumn<PartPurchase>[] = [
     align: "right",
     render: (p) => (
       <span className="font-semibold text-error-600 dark:text-error-400 whitespace-nowrap">
-        ₹{p.amount.toLocaleString("en-IN")}
+        {canViewFinancial("ACCOUNTS") ? `₹${p.amount.toLocaleString("en-IN")}` : "—"}
       </span>
     ),
     sortValue: (p) => p.amount,
@@ -209,7 +209,7 @@ function StatusAnalytics({
             Total
           </p>
           <p className="text-lg font-bold text-foreground">
-            ₹{total.toLocaleString("en-IN")}
+            {canViewFinancial("ACCOUNTS") ? `₹${total.toLocaleString("en-IN")}` : "—"}
           </p>
         </div>
         <div className="px-3">
@@ -217,7 +217,7 @@ function StatusAnalytics({
             Paid
           </p>
           <p className="text-lg font-bold text-success-600 dark:text-success-400">
-            ₹{paid.toLocaleString("en-IN")}
+            {canViewFinancial("ACCOUNTS") ? `₹${paid.toLocaleString("en-IN")}` : "—"}
           </p>
         </div>
         <div className="px-3">
@@ -225,7 +225,7 @@ function StatusAnalytics({
             Credit
           </p>
           <p className="text-lg font-bold text-warning-600 dark:text-warning-400">
-            ₹{credit.toLocaleString("en-IN")}
+            {canViewFinancial("ACCOUNTS") ? `₹${credit.toLocaleString("en-IN")}` : "—"}
           </p>
         </div>
       </div>

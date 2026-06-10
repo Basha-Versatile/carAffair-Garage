@@ -6,6 +6,7 @@ export interface User {
   garageId: string | null;
   garageName: string;
   permissions?: string[];
+  financialModules?: string[];
   garageRoleId?: string;
   staffTitle?: string;
 }
@@ -74,6 +75,16 @@ export function isGarageOwner(): boolean {
   return isGarageAdmin();
 }
 
+/**
+ * Maps new granular module names back to their legacy parent module.
+ * Allows old JWTs (issued before migration) to still grant access.
+ */
+const LEGACY_MODULE_MAP: Record<string, string> = {
+  SERVICE_REMINDERS: "REMINDERS",
+  SERVICE_FEEDBACKS: "REMINDERS",
+  INSURANCE_DUE: "REMINDERS",
+};
+
 /** Check if the current user has a specific permission. */
 export function hasPermission(permission: string): boolean {
   const user = getUser();
@@ -83,11 +94,19 @@ export function hasPermission(permission: string): boolean {
   if (user.role !== "garage_staff") return false;
   const perms = user.permissions ?? [];
   if (perms.includes(permission)) return true;
+
+  const [mod, action] = permission.split(":");
+
   // MANAGE implies VIEW
-  if (permission.endsWith(":VIEW")) {
-    const module = permission.split(":")[0];
-    return perms.includes(`${module}:MANAGE`);
+  if (action === "VIEW" && perms.includes(`${mod}:MANAGE`)) return true;
+
+  // Backward compat: check legacy module name for old JWT tokens
+  const legacyMod = LEGACY_MODULE_MAP[mod];
+  if (legacyMod) {
+    if (perms.includes(`${legacyMod}:${action}`)) return true;
+    if (action === "VIEW" && perms.includes(`${legacyMod}:MANAGE`)) return true;
   }
+
   return false;
 }
 
@@ -101,6 +120,15 @@ export function canManage(module: string): boolean {
   return hasPermission(`${module}:MANAGE`);
 }
 
+/** Check if the user can see financial data (prices, totals, GST) in a specific module. */
+export function canViewFinancial(module: string): boolean {
+  const user = getUser();
+  if (!user) return false;
+  if (user.role === "super_admin" || user.role === "garage_admin") return true;
+  if (user.role !== "garage_staff") return false;
+  return (user.financialModules ?? []).includes(module);
+}
+
 /** Route order for staff — used to find the first accessible page after login. */
 const MODULE_ROUTES: { module: string; path: string }[] = [
   { module: "DASHBOARD", path: "/dashboard" },
@@ -112,8 +140,10 @@ const MODULE_ROUTES: { module: string; path: string }[] = [
   { module: "VENDORS", path: "/dashboard/vendors" },
   { module: "VEHICLES", path: "/dashboard/vehicle-search" },
   { module: "APPOINTMENTS", path: "/dashboard/appointments" },
-  { module: "REMINDERS", path: "/dashboard/service-reminders" },
+  { module: "SERVICE_REMINDERS", path: "/dashboard/service-reminders" },
   { module: "REPORTS", path: "/dashboard/reports" },
+  { module: "ATTENDANCE", path: "/dashboard/attendance" },
+  { module: "LEAVES", path: "/dashboard/leaves" },
   { module: "SETTINGS", path: "/dashboard/settings" },
 ];
 

@@ -9,11 +9,14 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import com.garrage.model.Brand;
+import com.garrage.model.Garage;
 import com.garrage.model.User;
 import com.garrage.model.VehicleModel;
 import com.garrage.repository.BrandRepository;
+import com.garrage.repository.GarageRepository;
 import com.garrage.repository.UserRepository;
 import com.garrage.repository.VehicleModelRepository;
+import com.garrage.service.GarageRoleService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,11 +29,15 @@ public class DataSeeder implements CommandLineRunner {
     private final BrandRepository brandRepository;
     private final VehicleModelRepository vehicleModelRepository;
     private final UserRepository userRepository;
+    private final GarageRepository garageRepository;
+    private final GarageRoleService garageRoleService;
 
     @Override
     public void run(String... args) {
         seedBrands();
         seedSuperAdmin();
+        seedGarageRoles();
+        garageRoleService.migrateToGranularPermissions();
     }
 
     /**
@@ -163,5 +170,22 @@ public class DataSeeder implements CommandLineRunner {
         userRepository.save(superAdmin);
 
         log.info("Seeded super admin user with phone: 9999999999");
+    }
+
+    /**
+     * Seeds default roles for all existing garages that don't have roles yet.
+     */
+    private void seedGarageRoles() {
+        List<Garage> garages = garageRepository.findAll();
+        int seeded = 0;
+        for (Garage garage : garages) {
+            try {
+                garageRoleService.seedDefaultRoles(garage.getId());
+                seeded++;
+            } catch (Exception e) {
+                log.warn("Failed to seed roles for garage {}: {}", garage.getId(), e.getMessage());
+            }
+        }
+        log.info("Checked {} garages for default role seeding.", garages.size());
     }
 }

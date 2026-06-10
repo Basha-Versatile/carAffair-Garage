@@ -16,4 +16,6 @@ public class UpdateRoleRequest {
 
     @NotEmpty(message = "At least one permission is required")
     private List<String> permissions;
+
+    private List<String> financialModules;
 }

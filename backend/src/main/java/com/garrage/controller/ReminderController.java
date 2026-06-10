@@ -38,7 +38,7 @@ public class ReminderController {
     @PostMapping
     public ResponseEntity<ApiResponse<ServiceReminder>> createReminder(
             @RequestBody ServiceReminder reminder) {
-        PermissionChecker.require("REMINDERS:MANAGE");
+        PermissionChecker.require("SERVICE_REMINDERS:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("POST /api/service-reminders for garage {}", garageId);
         ServiceReminder created = reminderService.createReminder(reminder, garageId);
@@ -49,7 +49,7 @@ public class ReminderController {
     public ResponseEntity<ApiResponse<ServiceReminder>> updateReminder(
             @PathVariable String id,
             @RequestBody ServiceReminder reminder) {
-        PermissionChecker.require("REMINDERS:MANAGE");
+        PermissionChecker.require("SERVICE_REMINDERS:MANAGE");
         String garageId = TenantContext.getGarageId();
         log.info("PUT /api/service-reminders/{} for garage {}", id, garageId);
         ServiceReminder updated = reminderService.updateReminder(id, reminder, garageId);

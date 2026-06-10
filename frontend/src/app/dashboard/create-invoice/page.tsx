@@ -6,6 +6,7 @@ import {
   ArrowLeft, Plus, Trash2, Wrench, Tag, X,
   IndianRupee, ChevronDown, Search, Check, User, Package, Bell, Mail,
 } from "lucide-react";
+import { canViewFinancial } from "@/lib/auth";
 import { createInvoice, notifyCustomer, InvoiceItem } from "@/lib/api-invoices";
 import { getTags, createTag, Tag as TagType } from "@/lib/api-tags";
 import { searchCustomers, createCustomer, Customer } from "@/lib/api-customers";
@@ -786,7 +787,11 @@ export default function CreateInvoicePage() {
                       </div>
                       <div>
                         <label className={labelCls}>Rate</label>
-                        <input type="number" min={0} value={s.rate || ""} onChange={e => updateServiceRow(s.key, "rate", parseFloat(e.target.value) || 0)} className={smallInputCls} placeholder="0" />
+                        {canViewFinancial("INVOICES") ? (
+                          <input type="number" min={0} value={s.rate || ""} onChange={e => updateServiceRow(s.key, "rate", parseFloat(e.target.value) || 0)} className={smallInputCls} placeholder="0" />
+                        ) : (
+                          <div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">-</div>
+                        )}
                       </div>
                       <div>
                         <label className={labelCls}>Disc %</label>
@@ -794,11 +799,11 @@ export default function CreateInvoicePage() {
                       </div>
                       <div>
                         <label className={labelCls}>Amount</label>
-                        <div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{c.amount.toLocaleString("en-IN")}</div>
+                        <div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{canViewFinancial("INVOICES") ? c.amount.toLocaleString("en-IN") : "-"}</div>
                       </div>
                       <div>
                         <label className={labelCls}>GST Amt</label>
-                        <div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{c.gstAmount.toLocaleString("en-IN")}</div>
+                        <div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{canViewFinancial("INVOICES") ? c.gstAmount.toLocaleString("en-IN") : "-"}</div>
                       </div>
                     </div>
                   </div>
@@ -883,7 +888,11 @@ export default function CreateInvoicePage() {
                       </div>
                       <div>
                         <label className={labelCls}>Rate</label>
-                        <input type="number" min={0} value={p.rate || ""} onChange={e => updatePartRow(p.key, "rate", parseFloat(e.target.value) || 0)} className={smallInputCls} placeholder="0" />
+                        {canViewFinancial("INVOICES") ? (
+                          <input type="number" min={0} value={p.rate || ""} onChange={e => updatePartRow(p.key, "rate", parseFloat(e.target.value) || 0)} className={smallInputCls} placeholder="0" />
+                        ) : (
+                          <div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">-</div>
+                        )}
                       </div>
                       <div>
                         <label className={labelCls}>Disc %</label>
@@ -891,11 +900,11 @@ export default function CreateInvoicePage() {
                       </div>
                       <div>
                         <label className={labelCls}>Amount</label>
-                        <div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{c.amount.toLocaleString("en-IN")}</div>
+                        <div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{canViewFinancial("INVOICES") ? c.amount.toLocaleString("en-IN") : "-"}</div>
                       </div>
                       <div>
                         <label className={labelCls}>GST Amt</label>
-                        <div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{c.gstAmount.toLocaleString("en-IN")}</div>
+                        <div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{canViewFinancial("INVOICES") ? c.gstAmount.toLocaleString("en-IN") : "-"}</div>
                       </div>
                     </div>
                   </div>
@@ -964,6 +973,7 @@ export default function CreateInvoicePage() {
           </div>
 
           {/* ──────── Summary ──────── */}
+          {canViewFinancial("INVOICES") && (
           <div className="bg-background rounded-lg border border-edge p-5">
             <h3 className="text-sm font-semibold text-secondary mb-3">Summary</h3>
             <div className="space-y-2 text-sm">
@@ -989,6 +999,7 @@ export default function CreateInvoicePage() {
               </div>
             </div>
           </div>
+          )}
 
           {/* Error */}
           {error && (
@@ -1192,8 +1203,8 @@ export default function CreateInvoicePage() {
                         <p className="text-sm font-medium text-foreground">{svc.name}</p>
                         <p className="text-xs text-muted">
                           {svc.categoryName ? `${svc.categoryName} · ` : ""}
-                          Rs {svc.price}
-                          {svc.hasGst ? ` · GST ${svc.gstRate}%` : ""}
+                          {canViewFinancial("INVOICES") ? `Rs ${svc.price}` : ""}
+                          {canViewFinancial("INVOICES") && svc.hasGst ? ` · GST ${svc.gstRate}%` : ""}
                           {alreadyAdded ? " (Already added)" : ""}
                         </p>
                       </div>
@@ -1578,8 +1589,8 @@ export default function CreateInvoicePage() {
                         <p className="text-sm font-medium text-foreground">{part.name}</p>
                         <p className="text-xs text-muted">
                           {part.partNumber ? `#${part.partNumber} · ` : ""}
-                          Rs {part.sellingPrice}
-                          {part.gstRate ? ` · GST ${part.gstRate}%` : ""}
+                          {canViewFinancial("INVOICES") ? `Rs ${part.sellingPrice}` : ""}
+                          {canViewFinancial("INVOICES") && part.gstRate ? ` · GST ${part.gstRate}%` : ""}
                           {` · Stock: ${part.stockQty}`}
                           {alreadyAdded ? " (Already added)" : ""}
                         </p>

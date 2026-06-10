@@ -17,6 +17,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
+import { canViewFinancial } from "@/lib/auth";
 
 // ── Type styles ──
 
@@ -68,7 +69,7 @@ const txnColumns: DataColumn<AccountTransaction>[] = [
       const isOut = t.type === "Payment" || t.type === "Expense" || t.type === "Transfer";
       return (
         <span className={`font-semibold tabular-nums ${isOut ? "text-error-600 dark:text-error-400" : "text-success-600 dark:text-success-400"}`}>
-          {isOut ? "- " : "+ "}{formatCurrency(t.amount)}
+          {canViewFinancial("ACCOUNTS") ? <>{isOut ? "- " : "+ "}{formatCurrency(t.amount)}</> : "—"}
         </span>
       );
     },
@@ -162,10 +163,14 @@ export default function AccountBookPage() {
     <tfoot>
       <tr className="bg-dim dark:bg-white/[0.02] border-t-2 border-edge">
         <td className="px-4 py-3 text-right">
-          <div className="space-y-0.5">
-            <p className="text-xs text-success-600 dark:text-success-400 font-semibold">+ {formatCurrency(totals.inflow)}</p>
-            <p className="text-xs text-error-600 dark:text-error-400 font-semibold">- {formatCurrency(totals.outflow)}</p>
-          </div>
+          {canViewFinancial("ACCOUNTS") ? (
+            <div className="space-y-0.5">
+              <p className="text-xs text-success-600 dark:text-success-400 font-semibold">+ {formatCurrency(totals.inflow)}</p>
+              <p className="text-xs text-error-600 dark:text-error-400 font-semibold">- {formatCurrency(totals.outflow)}</p>
+            </div>
+          ) : (
+            <span className="text-xs text-muted">—</span>
+          )}
         </td>
         <td colSpan={4} className="px-4 py-3 text-sm font-semibold text-foreground">
           Period Totals
@@ -198,7 +203,7 @@ export default function AccountBookPage() {
                 <div className="h-8 w-28 bg-dim rounded animate-pulse" />
               ) : (
                 <p className="text-2xl font-bold text-success-600 dark:text-success-400">
-                  {formatCurrency(cashInHand)}
+                  {canViewFinancial("ACCOUNTS") ? formatCurrency(cashInHand) : "—"}
                 </p>
               )}
             </div>
@@ -217,7 +222,7 @@ export default function AccountBookPage() {
                 <div className="h-8 w-28 bg-dim rounded animate-pulse" />
               ) : (
                 <p className="text-2xl font-bold text-brand-600 dark:text-brand-400">
-                  {formatCurrency(bankBalance)}
+                  {canViewFinancial("ACCOUNTS") ? formatCurrency(bankBalance) : "—"}
                 </p>
               )}
             </div>

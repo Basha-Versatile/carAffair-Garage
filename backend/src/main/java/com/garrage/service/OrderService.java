@@ -467,6 +467,295 @@ public class OrderService {
         return saved;
     }
 
+    // ─── Work Timer ───
+
+    public Order startTimer(String orderId, String garageId, String lineItemId) {
+        Order order = getOrderById(orderId, garageId);
+        Order.ServiceAssignment target = findAssignment(order, lineItemId);
+
+        if ("completed".equals(target.getStatus())) {
+            throw new IllegalStateException("Cannot start timer on a completed task");
+        }
+
+        target.setWorkStartedAt(LocalDateTime.now());
+        target.setWorkPausedAt(null);
+        target.setStatus("in_progress");
+
+        // Generate status token if not present
+        if (order.getStatusToken() == null) {
+            order.setStatusToken(UUID.randomUUID().toString());
+        }
+
+        Order saved = orderRepository.save(order);
+        activityLogService.log("UPDATE", "ORDER", saved.getId(),
+                "started work timer for " + saved.getJobCard());
+
+        // Notify customer
+        notifyCustomerAboutUpdate(saved, "WORK_STARTED",
+                "Work has begun on your vehicle " + saved.getVehicleNumber());
+
+        return saved;
+    }
+
+    public Order pauseTimer(String orderId, String garageId, String lineItemId) {
+        Order order = getOrderById(orderId, garageId);
+        Order.ServiceAssignment target = findAssignment(order, lineItemId);
+
+        if (!"in_progress".equals(target.getStatus())) {
+            throw new IllegalStateException("Can only pause an in-progress task");
+        }
+        if (target.getWorkPausedAt() != null) {
+            throw new IllegalStateException("Task is already paused");
+        }
+
+        target.setWorkPausedAt(LocalDateTime.now());
+
+        Order saved = orderRepository.save(order);
+        activityLogService.log("UPDATE", "ORDER", saved.getId(),
+                "paused work timer for " + saved.getJobCard());
+
+        return saved;
+    }
+
+    public Order resumeTimer(String orderId, String garageId, String lineItemId) {
+        Order order = getOrderById(orderId, garageId);
+        Order.ServiceAssignment target = findAssignment(order, lineItemId);
+
+        if (target.getWorkPausedAt() == null) {
+            throw new IllegalStateException("Task is not paused");
+        }
+
+        // Accumulate paused duration
+        long pausedMs = java.time.Duration.between(target.getWorkPausedAt(), LocalDateTime.now()).toMillis();
+        target.setTotalPausedMs(target.getTotalPausedMs() + pausedMs);
+        target.setWorkPausedAt(null);
+
+        Order saved = orderRepository.save(order);
+        activityLogService.log("UPDATE", "ORDER", saved.getId(),
+                "resumed work timer for " + saved.getJobCard());
+
+        return saved;
+    }
+
+    public Order completeTimer(String orderId, String garageId, String lineItemId, String notes) {
+        Order order = getOrderById(orderId, garageId);
+        Order.ServiceAssignment target = findAssignment(order, lineItemId);
+
+        if ("completed".equals(target.getStatus())) {
+            throw new IllegalStateException("Task is already completed");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // If paused, accumulate remaining pause time
+        if (target.getWorkPausedAt() != null) {
+            long pausedMs = java.time.Duration.between(target.getWorkPausedAt(), now).toMillis();
+            target.setTotalPausedMs(target.getTotalPausedMs() + pausedMs);
+            target.setWorkPausedAt(null);
+        }
+
+        target.setStatus("completed");
+        target.setCompletedAt(now);
+        if (notes != null) {
+            target.setNotes(notes);
+        }
+
+        // Calculate total work duration
+        if (target.getWorkStartedAt() != null) {
+            long totalMs = java.time.Duration.between(target.getWorkStartedAt(), now).toMillis();
+            target.setTotalWorkMs(totalMs - target.getTotalPausedMs());
+        }
+
+        Order saved = orderRepository.save(order);
+        activityLogService.log("UPDATE", "ORDER", saved.getId(),
+                "completed work for " + saved.getJobCard());
+
+        // Notify customer about individual task completion
+        Order.OrderLineItem lineItemObj = null;
+        if (saved.getLineItems() != null) {
+            lineItemObj = saved.getLineItems().stream()
+                    .filter(li -> lineItemId.equals(li.getId()))
+                    .findFirst().orElse(null);
+        }
+        String serviceName = lineItemObj != null ? lineItemObj.getDescription() : "Service";
+        notifyCustomerAboutUpdate(saved, "TASK_COMPLETED",
+                serviceName + " completed for your vehicle " + saved.getVehicleNumber());
+
+        // Check if all assignments are done
+        boolean allDone = saved.getServiceAssignments().stream()
+                .allMatch(a -> "completed".equals(a.getStatus()));
+        if (allDone) {
+            notificationService.notifyAdmin(garageId,
+                    "ALL_SERVICES_COMPLETE", "APPOINTMENTS", "high",
+                    "All Services Completed",
+                    "All assigned services for order " + saved.getJobCard() + " are completed",
+                    "/dashboard/orders/" + saved.getId(),
+                    "ORDER", saved.getId());
+
+            // Notify customer: vehicle is ready
+            notifyCustomerAboutUpdate(saved, "VEHICLE_READY",
+                    "Your vehicle " + saved.getVehicleNumber() + " is ready for pickup!");
+        }
+
+        return saved;
+    }
+
+    /**
+     * Returns task analytics: per-staff and per-service time aggregations.
+     */
+    public Map<String, Object> getTaskAnalytics(String garageId) {
+        List<Order> orders = orderRepository.findByGarageIdOrderByCreatedAtDesc(garageId);
+
+        // Collect completed assignments with timer data
+        List<Map<String, Object>> completedTasks = new ArrayList<>();
+        Map<String, List<Long>> staffTimes = new LinkedHashMap<>();
+        Map<String, List<Long>> serviceTimes = new LinkedHashMap<>();
+        Map<String, Integer> staffTaskCount = new LinkedHashMap<>();
+
+        for (Order order : orders) {
+            if (order.getServiceAssignments() == null) continue;
+            for (Order.ServiceAssignment a : order.getServiceAssignments()) {
+                if (!"completed".equals(a.getStatus()) || a.getTotalWorkMs() == null) continue;
+
+                // Per-staff aggregation
+                String staffName = a.getAssignedUserName() != null ? a.getAssignedUserName() : "Unknown";
+                staffTimes.computeIfAbsent(staffName, k -> new ArrayList<>()).add(a.getTotalWorkMs());
+                staffTaskCount.merge(staffName, 1, Integer::sum);
+
+                // Per-service aggregation
+                if (order.getLineItems() != null) {
+                    order.getLineItems().stream()
+                            .filter(li -> li.getId().equals(a.getLineItemId()))
+                            .findFirst()
+                            .ifPresent(li -> {
+                                String desc = li.getDescription() != null ? li.getDescription() : "Service";
+                                serviceTimes.computeIfAbsent(desc, k -> new ArrayList<>()).add(a.getTotalWorkMs());
+                            });
+                }
+            }
+        }
+
+        // Compute averages
+        Map<String, Long> staffAvgMs = new LinkedHashMap<>();
+        staffTimes.forEach((name, times) ->
+                staffAvgMs.put(name, times.stream().mapToLong(Long::longValue).sum() / times.size()));
+
+        Map<String, Long> serviceAvgMs = new LinkedHashMap<>();
+        serviceTimes.forEach((name, times) ->
+                serviceAvgMs.put(name, times.stream().mapToLong(Long::longValue).sum() / times.size()));
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("staffAvgTimeMs", staffAvgMs);
+        result.put("staffTaskCount", staffTaskCount);
+        result.put("serviceAvgTimeMs", serviceAvgMs);
+        return result;
+    }
+
+    private Order.ServiceAssignment findAssignment(Order order, String lineItemId) {
+        if (order.getServiceAssignments() == null) {
+            throw new ResourceNotFoundException("No assignments found for this order");
+        }
+        return order.getServiceAssignments().stream()
+                .filter(a -> lineItemId.equals(a.getLineItemId()))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found for line item: " + lineItemId));
+    }
+
+    // ─── Task Photos (Before/After) ───
+
+    public Order addTaskBeforeImages(String orderId, String garageId, String lineItemId, List<String> fileIds) {
+        Order order = getOrderById(orderId, garageId);
+        Order.ServiceAssignment target = findAssignment(order, lineItemId);
+
+        List<String> existing = target.getBeforeImageIds();
+        if (existing == null) existing = new ArrayList<>();
+        existing.addAll(fileIds);
+        target.setBeforeImageIds(existing);
+
+        Order saved = orderRepository.save(order);
+        activityLogService.log("UPDATE", "ORDER", saved.getId(),
+                "uploaded before photos for " + saved.getJobCard());
+        return saved;
+    }
+
+    public Order addTaskAfterImages(String orderId, String garageId, String lineItemId, List<String> fileIds) {
+        Order order = getOrderById(orderId, garageId);
+        Order.ServiceAssignment target = findAssignment(order, lineItemId);
+
+        List<String> existing = target.getAfterImageIds();
+        if (existing == null) existing = new ArrayList<>();
+        existing.addAll(fileIds);
+        target.setAfterImageIds(existing);
+
+        Order saved = orderRepository.save(order);
+        activityLogService.log("UPDATE", "ORDER", saved.getId(),
+                "uploaded after photos for " + saved.getJobCard());
+
+        // Notify customer about progress photo
+        notifyCustomerAboutUpdate(saved, "PHOTO_UPLOADED",
+                "New progress photo uploaded for your vehicle " + saved.getVehicleNumber());
+
+        return saved;
+    }
+
+    public Map<String, List<String>> getTaskImages(String orderId, String garageId, String lineItemId) {
+        Order order = getOrderById(orderId, garageId);
+        Order.ServiceAssignment target = findAssignment(order, lineItemId);
+
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        result.put("before", target.getBeforeImageIds() != null ? target.getBeforeImageIds() : List.of());
+        result.put("after", target.getAfterImageIds() != null ? target.getAfterImageIds() : List.of());
+        return result;
+    }
+
+    public void deleteTaskImage(String orderId, String garageId, String fileId) {
+        Order order = getOrderById(orderId, garageId);
+        if (order.getServiceAssignments() != null) {
+            for (Order.ServiceAssignment a : order.getServiceAssignments()) {
+                if (a.getBeforeImageIds() != null) a.getBeforeImageIds().remove(fileId);
+                if (a.getAfterImageIds() != null) a.getAfterImageIds().remove(fileId);
+            }
+        }
+        orderRepository.save(order);
+    }
+
+    // ─── Order Status Token (public live updates) ───
+
+    public Order getOrderByStatusToken(String token) {
+        return orderRepository.findByStatusToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Order status link not found or expired"));
+    }
+
+    /**
+     * Ensure order has a statusToken; generate one if missing.
+     */
+    public String ensureStatusToken(String orderId, String garageId) {
+        Order order = getOrderById(orderId, garageId);
+        if (order.getStatusToken() == null) {
+            order.setStatusToken(UUID.randomUUID().toString());
+            order = orderRepository.save(order);
+        }
+        return order.getStatusToken();
+    }
+
+    // ─── Customer Notification Helper ───
+
+    private void notifyCustomerAboutUpdate(Order order, String type, String message) {
+        if (order.getCustomerId() == null) return;
+        try {
+            notificationService.notify(order.getGarageId(), order.getCustomerId(),
+                    type, "APPOINTMENTS", "normal",
+                    "Vehicle Update",
+                    message,
+                    order.getStatusToken() != null
+                            ? "/order-status/" + order.getStatusToken()
+                            : "/dashboard/orders/" + order.getId(),
+                    "ORDER", order.getId());
+        } catch (Exception e) {
+            log.warn("Failed to notify customer about update: {}", e.getMessage());
+        }
+    }
+
     // ─── Payment Due ───
 
     public Order getOrderByPaymentToken(String token) {

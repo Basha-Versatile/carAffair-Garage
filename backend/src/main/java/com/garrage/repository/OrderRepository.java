@@ -14,6 +14,7 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     Optional<Order> findByOnboardingToken(String onboardingToken);
     Optional<Order> findByEstimateToken(String estimateToken);
     Optional<Order> findByPaymentToken(String paymentToken);
+    Optional<Order> findByStatusToken(String statusToken);
     List<Order> findByGarageIdAndEstimatedDeliveryDateAndStatusIn(
             String garageId, String estimatedDeliveryDate, List<String> statuses);
     boolean existsByGarageIdAndVehicleId(String garageId, String vehicleId);

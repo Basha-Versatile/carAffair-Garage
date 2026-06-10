@@ -28,6 +28,9 @@ public class UserPrincipal implements UserDetails {
     /** Module-level permissions. Only populated for garage_staff. */
     private List<String> permissions;
 
+    /** Modules where this role can see financial data. Only populated for garage_staff. */
+    private List<String> financialModules;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> authorities = new ArrayList<>();

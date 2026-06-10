@@ -16,4 +16,6 @@ public class CreateRoleRequest {
 
     @NotEmpty(message = "At least one permission is required")
     private List<String> permissions;
+
+    private List<String> financialModules;
 }

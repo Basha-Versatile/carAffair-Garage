@@ -60,6 +60,7 @@ async function tryRefreshToken(): Promise<boolean> {
         garageId: string | null;
         garageName: string;
         permissions?: string[];
+        financialModules?: string[];
         garageRoleId?: string;
         staffTitle?: string;
       }>;
@@ -81,6 +82,7 @@ async function tryRefreshToken(): Promise<boolean> {
           garageId: d.garageId,
           garageName: d.garageName,
           permissions: d.permissions,
+          financialModules: d.financialModules,
           garageRoleId: d.garageRoleId,
           staffTitle: d.staffTitle,
         },

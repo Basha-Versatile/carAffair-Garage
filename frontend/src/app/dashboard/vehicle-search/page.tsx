@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getVehicles, getBrandById, getModelById, getCustomerById, Vehicle } from "@/lib/api-vehicles";
 import { Search, Car, User, Phone, Calendar, Shield, Loader2, LayoutGrid, List, Plus } from "lucide-react";
 import { canManage } from "@/lib/auth";
@@ -68,7 +68,9 @@ const vehicleColumns: DataColumn<VehicleWithDetails>[] = [
 
 export default function VehicleSearchPage() {
   const router = useRouter();
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const brandParam = searchParams.get("brand") || "";
+  const [search, setSearch] = useState(brandParam);
   const [vehicles, setVehicles] = useState<VehicleWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -219,7 +221,7 @@ export default function VehicleSearchPage() {
               <Car className="w-8 h-8 text-muted" />
             </div>
             <p className="text-foreground font-medium mb-1">No vehicles yet</p>
-            <p className="text-muted text-sm mb-5">Create a repair order to add vehicles.</p>
+            <p className="text-muted text-sm mb-5">Create a job card to add vehicles.</p>
             {canManage("VEHICLES") && (
               <button
                 onClick={() => router.push("/dashboard/create-order")}

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Plus,
   Pencil,
   Trash2,
   ArrowLeft,
@@ -15,12 +14,11 @@ import {
 } from "lucide-react";
 import {
   getRoles,
-  createRole,
   updateRole,
   deleteRole,
   type GarageRole,
 } from "@/lib/api-roles";
-import { MODULES, MODULE_LABELS, type Module } from "@/lib/permissions";
+import { MODULES, MODULE_LABELS, MODULE_SUB_PAGES, PERMISSION_GROUPS, FINANCIAL_MODULES, type Module } from "@/lib/permissions";
 
 export default function RolesPage() {
   const router = useRouter();
@@ -36,6 +34,7 @@ export default function RolesPage() {
   const [formName, setFormName] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formPermissions, setFormPermissions] = useState<string[]>([]);
+  const [formFinancialModules, setFormFinancialModules] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -69,7 +68,6 @@ export default function RolesPage() {
 
   function togglePermission(module: Module, action: "VIEW" | "MANAGE") {
     setFormPermissions((prev) => {
-      const perm = `${module}:${action}`;
       const viewPerm = `${module}:VIEW`;
       const managePerm = `${module}:MANAGE`;
 
@@ -77,18 +75,15 @@ export default function RolesPage() {
 
       if (action === "MANAGE") {
         if (next.includes(managePerm)) {
-          // Uncheck Manage only
           next = next.filter((p) => p !== managePerm);
         } else {
-          // Check Manage and also ensure View is checked
           if (!next.includes(managePerm)) next.push(managePerm);
           if (!next.includes(viewPerm)) next.push(viewPerm);
         }
       } else {
-        // action === "VIEW"
         if (next.includes(viewPerm)) {
-          // Uncheck View and also uncheck Manage
           next = next.filter((p) => p !== viewPerm && p !== managePerm);
+          setFormFinancialModules((fm) => fm.filter((m) => m !== module));
         } else {
           next.push(viewPerm);
         }
@@ -98,14 +93,15 @@ export default function RolesPage() {
     });
   }
 
-  // ── Open create modal ──
-  function openCreate() {
-    setEditingRole(null);
-    setFormName("");
-    setFormDescription("");
-    setFormPermissions([]);
-    setFormError("");
-    setShowModal(true);
+  // ── Financial module helpers ──
+  function hasFinancial(module: Module): boolean {
+    return formFinancialModules.includes(module);
+  }
+
+  function toggleFinancial(module: Module) {
+    setFormFinancialModules((prev) =>
+      prev.includes(module) ? prev.filter((m) => m !== module) : [...prev, module]
+    );
   }
 
   // ── Open edit modal ──
@@ -114,6 +110,7 @@ export default function RolesPage() {
     setFormName(role.name);
     setFormDescription(role.description || "");
     setFormPermissions([...role.permissions]);
+    setFormFinancialModules([...(role.financialModules || [])]);
     setFormError("");
     setShowModal(true);
   }
@@ -139,6 +136,7 @@ export default function RolesPage() {
         name: formName.trim(),
         description: formDescription.trim() || undefined,
         permissions: formPermissions,
+        financialModules: formFinancialModules,
       };
 
       if (editingRole) {
@@ -146,9 +144,6 @@ export default function RolesPage() {
         setRoles((prev) =>
           prev.map((r) => (r.id === updated.id ? updated : r))
         );
-      } else {
-        const created = await createRole(payload);
-        setRoles((prev) => [created, ...prev]);
       }
       closeModal();
     } catch (err: unknown) {
@@ -210,17 +205,9 @@ export default function RolesPage() {
             Roles Management
           </h1>
           <p className="text-xs text-muted mt-0.5">
-            Create and manage roles with granular permissions for your garage
-            staff.
+            Manage permissions for your garage staff roles.
           </p>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-1.5 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-hover transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Create Role
-        </button>
       </div>
 
       {/* ── Content ── */}
@@ -252,19 +239,11 @@ export default function RolesPage() {
               <Shield className="w-10 h-10 text-primary" />
             </div>
             <h3 className="text-base font-semibold text-foreground mb-1">
-              No roles yet
+              No roles found
             </h3>
-            <p className="text-sm text-muted mb-5 text-center max-w-sm">
-              Roles let you control what each staff member can see and do.
-              Create your first role to get started.
+            <p className="text-sm text-muted text-center max-w-sm">
+              Default roles will be created automatically when the garage is set up.
             </p>
-            <button
-              onClick={openCreate}
-              className="flex items-center gap-1.5 bg-primary text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Create Your First Role
-            </button>
           </div>
         ) : (
           /* Role cards grid */
@@ -281,9 +260,16 @@ export default function RolesPage() {
                       <ShieldCheck className="w-5 h-5 text-primary" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-foreground truncate">
-                        {role.name}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-foreground truncate">
+                          {role.name}
+                        </h3>
+                        {role.isDefault && (
+                          <span className="text-[10px] font-medium text-primary bg-primary-light px-1.5 py-0.5 rounded shrink-0">
+                            Default
+                          </span>
+                        )}
+                      </div>
                       {role.description && (
                         <p className="text-xs text-muted mt-0.5 line-clamp-2">
                           {role.description}
@@ -312,13 +298,15 @@ export default function RolesPage() {
                     Edit
                   </button>
                   <div className="flex-1" />
-                  <button
-                    onClick={() => openDelete(role)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-bad hover:bg-bad-light px-3 py-1.5 rounded-md transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Delete
-                  </button>
+                  {!role.isDefault && (
+                    <button
+                      onClick={() => openDelete(role)}
+                      className="flex items-center gap-1.5 text-xs font-medium text-bad hover:bg-bad-light px-3 py-1.5 rounded-md transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -362,9 +350,13 @@ export default function RolesPage() {
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   placeholder="e.g. Service Advisor"
-                  className="w-full px-3 py-2 border border-edge rounded-lg text-sm text-foreground bg-background placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  disabled={editingRole?.isDefault}
+                  className="w-full px-3 py-2 border border-edge rounded-lg text-sm text-foreground bg-background placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
                   autoFocus
                 />
+                {editingRole?.isDefault && (
+                  <p className="text-[11px] text-muted mt-1">Default role names cannot be changed.</p>
+                )}
               </div>
 
               {/* Description */}
@@ -381,104 +373,147 @@ export default function RolesPage() {
                 />
               </div>
 
-              {/* Permission grid */}
+              {/* Permission grid – grouped by sidebar sections */}
               <div>
                 <label className="block text-xs font-medium text-muted mb-2">
                   Permissions
                 </label>
-                <div className="border border-edge rounded-lg overflow-hidden">
-                  {/* Table header */}
-                  <div className="grid grid-cols-[1fr_80px_80px] bg-dim px-4 py-2.5 border-b border-edge">
-                    <span className="text-xs font-semibold text-secondary uppercase tracking-wide">
-                      Module
-                    </span>
-                    <span className="text-xs font-semibold text-secondary uppercase tracking-wide text-center">
-                      View
-                    </span>
-                    <span className="text-xs font-semibold text-secondary uppercase tracking-wide text-center">
-                      Manage
-                    </span>
-                  </div>
-
-                  {/* Table rows */}
-                  {MODULES.map((mod, idx) => (
-                    <div
-                      key={mod}
-                      className={`grid grid-cols-[1fr_80px_80px] items-center px-4 py-3 ${
-                        idx < MODULES.length - 1
-                          ? "border-b border-edge"
-                          : ""
-                      } hover:bg-dim/50 transition-colors`}
-                    >
-                      <span className="text-sm text-foreground font-medium">
-                        {MODULE_LABELS[mod]}
-                      </span>
-
-                      {/* View checkbox */}
-                      <div className="flex justify-center">
-                        <label className="relative flex items-center justify-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={hasPermission(mod, "VIEW")}
-                            onChange={() => togglePermission(mod, "VIEW")}
-                            className="sr-only peer"
-                          />
-                          <div className="w-5 h-5 border-2 border-edge rounded-md peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center">
-                            {hasPermission(mod, "VIEW") && (
-                              <svg
-                                className="w-3 h-3 text-white"
-                                viewBox="0 0 12 12"
-                                fill="none"
-                              >
-                                <path
-                                  d="M2 6l3 3 5-5"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            )}
-                          </div>
-                        </label>
+                <div className="space-y-3">
+                  {PERMISSION_GROUPS.map((group) => {
+                    const groupHasFinancial = group.modules.some((m) =>
+                      FINANCIAL_MODULES.includes(m)
+                    );
+                    return (
+                    <div key={group.title} className="border border-edge rounded-lg overflow-hidden">
+                      {/* Group header */}
+                      <div className={`grid ${groupHasFinancial ? "grid-cols-[1fr_60px_60px_60px]" : "grid-cols-[1fr_60px_60px]"} bg-dim px-4 py-2 border-b border-edge`}>
+                        <span className="text-[11px] font-bold text-secondary uppercase tracking-wider">
+                          {group.title}
+                        </span>
+                        <span className="text-[10px] font-semibold text-muted uppercase tracking-wide text-center">
+                          View
+                        </span>
+                        <span className="text-[10px] font-semibold text-muted uppercase tracking-wide text-center">
+                          Manage
+                        </span>
+                        {groupHasFinancial && (
+                          <span className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide text-center">
+                            &#x20B9;
+                          </span>
+                        )}
                       </div>
 
-                      {/* Manage checkbox */}
-                      <div className="flex justify-center">
-                        <label className="relative flex items-center justify-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={hasPermission(mod, "MANAGE")}
-                            onChange={() => togglePermission(mod, "MANAGE")}
-                            className="sr-only peer"
-                          />
-                          <div className="w-5 h-5 border-2 border-edge rounded-md peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center">
-                            {hasPermission(mod, "MANAGE") && (
-                              <svg
-                                className="w-3 h-3 text-white"
-                                viewBox="0 0 12 12"
-                                fill="none"
-                              >
-                                <path
-                                  d="M2 6l3 3 5-5"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            )}
+                      {/* Module rows */}
+                      {group.modules.map((mod, idx) => {
+                        const isFinancialModule = FINANCIAL_MODULES.includes(mod);
+                        const modHasAccess = hasPermission(mod, "VIEW");
+                        return (
+                        <div
+                          key={mod}
+                          className={`grid ${groupHasFinancial ? "grid-cols-[1fr_60px_60px_60px]" : "grid-cols-[1fr_60px_60px]"} items-center px-4 py-2.5 ${
+                            idx < group.modules.length - 1
+                              ? "border-b border-edge"
+                              : ""
+                          } hover:bg-dim/50 transition-colors`}
+                        >
+                          <div>
+                            <span className="text-sm text-foreground font-medium">
+                              {MODULE_LABELS[mod]}
+                            </span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {MODULE_SUB_PAGES[mod].map((sub) => (
+                                <span
+                                  key={sub}
+                                  className="text-[10px] text-muted bg-dim px-1.5 py-0.5 rounded"
+                                >
+                                  {sub}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        </label>
-                      </div>
+
+                          {/* View checkbox */}
+                          <div className="flex justify-center">
+                            <label className="relative flex items-center justify-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={hasPermission(mod, "VIEW")}
+                                onChange={() => togglePermission(mod, "VIEW")}
+                                className="sr-only peer"
+                              />
+                              <div className="w-5 h-5 border-2 border-edge rounded-md peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center">
+                                {hasPermission(mod, "VIEW") && (
+                                  <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                )}
+                              </div>
+                            </label>
+                          </div>
+
+                          {/* Manage checkbox */}
+                          <div className="flex justify-center">
+                            <label className="relative flex items-center justify-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={hasPermission(mod, "MANAGE")}
+                                onChange={() => togglePermission(mod, "MANAGE")}
+                                className="sr-only peer"
+                              />
+                              <div className="w-5 h-5 border-2 border-edge rounded-md peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center">
+                                {hasPermission(mod, "MANAGE") && (
+                                  <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                                    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                )}
+                              </div>
+                            </label>
+                          </div>
+
+                          {/* Financial toggle — only for modules with financial data */}
+                          {groupHasFinancial && (
+                            <div className="flex justify-center">
+                              {isFinancialModule ? (
+                                <label className={`relative flex items-center justify-center ${modHasAccess ? "cursor-pointer" : "cursor-not-allowed opacity-30"}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={hasFinancial(mod)}
+                                    onChange={() => toggleFinancial(mod)}
+                                    disabled={!modHasAccess}
+                                    className="sr-only peer"
+                                  />
+                                  <div className={`w-5 h-5 border-2 rounded-md transition-colors flex items-center justify-center ${
+                                    hasFinancial(mod) && modHasAccess
+                                      ? "bg-amber-500 border-amber-500"
+                                      : "border-edge"
+                                  }`}>
+                                    {hasFinancial(mod) && modHasAccess && (
+                                      <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                                        <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                </label>
+                              ) : (
+                                <span className="w-5 h-5" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        );
+                      })}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <p className="text-[11px] text-muted mt-2">
                   Checking &quot;Manage&quot; automatically grants
                   &quot;View&quot; access. Unchecking &quot;View&quot; also
                   removes &quot;Manage&quot;.
+                  The <span className="text-amber-600 font-semibold">&#x20B9;</span> column
+                  controls whether the role can see prices, totals, GST, and
+                  other financial data in that module.
                 </p>
               </div>
             </div>

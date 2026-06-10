@@ -81,6 +81,49 @@ public class ImageController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
+    // ─── Task Photos (Before/After) ───
+
+    @PostMapping("/api/orders/{orderId}/task-images/before")
+    public ResponseEntity<ApiResponse<List<String>>> uploadTaskBeforeImages(
+            @PathVariable String orderId,
+            @RequestParam("lineItemId") String lineItemId,
+            @RequestParam("files") List<MultipartFile> files) throws IOException {
+        String garageId = TenantContext.getGarageId();
+        List<String> fileIds = imageStorageService.storeImages(files, garageId, orderId);
+        Order order = orderService.addTaskBeforeImages(orderId, garageId, lineItemId, fileIds);
+        return ResponseEntity.ok(ApiResponse.ok(fileIds));
+    }
+
+    @PostMapping("/api/orders/{orderId}/task-images/after")
+    public ResponseEntity<ApiResponse<List<String>>> uploadTaskAfterImages(
+            @PathVariable String orderId,
+            @RequestParam("lineItemId") String lineItemId,
+            @RequestParam("files") List<MultipartFile> files) throws IOException {
+        String garageId = TenantContext.getGarageId();
+        List<String> fileIds = imageStorageService.storeImages(files, garageId, orderId);
+        Order order = orderService.addTaskAfterImages(orderId, garageId, lineItemId, fileIds);
+        return ResponseEntity.ok(ApiResponse.ok(fileIds));
+    }
+
+    @GetMapping("/api/orders/{orderId}/task-images/{lineItemId}")
+    public ResponseEntity<ApiResponse<java.util.Map<String, List<String>>>> getTaskImages(
+            @PathVariable String orderId,
+            @PathVariable String lineItemId) {
+        String garageId = TenantContext.getGarageId();
+        var images = orderService.getTaskImages(orderId, garageId, lineItemId);
+        return ResponseEntity.ok(ApiResponse.ok(images));
+    }
+
+    @DeleteMapping("/api/orders/{orderId}/task-images/{fileId}")
+    public ResponseEntity<ApiResponse<Void>> deleteTaskImage(
+            @PathVariable String orderId,
+            @PathVariable String fileId) {
+        String garageId = TenantContext.getGarageId();
+        imageStorageService.deleteImage(fileId);
+        orderService.deleteTaskImage(orderId, garageId, fileId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
     /**
      * Public image access for onboarding page (token-verified).
      */
@@ -110,6 +153,26 @@ public class ImageController {
             @PathVariable String fileId) throws IOException {
         // Verify the token is valid (this will throw if not found)
         orderService.getOrderByEstimateToken(token);
+
+        GridFsResource resource = imageStorageService.getImage(fileId);
+        if (resource == null || !resource.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(resource.getContentType()))
+                .header(HttpHeaders.CACHE_CONTROL, "max-age=86400")
+                .body(new InputStreamResource(resource.getInputStream()));
+    }
+
+    /**
+     * Public image access for order status page (token-verified).
+     */
+    @GetMapping("/api/public/order-status/{token}/images/{fileId}")
+    public ResponseEntity<InputStreamResource> getPublicOrderStatusImage(
+            @PathVariable String token,
+            @PathVariable String fileId) throws IOException {
+        orderService.getOrderByStatusToken(token);
 
         GridFsResource resource = imageStorageService.getImage(fileId);
         if (resource == null || !resource.exists()) {

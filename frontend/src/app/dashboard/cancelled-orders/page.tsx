@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { getOrdersByStatus, type Order } from "@/lib/api-orders";
+import { canViewFinancial } from "@/lib/auth";
 import { Search, CalendarX, Loader2, Calendar } from "lucide-react";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 
@@ -113,17 +114,17 @@ export default function CancelledOrdersPage() {
         </span>
       ),
     },
-    {
+    ...(canViewFinancial("ORDERS") ? [{
       key: "amount",
       header: "Amount",
       align: "right" as const,
-      render: (o) => (
+      render: (o: Order) => (
         <span className="text-sm font-bold text-[var(--surface-fg)] tabular-nums">
           ₹{(o.grandTotal ?? o.amount ?? 0).toLocaleString("en-IN")}
         </span>
       ),
-      sortValue: (o) => o.grandTotal ?? o.amount ?? 0,
-    },
+      sortValue: (o: Order) => o.grandTotal ?? o.amount ?? 0,
+    }] : []),
   ], []);
 
   const TABLE_CLS = "bg-[var(--surface-bg)] rounded-xl border border-[var(--border-main)] overflow-hidden";

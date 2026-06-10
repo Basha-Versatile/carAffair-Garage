@@ -182,8 +182,8 @@ export default function AddPartPurchasePage() {
           {/* ── Vendor ── */}
           <Row label="Vendor" value={vendorName} placeholder="Select" onClick={() => setVendorModalOpen(true)} />
 
-          {/* ── Repair Order ── */}
-          <Row label="Repair Order" value={repairOrderJobCard} placeholder="Select" onClick={() => setOrderModalOpen(true)} />
+          {/* ── Job Card ── */}
+          <Row label="Job Card" value={repairOrderJobCard} placeholder="Select" onClick={() => setOrderModalOpen(true)} />
 
           {/* ── Amount ── */}
           <div className="py-3.5 border-b border-edge-light">
@@ -367,7 +367,7 @@ export default function AddPartPurchasePage() {
         </div>
       )}
 
-      <SelectModal open={orderModalOpen} title="Select Repair Order"
+      <SelectModal open={orderModalOpen} title="Select Job Card"
         items={orders.map((o) => ({ id: o.id, label: o.jobCard, sublabel: `${o.customerName} — ${o.vehicleNumber}` }))} selectedId={repairOrderId}
         onSelect={(id) => { const f = orders.find((o) => o.id === id); if (f) { setRepairOrderId(f.id); setRepairOrderJobCard(f.jobCard); } setOrderModalOpen(false); }}
         onClose={() => setOrderModalOpen(false)} />

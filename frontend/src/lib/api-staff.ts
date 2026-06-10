@@ -43,3 +43,17 @@ export function updateStaffMember(id: string, payload: UpdateStaffPayload): Prom
 export function removeStaffMember(id: string): Promise<void> {
   return api.delete<void>(`/api/garage-staff/${id}`);
 }
+
+export interface AssignableRole {
+  id: string;
+  name: string;
+  description?: string;
+  permissions: string[];
+  isActive: boolean;
+  isDefault: boolean;
+}
+
+/** Returns roles the current user is allowed to assign (filtered by hierarchy). */
+export function getAssignableRoles(): Promise<AssignableRole[]> {
+  return api.get<AssignableRole[]>("/api/garage-staff/assignable-roles");
+}

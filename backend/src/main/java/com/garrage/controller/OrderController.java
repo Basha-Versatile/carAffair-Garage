@@ -150,6 +150,47 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.ok(order));
     }
 
+    // ─── Work Timer ───
+
+    @PutMapping("/api/orders/{id}/timer/start")
+    public ResponseEntity<ApiResponse<Order>> startTimer(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body) {
+        Order order = orderService.startTimer(id, TenantContext.getGarageId(), body.get("lineItemId"));
+        return ResponseEntity.ok(ApiResponse.ok(order));
+    }
+
+    @PutMapping("/api/orders/{id}/timer/pause")
+    public ResponseEntity<ApiResponse<Order>> pauseTimer(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body) {
+        Order order = orderService.pauseTimer(id, TenantContext.getGarageId(), body.get("lineItemId"));
+        return ResponseEntity.ok(ApiResponse.ok(order));
+    }
+
+    @PutMapping("/api/orders/{id}/timer/resume")
+    public ResponseEntity<ApiResponse<Order>> resumeTimer(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body) {
+        Order order = orderService.resumeTimer(id, TenantContext.getGarageId(), body.get("lineItemId"));
+        return ResponseEntity.ok(ApiResponse.ok(order));
+    }
+
+    @PutMapping("/api/orders/{id}/timer/complete")
+    public ResponseEntity<ApiResponse<Order>> completeTimer(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body) {
+        Order order = orderService.completeTimer(id, TenantContext.getGarageId(),
+                body.get("lineItemId"), body.get("notes"));
+        return ResponseEntity.ok(ApiResponse.ok(order));
+    }
+
+    @GetMapping("/api/orders/task-analytics")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getTaskAnalytics() {
+        Map<String, Object> analytics = orderService.getTaskAnalytics(TenantContext.getGarageId());
+        return ResponseEntity.ok(ApiResponse.ok(analytics));
+    }
+
     // ─── Payment ───
 
     @PostMapping("/api/orders/{id}/mark-payment-due")
@@ -208,7 +249,21 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.ok(GstCalculationService.getCitiesByState(state)));
     }
 
+    // ─── Order Status Token ───
+
+    @GetMapping("/api/orders/{id}/status-link")
+    public ResponseEntity<ApiResponse<String>> getStatusLink(@PathVariable String id) {
+        String token = orderService.ensureStatusToken(id, TenantContext.getGarageId());
+        return ResponseEntity.ok(ApiResponse.ok(token));
+    }
+
     // ─── Public endpoints (no auth) ───
+
+    @GetMapping("/api/public/order-status/{token}")
+    public ResponseEntity<ApiResponse<Order>> getPublicOrderStatus(@PathVariable String token) {
+        Order order = orderService.getOrderByStatusToken(token);
+        return ResponseEntity.ok(ApiResponse.ok(order));
+    }
 
     @GetMapping("/api/public/onboarding/{token}")
     public ResponseEntity<ApiResponse<Order>> getPublicOnboarding(@PathVariable String token) {

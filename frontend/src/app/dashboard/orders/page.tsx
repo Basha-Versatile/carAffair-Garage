@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { getOrders, getOrdersByStatus, getOrderCounts, Order, TabKey, tabs } from "@/lib/api-orders";
 import { Search, FileText, Loader2, Calendar, LayoutGrid, List, Plus } from "lucide-react";
+import { canView, canManage, canViewFinancial } from "@/lib/auth";
 import { DataTable, DataColumn } from "@/components/tables/DataTable";
 import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
 
@@ -156,17 +157,17 @@ export default function OrderSearchPage() {
       render: (o) => <StatusBadge status={o.status} />,
       filterValue: (o) => STATUS_STYLES[o.status]?.label || o.status || "",
     },
-    {
+    ...(canViewFinancial("ORDERS") ? [{
       key: "amount",
       header: "Amount",
       align: "right" as const,
-      render: (o) => (
+      render: (o: Order) => (
         <span className="text-sm font-bold text-[var(--surface-fg)] tabular-nums">
           ₹{(o.amount ?? 0).toLocaleString("en-IN")}
         </span>
       ),
-      sortValue: (o) => o.amount ?? 0,
-    },
+      sortValue: (o: Order) => o.amount ?? 0,
+    }] : []),
   ], []);
 
   const TABLE_CLS = "bg-[var(--surface-bg)] rounded-xl border border-[var(--border-main)] overflow-hidden";
@@ -182,13 +183,15 @@ export default function OrderSearchPage() {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push("/dashboard/create-order")}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold shadow-lg shadow-red-600/20 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Repair Order
-          </button>
+          {canManage("ORDERS") && (
+            <button
+              onClick={() => router.push("/dashboard/create-order")}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold shadow-lg shadow-red-600/20 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Job Card
+            </button>
+          )}
           <div className="flex items-center border border-[var(--border-main)] rounded-lg overflow-hidden">
             <button onClick={() => setViewMode("cards")}
               className={`p-2 transition-colors ${viewMode === "cards" ? "bg-red-600 text-white" : "text-[var(--text-mut)] hover:bg-[var(--surface-hover)]"}`}
@@ -396,9 +399,11 @@ export default function OrderSearchPage() {
                               ))}
                             </div>
                           )}
-                          <div className="pt-3 mt-3 border-t border-[var(--border-lt)]">
-                            <span className="text-sm font-bold text-[var(--surface-fg)]">₹{(order.amount ?? 0).toLocaleString("en-IN")}</span>
-                          </div>
+                          {canViewFinancial("ORDERS") && (
+                            <div className="pt-3 mt-3 border-t border-[var(--border-lt)]">
+                              <span className="text-sm font-bold text-[var(--surface-fg)]">₹{(order.amount ?? 0).toLocaleString("en-IN")}</span>
+                            </div>
+                          )}
                         </div>
                       );
                     })}

@@ -79,6 +79,7 @@ export default function LoginPage() {
         garageId: string | null;
         garageName: string;
         permissions?: string[];
+        financialModules?: string[];
         garageRoleId?: string;
         staffTitle?: string;
       }>("/api/auth/verify-otp", { phone, otp: otp.join(""), role: "garage_admin" });
@@ -91,6 +92,7 @@ export default function LoginPage() {
           garageId: data.garageId,
           garageName: data.garageName,
           permissions: data.permissions,
+          financialModules: data.financialModules,
           garageRoleId: data.garageRoleId,
           staffTitle: data.staffTitle,
         },

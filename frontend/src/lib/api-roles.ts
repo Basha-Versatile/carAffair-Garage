@@ -6,7 +6,9 @@ export interface GarageRole {
   name: string;
   description?: string;
   permissions: string[];
+  financialModules: string[];
   isActive: boolean;
+  isDefault: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,12 +17,14 @@ export interface CreateRolePayload {
   name: string;
   description?: string;
   permissions: string[];
+  financialModules: string[];
 }
 
 export interface UpdateRolePayload {
   name: string;
   description?: string;
   permissions: string[];
+  financialModules: string[];
 }
 
 export function getRoles(): Promise<GarageRole[]> {

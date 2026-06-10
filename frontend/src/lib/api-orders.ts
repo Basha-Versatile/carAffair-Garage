@@ -27,6 +27,20 @@ export interface ServiceAssignment {
   assignedAt?: string;
   completedAt?: string;
   notes?: string;
+  // Timer fields
+  workStartedAt?: string;
+  workPausedAt?: string;
+  totalPausedMs?: number;
+  totalWorkMs?: number;
+  // Work photo fields
+  beforeImageIds?: string[];
+  afterImageIds?: string[];
+}
+
+export interface TaskAnalytics {
+  staffAvgTimeMs: Record<string, number>;
+  staffTaskCount: Record<string, number>;
+  serviceAvgTimeMs: Record<string, number>;
 }
 
 export interface Order {
@@ -82,6 +96,9 @@ export interface Order {
   // Payment
   paymentToken?: string;
   paymentSentAt?: string;
+
+  // Live status
+  statusToken?: string;
 
   // Transient (request-only)
   notifyCustomer?: boolean;
@@ -323,6 +340,106 @@ export async function updateAssignmentStatus(
     notes,
   });
   return normalizeOrder(order);
+}
+
+// ── Work Timer ──
+
+export async function startTimer(orderId: string, lineItemId: string): Promise<Order> {
+  const order = await api.put<Order>(`/api/orders/${orderId}/timer/start`, { lineItemId });
+  return normalizeOrder(order);
+}
+
+export async function pauseTimer(orderId: string, lineItemId: string): Promise<Order> {
+  const order = await api.put<Order>(`/api/orders/${orderId}/timer/pause`, { lineItemId });
+  return normalizeOrder(order);
+}
+
+export async function resumeTimer(orderId: string, lineItemId: string): Promise<Order> {
+  const order = await api.put<Order>(`/api/orders/${orderId}/timer/resume`, { lineItemId });
+  return normalizeOrder(order);
+}
+
+export async function completeTimer(orderId: string, lineItemId: string, notes?: string): Promise<Order> {
+  const order = await api.put<Order>(`/api/orders/${orderId}/timer/complete`, { lineItemId, notes });
+  return normalizeOrder(order);
+}
+
+export async function getTaskAnalytics(): Promise<TaskAnalytics> {
+  return api.get<TaskAnalytics>("/api/orders/task-analytics");
+}
+
+// ── Task Photos ──
+
+export async function uploadTaskBeforeImages(
+  orderId: string,
+  lineItemId: string,
+  files: File[]
+): Promise<string[]> {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("files", file));
+  formData.append("lineItemId", lineItemId);
+
+  const token = getAccessToken();
+  const response = await fetch(
+    `${API_BASE_URL}/api/orders/${orderId}/task-images/before?lineItemId=${encodeURIComponent(lineItemId)}`,
+    {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    }
+  );
+
+  if (!response.ok) throw new Error("Failed to upload before images");
+  const json = await response.json();
+  return json.data;
+}
+
+export async function uploadTaskAfterImages(
+  orderId: string,
+  lineItemId: string,
+  files: File[]
+): Promise<string[]> {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("files", file));
+
+  const token = getAccessToken();
+  const response = await fetch(
+    `${API_BASE_URL}/api/orders/${orderId}/task-images/after?lineItemId=${encodeURIComponent(lineItemId)}`,
+    {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    }
+  );
+
+  if (!response.ok) throw new Error("Failed to upload after images");
+  const json = await response.json();
+  return json.data;
+}
+
+export async function deleteTaskImage(
+  orderId: string,
+  fileId: string
+): Promise<void> {
+  await api.delete(`/api/orders/${orderId}/task-images/${fileId}`);
+}
+
+// ── Order Status (public) ──
+
+export async function getStatusLink(orderId: string): Promise<string> {
+  return api.get<string>(`/api/orders/${orderId}/status-link`);
+}
+
+export async function getPublicOrderStatus(token: string): Promise<Order> {
+  const url = `${API_BASE_URL}/api/public/order-status/${token}`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Order status not found");
+  const json = await response.json();
+  return json.data;
+}
+
+export function getPublicOrderStatusImageUrl(token: string, fileId: string): string {
+  return `${API_BASE_URL}/api/public/order-status/${token}/images/${fileId}`;
 }
 
 // ── Payment ──

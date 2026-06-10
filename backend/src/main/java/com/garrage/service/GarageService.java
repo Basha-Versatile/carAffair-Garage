@@ -37,6 +37,7 @@ public class GarageService {
     private final GarageRegistrationRepository garageRegistrationRepository;
     private final BrandRequestRepository brandRequestRepository;
     private final EmailService emailService;
+    private final GarageRoleService garageRoleService;
 
     /**
      * Creates a new garage and its admin user.
@@ -103,6 +104,9 @@ public class GarageService {
             emailService.sendGarageWelcomeEmail(
                     request.getEmail(), garage.getName(), request.getOwnerName(), request.getPhone());
         }
+
+        // 4. Seed default roles for this garage
+        garageRoleService.seedDefaultRoles(garage.getId());
 
         log.info("Garage created: {} (id: {}), admin user: {}", garage.getName(), garage.getId(), adminUser.getId());
 

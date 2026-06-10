@@ -8,6 +8,7 @@ com\garrage\model\PartCategory.class
 com\garrage\model\PartPurchase.class
 com\garrage\model\ServiceFeedback.class
 com\garrage\model\GarageRole.class
+com\garrage\controller\PerformanceController.class
 com\garrage\repository\PartCategoryRepository.class
 com\garrage\dto\request\CreateOrderRequest.class
 com\garrage\model\ActivityLog$ActivityLogBuilder.class
@@ -16,6 +17,7 @@ com\garrage\repository\UserRepository.class
 com\garrage\dto\request\AssignServiceRequest.class
 com\garrage\controller\PurchaseOrderController.class
 com\garrage\service\CustomerService.class
+com\garrage\model\LeaveBalance.class
 com\garrage\dto\request\VerifyOtpRequest.class
 com\garrage\repository\CounterSaleRepository.class
 com\garrage\repository\VehicleRepository.class
@@ -75,6 +77,7 @@ com\garrage\dto\request\UpdateRoleRequest.class
 com\garrage\repository\StockHistoryRepository.class
 com\garrage\controller\ImageController.class
 com\garrage\controller\GarageController.class
+com\garrage\model\LeaveBalance$LeaveBalanceBuilder.class
 com\garrage\model\Invoice$InvoiceItem.class
 com\garrage\model\ServiceFeedback$ServiceFeedbackBuilder.class
 com\garrage\model\User$UserBuilder.class
@@ -90,6 +93,7 @@ com\garrage\model\CounterSale$CSService.class
 com\garrage\model\StockInRecord$StockInRecordBuilder.class
 com\garrage\dto\request\CreateCustomerRequest.class
 com\garrage\repository\ServicePackageRepository.class
+com\garrage\controller\LeaveController.class
 com\garrage\service\ExpenseService.class
 com\garrage\dto\request\RefreshTokenRequest.class
 com\garrage\model\PurchaseOrder$POItem$POItemBuilder.class
@@ -111,6 +115,7 @@ com\garrage\model\User.class
 com\garrage\service\InvoiceService.class
 com\garrage\dto\response\StaffResponse.class
 com\garrage\model\ServiceEntry.class
+com\garrage\repository\LeaveBalanceRepository.class
 com\garrage\service\FeedbackService.class
 com\garrage\model\Invoice$InvoiceBuilder.class
 com\garrage\repository\InvoiceRepository.class
@@ -164,6 +169,7 @@ com\garrage\model\ExpenseLabel$ExpenseLabelBuilder.class
 com\garrage\model\Notification$NotificationBuilder.class
 com\garrage\model\PartCategory$PartCategoryBuilder.class
 com\garrage\controller\GarageStaffController.class
+com\garrage\model\LeaveRequest$LeaveRequestBuilder.class
 com\garrage\model\Garage.class
 com\garrage\model\ServicePackage$PackageServiceItem$PackageServiceItemBuilder.class
 com\garrage\service\BrandRequestService.class
@@ -171,6 +177,7 @@ com\garrage\model\Vendor.class
 com\garrage\dto\request\CreateStaffRequest.class
 com\garrage\model\Vehicle.class
 com\garrage\model\ServiceReminder$ServiceReminderBuilder.class
+com\garrage\model\LeaveRequest.class
 com\garrage\dto\request\CreateGarageRequest.class
 com\garrage\model\Notification.class
 com\garrage\model\ExpenseLabel.class
@@ -182,6 +189,7 @@ com\garrage\dto\request\UpdateOrderRequest.class
 com\garrage\dto\response\RcLookupResponse.class
 com\garrage\dto\request\SaveEstimateRequest.class
 com\garrage\controller\ServicePackageController.class
+com\garrage\controller\AttendanceController.class
 com\garrage\repository\ExpenseLabelRepository.class
 com\garrage\model\Booking.class
 com\garrage\model\Garage$GarageBuilder.class
@@ -206,14 +214,17 @@ com\garrage\service\PartCategoryService.class
 com\garrage\dto\request\UpdateAssignmentRequest.class
 com\garrage\model\VehicleModel$VehicleModelBuilder.class
 com\garrage\service\SseEmitterService.class
+com\garrage\model\Attendance$AttendanceBuilder.class
 com\garrage\controller\CounterSaleController.class
 com\garrage\repository\GarageRegistrationRepository.class
 com\garrage\model\Invoice$InvoiceItem$InvoiceItemBuilder.class
 com\garrage\repository\FeedbackRepository.class
 com\garrage\dto\request\CreatePartRequest$ApplicableBrandDto.class
 com\garrage\repository\PartPurchaseRepository.class
+com\garrage\repository\AttendanceRepository.class
 com\garrage\config\JwtProperties.class
 com\garrage\model\ServiceEntry$ServiceEntryBuilder.class
+com\garrage\repository\LeaveRequestRepository.class
 com\garrage\model\Order$OrderLineItem.class
 com\garrage\model\ServiceReminder.class
 com\garrage\repository\BrandRequestRepository.class
@@ -227,9 +238,11 @@ com\garrage\config\DataSeeder.class
 com\garrage\repository\ActivityLogRepository.class
 com\garrage\service\StockInService.class
 com\garrage\repository\ExpenseRepository.class
+com\garrage\service\AttendanceService.class
 com\garrage\service\AuthService.class
 com\garrage\GarrageApplication.class
 com\garrage\model\Expense.class
+com\garrage\service\LeaveService.class
 com\garrage\dto\request\InspectionRequest.class
 com\garrage\controller\BrandRequestController.class
 com\garrage\service\ReminderService.class
@@ -245,6 +258,7 @@ com\garrage\service\NotificationDeliveryService.class
 com\garrage\repository\VehicleAnalyticsRepository.class
 com\garrage\controller\BookingController.class
 com\garrage\model\CounterSale$CSItem$CSItemBuilder.class
+com\garrage\model\Attendance.class
 com\garrage\model\ServiceEntry$ApplicableBrand.class
 com\garrage\exception\GlobalExceptionHandler.class
 com\garrage\model\CounterSale$CounterSaleBuilder.class

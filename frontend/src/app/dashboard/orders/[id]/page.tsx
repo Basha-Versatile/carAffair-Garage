@@ -18,7 +18,7 @@ import { getParts, addPart, type Part } from "@/lib/api-inventory";
 import { getManufacturers, createManufacturer, type Manufacturer } from "@/lib/api-manufacturers";
 import { getPartCategories, createPartCategory, type PartCategoryItem } from "@/lib/api-part-categories";
 import { getBrands, getModelsByBrand, getCustomerById, type VehicleBrand, type VehicleModel, type Customer } from "@/lib/api-vehicles";
-import { isGarageOwner, getAccessToken, getUser } from "@/lib/auth";
+import { isGarageOwner, isGarageStaff, getAccessToken, getUser, canView, canManage, canViewFinancial } from "@/lib/auth";
 import {
   getDepartments,
   getServiceDepartment,
@@ -273,6 +273,7 @@ export default function OrderDetailPage() {
   const [assigning, setAssigning] = useState<string | null>(null);
   const [staffDropdownOpen, setStaffDropdownOpen] = useState<string | null>(null);
   const [assignConfirm, setAssignConfirm] = useState<{ lineItemId: string; serviceName: string; staff: StaffMember } | null>(null);
+  const [assignRoleFilter, setAssignRoleFilter] = useState<string>("all");
 
   // Customer
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -684,9 +685,10 @@ export default function OrderDetailPage() {
   }
 
   const statusCfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.open;
-  const canEdit = order.status === "open" || order.status === "cancelled";
+  const manage = canManage("ORDERS");
+  const canEdit = (order.status === "open" || order.status === "cancelled") && manage;
   const hasItems = serviceRows.length > 0 || partRows.length > 0;
-  const canSend = hasItems && (order.status === "open" || order.status === "cancelled");
+  const canSend = hasItems && canEdit;
   const isOwner = isGarageOwner();
 
   return (
@@ -1031,13 +1033,15 @@ export default function OrderDetailPage() {
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-foreground">{s.description}</p>
                         <div className="flex items-center gap-3">
-                          <label className="flex items-center gap-1.5 cursor-pointer">
-                            <span className="text-[11px] text-muted">GST Inclusive</span>
-                            <button onClick={() => canEdit && updateServiceRow(s.key, "gstInclusive", !s.gstInclusive)}
-                              className={`relative w-8 h-4.5 rounded-full transition-colors ${s.gstInclusive ? "bg-primary" : "bg-edge"}`}>
-                              <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${s.gstInclusive ? "left-[calc(100%-1rem)]" : "left-0.5"}`} />
-                            </button>
-                          </label>
+                          {canViewFinancial("ORDERS") && (
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                              <span className="text-[11px] text-muted">GST Inclusive</span>
+                              <button onClick={() => canEdit && updateServiceRow(s.key, "gstInclusive", !s.gstInclusive)}
+                                className={`relative w-8 h-4.5 rounded-full transition-colors ${s.gstInclusive ? "bg-primary" : "bg-edge"}`}>
+                                <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${s.gstInclusive ? "left-[calc(100%-1rem)]" : "left-0.5"}`} />
+                              </button>
+                            </label>
+                          )}
                           {canEdit && (
                             <button onClick={() => setServiceRows(prev => prev.filter(x => x.key !== s.key))} className="p-1 text-muted hover:text-bad hover:bg-bad-light rounded transition-colors">
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1045,34 +1049,40 @@ export default function OrderDetailPage() {
                           )}
                         </div>
                       </div>
-                      <div className="grid grid-cols-7 gap-2 items-end">
-                        <div className="relative">
-                          <label className={labelCls}>GST %</label>
-                          <button onClick={() => canEdit && setGstDropdownKey(gstDropdownKey === s.key ? null : s.key)}
-                            className="w-full flex items-center justify-between px-2 py-1.5 border border-edge rounded text-sm bg-background">
-                            <span>{s.gstRate}%</span><ChevronDown className="w-3 h-3 text-muted" />
-                          </button>
-                          {gstDropdownKey === s.key && canEdit && (
-                            <div className="absolute z-30 top-full left-0 mt-1 min-w-[180px] bg-background border border-edge rounded-md shadow-lg max-h-48 overflow-y-auto">
-                              {serviceTaxProfiles.map(tp => (
-                                <button key={tp.id} onClick={() => { updateServiceRow(s.key, "gstRate", tp.taxPercent); if (tp.sacNumber) updateServiceRow(s.key, "hsnSac", tp.sacNumber); setGstDropdownKey(null); }}
-                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-hover ${s.gstRate === tp.taxPercent ? "bg-primary-light text-primary" : "text-secondary"}`}>
-                                  {tp.name} ({tp.taxPercent}%)
-                                </button>
-                              ))}
-                              <div className="border-t border-edge">
-                                <button onClick={() => { setGstDropdownKey(null); setTaxForm({ name: "", taxPercent: "", sacNumber: "", taxType: "service" }); setCreateTaxOpen(true); }}
-                                  className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-primary-light">+ Create GST Profile</button>
+                      <div className={`grid gap-2 items-end ${canViewFinancial("ORDERS") ? "grid-cols-7" : "grid-cols-3"}`}>
+                        {canViewFinancial("ORDERS") && (
+                          <div className="relative">
+                            <label className={labelCls}>GST %</label>
+                            <button onClick={() => canEdit && setGstDropdownKey(gstDropdownKey === s.key ? null : s.key)}
+                              className="w-full flex items-center justify-between px-2 py-1.5 border border-edge rounded text-sm bg-background">
+                              <span>{s.gstRate}%</span><ChevronDown className="w-3 h-3 text-muted" />
+                            </button>
+                            {gstDropdownKey === s.key && canEdit && (
+                              <div className="absolute z-30 top-full left-0 mt-1 min-w-[180px] bg-background border border-edge rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                {serviceTaxProfiles.map(tp => (
+                                  <button key={tp.id} onClick={() => { updateServiceRow(s.key, "gstRate", tp.taxPercent); if (tp.sacNumber) updateServiceRow(s.key, "hsnSac", tp.sacNumber); setGstDropdownKey(null); }}
+                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-hover ${s.gstRate === tp.taxPercent ? "bg-primary-light text-primary" : "text-secondary"}`}>
+                                    {tp.name} ({tp.taxPercent}%)
+                                  </button>
+                                ))}
+                                <div className="border-t border-edge">
+                                  <button onClick={() => { setGstDropdownKey(null); setTaxForm({ name: "", taxPercent: "", sacNumber: "", taxType: "service" }); setCreateTaxOpen(true); }}
+                                    className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-primary-light">+ Create GST Profile</button>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
+                            )}
+                          </div>
+                        )}
                         <div><label className={labelCls}>SAC</label><input type="text" value={s.hsnSac} onChange={e => updateServiceRow(s.key, "hsnSac", e.target.value)} disabled={!canEdit} className={smallInputCls} /></div>
                         <div><label className={labelCls}>Qty</label><input type="number" min={1} value={s.qty} onChange={e => updateServiceRow(s.key, "qty", parseInt(e.target.value) || 1)} disabled={!canEdit} className={smallInputCls} /></div>
-                        <div><label className={labelCls}>Rate</label><input type="number" min={0} value={s.rate || ""} onChange={e => updateServiceRow(s.key, "rate", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
-                        <div><label className={labelCls}>Disc %</label><input type="number" min={0} max={100} value={s.discount || ""} onChange={e => updateServiceRow(s.key, "discount", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
-                        <div><label className={labelCls}>Amount</label><div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{c.amount.toLocaleString("en-IN")}</div></div>
-                        <div><label className={labelCls}>GST Amt</label><div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{c.gstAmount.toLocaleString("en-IN")}</div></div>
+                        {canViewFinancial("ORDERS") && (
+                          <>
+                            <div><label className={labelCls}>Rate</label><input type="number" min={0} value={s.rate || ""} onChange={e => updateServiceRow(s.key, "rate", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
+                            <div><label className={labelCls}>Disc %</label><input type="number" min={0} max={100} value={s.discount || ""} onChange={e => updateServiceRow(s.key, "discount", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
+                            <div><label className={labelCls}>Amount</label><div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{c.amount.toLocaleString("en-IN")}</div></div>
+                            <div><label className={labelCls}>GST Amt</label><div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{c.gstAmount.toLocaleString("en-IN")}</div></div>
+                          </>
+                        )}
                       </div>
 
                     </div>
@@ -1107,13 +1117,15 @@ export default function OrderDetailPage() {
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-foreground">{p.description}</p>
                         <div className="flex items-center gap-3">
-                          <label className="flex items-center gap-1.5 cursor-pointer">
-                            <span className="text-[11px] text-muted">GST Inclusive</span>
-                            <button onClick={() => canEdit && updatePartRow(p.key, "gstInclusive", !p.gstInclusive)}
-                              className={`relative w-8 h-4.5 rounded-full transition-colors ${p.gstInclusive ? "bg-primary" : "bg-edge"}`}>
-                              <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${p.gstInclusive ? "left-[calc(100%-1rem)]" : "left-0.5"}`} />
-                            </button>
-                          </label>
+                          {canViewFinancial("ORDERS") && (
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                              <span className="text-[11px] text-muted">GST Inclusive</span>
+                              <button onClick={() => canEdit && updatePartRow(p.key, "gstInclusive", !p.gstInclusive)}
+                                className={`relative w-8 h-4.5 rounded-full transition-colors ${p.gstInclusive ? "bg-primary" : "bg-edge"}`}>
+                                <span className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-transform ${p.gstInclusive ? "left-[calc(100%-1rem)]" : "left-0.5"}`} />
+                              </button>
+                            </label>
+                          )}
                           {canEdit && (
                             <button onClick={() => setPartRows(prev => prev.filter(x => x.key !== p.key))} className="p-1 text-muted hover:text-bad hover:bg-bad-light rounded transition-colors">
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1121,34 +1133,40 @@ export default function OrderDetailPage() {
                           )}
                         </div>
                       </div>
-                      <div className="grid grid-cols-7 gap-2 items-end">
-                        <div className="relative">
-                          <label className={labelCls}>GST %</label>
-                          <button onClick={() => canEdit && setPartGstDropdownKey(partGstDropdownKey === p.key ? null : p.key)}
-                            className="w-full flex items-center justify-between px-2 py-1.5 border border-edge rounded text-sm bg-background">
-                            <span>{p.gstRate}%</span><ChevronDown className="w-3 h-3 text-muted" />
-                          </button>
-                          {partGstDropdownKey === p.key && canEdit && (
-                            <div className="absolute z-30 top-full left-0 mt-1 min-w-[180px] bg-background border border-edge rounded-md shadow-lg max-h-48 overflow-y-auto">
-                              {goodsTaxProfiles.map(tp => (
-                                <button key={tp.id} onClick={() => { updatePartRow(p.key, "gstRate", tp.taxPercent); if (tp.sacNumber) updatePartRow(p.key, "hsnSac", tp.sacNumber); setPartGstDropdownKey(null); }}
-                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-hover ${p.gstRate === tp.taxPercent ? "bg-primary-light text-primary" : "text-secondary"}`}>
-                                  {tp.name} ({tp.taxPercent}%)
-                                </button>
-                              ))}
-                              <div className="border-t border-edge">
-                                <button onClick={() => { setPartGstDropdownKey(null); setTaxForm({ name: "", taxPercent: "", sacNumber: "", taxType: "goods" }); setCreateTaxOpen(true); }}
-                                  className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-primary-light">+ Create GST Profile</button>
+                      <div className={`grid gap-2 items-end ${canViewFinancial("ORDERS") ? "grid-cols-7" : "grid-cols-3"}`}>
+                        {canViewFinancial("ORDERS") && (
+                          <div className="relative">
+                            <label className={labelCls}>GST %</label>
+                            <button onClick={() => canEdit && setPartGstDropdownKey(partGstDropdownKey === p.key ? null : p.key)}
+                              className="w-full flex items-center justify-between px-2 py-1.5 border border-edge rounded text-sm bg-background">
+                              <span>{p.gstRate}%</span><ChevronDown className="w-3 h-3 text-muted" />
+                            </button>
+                            {partGstDropdownKey === p.key && canEdit && (
+                              <div className="absolute z-30 top-full left-0 mt-1 min-w-[180px] bg-background border border-edge rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                {goodsTaxProfiles.map(tp => (
+                                  <button key={tp.id} onClick={() => { updatePartRow(p.key, "gstRate", tp.taxPercent); if (tp.sacNumber) updatePartRow(p.key, "hsnSac", tp.sacNumber); setPartGstDropdownKey(null); }}
+                                    className={`w-full text-left px-3 py-2 text-sm hover:bg-hover ${p.gstRate === tp.taxPercent ? "bg-primary-light text-primary" : "text-secondary"}`}>
+                                    {tp.name} ({tp.taxPercent}%)
+                                  </button>
+                                ))}
+                                <div className="border-t border-edge">
+                                  <button onClick={() => { setPartGstDropdownKey(null); setTaxForm({ name: "", taxPercent: "", sacNumber: "", taxType: "goods" }); setCreateTaxOpen(true); }}
+                                    className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-primary-light">+ Create GST Profile</button>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
+                            )}
+                          </div>
+                        )}
                         <div><label className={labelCls}>HSN</label><input type="text" value={p.hsnSac} onChange={e => updatePartRow(p.key, "hsnSac", e.target.value)} disabled={!canEdit} className={smallInputCls} /></div>
                         <div><label className={labelCls}>Qty</label><input type="number" min={1} value={p.qty} onChange={e => updatePartRow(p.key, "qty", parseInt(e.target.value) || 1)} disabled={!canEdit} className={smallInputCls} /></div>
-                        <div><label className={labelCls}>Rate</label><input type="number" min={0} value={p.rate || ""} onChange={e => updatePartRow(p.key, "rate", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
-                        <div><label className={labelCls}>Disc %</label><input type="number" min={0} max={100} value={p.discount || ""} onChange={e => updatePartRow(p.key, "discount", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
-                        <div><label className={labelCls}>Amount</label><div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{c.amount.toLocaleString("en-IN")}</div></div>
-                        <div><label className={labelCls}>GST Amt</label><div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{c.gstAmount.toLocaleString("en-IN")}</div></div>
+                        {canViewFinancial("ORDERS") && (
+                          <>
+                            <div><label className={labelCls}>Rate</label><input type="number" min={0} value={p.rate || ""} onChange={e => updatePartRow(p.key, "rate", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
+                            <div><label className={labelCls}>Disc %</label><input type="number" min={0} max={100} value={p.discount || ""} onChange={e => updatePartRow(p.key, "discount", parseFloat(e.target.value) || 0)} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
+                            <div><label className={labelCls}>Amount</label><div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{c.amount.toLocaleString("en-IN")}</div></div>
+                            <div><label className={labelCls}>GST Amt</label><div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{c.gstAmount.toLocaleString("en-IN")}</div></div>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
@@ -1225,9 +1243,11 @@ export default function OrderDetailPage() {
                           </h3>
                           <span className="text-xs bg-accent-light text-accent px-1.5 py-0.5 rounded-full">{group.items.length}</span>
                         </div>
-                        <span className="text-sm font-semibold text-foreground tabular-nums">
-                          Subtotal: ₹{(deptSubtotal + (isProforma ? 0 : deptGst)).toLocaleString("en-IN")}
-                        </span>
+                        {canViewFinancial("ORDERS") && (
+                          <span className="text-sm font-semibold text-foreground tabular-nums">
+                            Subtotal: ₹{(deptSubtotal + (isProforma ? 0 : deptGst)).toLocaleString("en-IN")}
+                          </span>
+                        )}
                       </div>
 
                       <div className="p-4 space-y-3">
@@ -1267,12 +1287,16 @@ export default function OrderDetailPage() {
                                   )}
                                 </div>
                               </div>
-                              <div className="grid grid-cols-5 gap-2 items-end">
+                              <div className={`grid gap-2 items-end ${canViewFinancial("ORDERS") ? "grid-cols-5" : "grid-cols-2"}`}>
                                 <div><label className={labelCls}>{isService ? "SAC" : "HSN"}</label><input type="text" value={item.hsnSac} onChange={e => { if (isService) updateServiceRow(item.key, "hsnSac", e.target.value); else updatePartRow(item.key, "hsnSac", e.target.value); }} disabled={!canEdit} className={smallInputCls} /></div>
                                 <div><label className={labelCls}>Qty</label><input type="number" min={1} value={item.qty} onChange={e => { if (isService) updateServiceRow(item.key, "qty", parseInt(e.target.value) || 1); else updatePartRow(item.key, "qty", parseInt(e.target.value) || 1); }} disabled={!canEdit} className={smallInputCls} /></div>
-                                <div><label className={labelCls}>Rate</label><input type="number" min={0} value={item.rate || ""} onChange={e => { if (isService) updateServiceRow(item.key, "rate", parseFloat(e.target.value) || 0); else updatePartRow(item.key, "rate", parseFloat(e.target.value) || 0); }} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
-                                <div><label className={labelCls}>Amount</label><div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{item.calc.amount.toLocaleString("en-IN")}</div></div>
-                                <div><label className={labelCls}>GST</label><div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{item.calc.gstAmount.toLocaleString("en-IN")}</div></div>
+                                {canViewFinancial("ORDERS") && (
+                                  <>
+                                    <div><label className={labelCls}>Rate</label><input type="number" min={0} value={item.rate || ""} onChange={e => { if (isService) updateServiceRow(item.key, "rate", parseFloat(e.target.value) || 0); else updatePartRow(item.key, "rate", parseFloat(e.target.value) || 0); }} disabled={!canEdit} className={smallInputCls} placeholder="0" /></div>
+                                    <div><label className={labelCls}>Amount</label><div className="px-2 py-1.5 text-sm text-right text-foreground font-medium bg-dim rounded">{item.calc.amount.toLocaleString("en-IN")}</div></div>
+                                    <div><label className={labelCls}>GST</label><div className="px-2 py-1.5 text-sm text-right text-muted bg-dim rounded">{item.calc.gstAmount.toLocaleString("en-IN")}</div></div>
+                                  </>
+                                )}
                               </div>
                             </div>
                           );
@@ -1331,39 +1355,127 @@ export default function OrderDetailPage() {
                               )}
                               {existing?.status === "completed" ? <Check className="w-3 h-3 shrink-0" /> : <ChevronDown className="w-3 h-3 shrink-0" />}
                             </button>
-                            {isDropdownOpen && staffMembers.length > 0 && (
-                              <div className="absolute right-0 top-full mt-1 z-30 bg-background border border-edge rounded-lg shadow-lg py-1 min-w-[220px] max-h-48 overflow-y-auto">
-                                {staffMembers.filter(m => m.isActive).map((staff) => (
-                                  <button key={staff.id}
-                                    onClick={() => { setStaffDropdownOpen(null); setAssignConfirm({ lineItemId: s.key, serviceName: s.description, staff }); }}
-                                    className={`w-full text-left px-3 py-2 text-xs hover:bg-hover transition-colors flex items-center justify-between ${
-                                      existing?.assignedUserId === staff.id ? "bg-primary-light text-primary font-medium" : "text-foreground"
-                                    }`}>
-                                    <div>
-                                      <p className="font-medium">{staff.name}</p>
-                                      {staff.staffTitle && <p className="text-muted mt-0.5">{staff.staffTitle}</p>}
+                            {isDropdownOpen && staffMembers.length > 0 && (() => {
+                              const activeStaff = staffMembers.filter(m => m.isActive);
+                              const uniqueRoles = [...new Set(activeStaff.filter(m => m.roleName).map(m => m.roleName!))];
+                              const filteredStaff = assignRoleFilter === "all" ? activeStaff : activeStaff.filter(m => m.roleName === assignRoleFilter);
+                              return (
+                                <div className="absolute right-0 top-full mt-1 z-30 bg-background border border-edge rounded-lg shadow-lg min-w-[240px] max-h-64 flex flex-col">
+                                  {/* Role filter chips */}
+                                  {uniqueRoles.length > 1 && (
+                                    <div className="flex flex-wrap gap-1 px-2.5 pt-2 pb-1.5 border-b border-edge">
+                                      <button onClick={() => setAssignRoleFilter("all")}
+                                        className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${assignRoleFilter === "all" ? "bg-primary text-white" : "bg-hover text-muted hover:text-foreground"}`}>
+                                        All
+                                      </button>
+                                      {uniqueRoles.map(role => (
+                                        <button key={role} onClick={() => setAssignRoleFilter(role)}
+                                          className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${assignRoleFilter === role ? "bg-primary text-white" : "bg-hover text-muted hover:text-foreground"}`}>
+                                          {role}
+                                        </button>
+                                      ))}
                                     </div>
-                                    {existing?.assignedUserId === staff.id && <Check className="w-3.5 h-3.5 text-primary" />}
-                                  </button>
-                                ))}
-                                {staffMembers.filter(m => m.isActive).length === 0 && (
-                                  <p className="px-3 py-2 text-xs text-muted">No staff members added yet</p>
-                                )}
-                              </div>
-                            )}
+                                  )}
+                                  {/* Staff list */}
+                                  <div className="py-1 overflow-y-auto">
+                                    {filteredStaff.map((staff) => (
+                                      <button key={staff.id}
+                                        onClick={() => { setStaffDropdownOpen(null); setAssignRoleFilter("all"); setAssignConfirm({ lineItemId: s.key, serviceName: s.description, staff }); }}
+                                        className={`w-full text-left px-3 py-2 text-xs hover:bg-hover transition-colors flex items-center justify-between ${
+                                          existing?.assignedUserId === staff.id ? "bg-primary-light text-primary font-medium" : "text-foreground"
+                                        }`}>
+                                        <div>
+                                          <p className="font-medium">{staff.name}</p>
+                                          {staff.roleName && <p className="text-muted mt-0.5">{staff.roleName}</p>}
+                                        </div>
+                                        {existing?.assignedUserId === staff.id && <Check className="w-3.5 h-3.5 text-primary" />}
+                                      </button>
+                                    ))}
+                                    {filteredStaff.length === 0 && (
+                                      <p className="px-3 py-2 text-xs text-muted">No staff members found</p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                           {existing && (
-                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${
-                              existing.status === "completed" ? "bg-ok/10 text-ok" :
-                              existing.status === "in_progress" ? "bg-warn/10 text-warn" :
-                              "bg-dim text-muted"
-                            }`}>
-                              {existing.status === "in_progress" ? "In Progress" :
-                               existing.status === "completed" ? "Completed" : "Pending"}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              {/* Timer display */}
+                              {existing.workStartedAt && (() => {
+                                const isPaused = !!existing.workPausedAt;
+                                const isCompleted = existing.status === "completed";
+                                let elapsedMs = 0;
+                                if (existing.totalWorkMs != null && existing.totalWorkMs > 0) {
+                                  elapsedMs = existing.totalWorkMs;
+                                } else if (existing.workStartedAt) {
+                                  const started = new Date(existing.workStartedAt).getTime();
+                                  const paused = existing.totalPausedMs || 0;
+                                  if (isPaused && existing.workPausedAt) {
+                                    elapsedMs = new Date(existing.workPausedAt).getTime() - started - paused;
+                                  } else {
+                                    elapsedMs = Date.now() - started - paused;
+                                  }
+                                }
+                                const totalSec = Math.max(0, Math.floor(elapsedMs / 1000));
+                                const h = Math.floor(totalSec / 3600);
+                                const m = Math.floor((totalSec % 3600) / 60);
+                                const s = totalSec % 60;
+                                const timeStr = `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+                                return (
+                                  <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded ${
+                                    isCompleted ? "bg-ok/10 text-ok" :
+                                    isPaused ? "bg-dim text-muted" :
+                                    "bg-warn/10 text-warn"
+                                  }`}>
+                                    {timeStr}
+                                  </span>
+                                );
+                              })()}
+                              <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${
+                                existing.status === "completed" ? "bg-ok/10 text-ok" :
+                                existing.workPausedAt ? "bg-dim text-muted" :
+                                existing.status === "in_progress" ? "bg-warn/10 text-warn" :
+                                "bg-dim text-muted"
+                              }`}>
+                                {existing.workPausedAt ? "Paused" :
+                                 existing.status === "in_progress" ? "In Progress" :
+                                 existing.status === "completed" ? "Completed" : "Pending"}
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>
+                      {existing && ((existing.beforeImageIds?.length || 0) > 0 || (existing.afterImageIds?.length || 0) > 0) && (
+                        <div className="mt-2 pt-2 border-t border-edge-light space-y-2">
+                          {existing.beforeImageIds && existing.beforeImageIds.length > 0 && (
+                            <div>
+                              <p className="text-[11px] font-medium text-muted mb-1">Before</p>
+                              <div className="flex gap-1.5 flex-wrap">
+                                {existing.beforeImageIds.map((imgId) => (
+                                  <a key={imgId} href={getImageUrl(imgId)} target="_blank" rel="noopener noreferrer"
+                                    className="w-14 h-14 rounded-lg overflow-hidden border border-edge hover:border-primary transition-colors block">
+                                    <img src={getImageUrl(imgId)} alt="Before" className="w-full h-full object-cover" />
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {existing.afterImageIds && existing.afterImageIds.length > 0 && (
+                            <div>
+                              <p className="text-[11px] font-medium text-muted mb-1">After</p>
+                              <div className="flex gap-1.5 flex-wrap">
+                                {existing.afterImageIds.map((imgId) => (
+                                  <a key={imgId} href={getImageUrl(imgId)} target="_blank" rel="noopener noreferrer"
+                                    className="w-14 h-14 rounded-lg overflow-hidden border border-edge hover:border-primary transition-colors block">
+                                    <img src={getImageUrl(imgId)} alt="After" className="w-full h-full object-cover" />
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1371,20 +1483,78 @@ export default function OrderDetailPage() {
             </div>
           )}
 
+          {/* ─── Work Photos (for completed / payment_due orders) ─── */}
+          {(order.status === "payment_due" || order.status === "completed") && (() => {
+            const assignments = (order.serviceAssignments || []).filter(
+              a => (a.beforeImageIds?.length || 0) > 0 || (a.afterImageIds?.length || 0) > 0
+            );
+            if (assignments.length === 0) return null;
+            return (
+              <div className="bg-background rounded-lg border border-edge">
+                <div className="flex items-center justify-between px-5 py-3 bg-dim border-b border-edge rounded-t-lg">
+                  <div className="flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-primary" />
+                    <h3 className="text-sm font-semibold text-secondary">Work Photos</h3>
+                  </div>
+                </div>
+                <div className="p-4 space-y-3">
+                  {assignments.map((a) => {
+                    const row = serviceRows.find(r => r.key === a.lineItemId);
+                    return (
+                      <div key={a.lineItemId} className="border border-edge-light rounded-lg p-3 space-y-2">
+                        <p className="text-sm font-medium text-foreground">{row?.description || a.lineItemId}</p>
+                        {a.beforeImageIds && a.beforeImageIds.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-medium text-muted mb-1">Before</p>
+                            <div className="flex gap-1.5 flex-wrap">
+                              {a.beforeImageIds.map((imgId) => (
+                                <a key={imgId} href={getImageUrl(imgId)} target="_blank" rel="noopener noreferrer"
+                                  className="w-14 h-14 rounded-lg overflow-hidden border border-edge hover:border-primary transition-colors block">
+                                  <img src={getImageUrl(imgId)} alt="Before" className="w-full h-full object-cover" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {a.afterImageIds && a.afterImageIds.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-medium text-muted mb-1">After</p>
+                            <div className="flex gap-1.5 flex-wrap">
+                              {a.afterImageIds.map((imgId) => (
+                                <a key={imgId} href={getImageUrl(imgId)} target="_blank" rel="noopener noreferrer"
+                                  className="w-14 h-14 rounded-lg overflow-hidden border border-edge hover:border-primary transition-colors block">
+                                  <img src={getImageUrl(imgId)} alt="After" className="w-full h-full object-cover" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* ─── Summary + Actions ─── */}
           {hasItems && (
             <div className="bg-background rounded-lg border border-edge p-5">
-              <h3 className="text-sm font-semibold text-secondary mb-3">Summary</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between text-secondary"><span>Services Subtotal</span><span>{serviceSubtotal.toLocaleString("en-IN")}</span></div>
-                {!isProforma && <div className="flex justify-between text-secondary"><span>Services GST</span><span>{serviceGstTotal.toLocaleString("en-IN")}</span></div>}
-                <div className="flex justify-between text-secondary"><span>Parts Subtotal</span><span>{partSubtotal.toLocaleString("en-IN")}</span></div>
-                {!isProforma && <div className="flex justify-between text-secondary"><span>Parts GST</span><span>{partGstTotal.toLocaleString("en-IN")}</span></div>}
-                <div className="flex justify-between text-foreground font-bold text-base border-t border-edge pt-2">
-                  <span className="flex items-center gap-1"><IndianRupee className="w-4 h-4" /> Grand Total</span>
-                  <span>{grandTotal.toLocaleString("en-IN")}</span>
-                </div>
-              </div>
+              {canViewFinancial("ORDERS") && (
+                <>
+                  <h3 className="text-sm font-semibold text-secondary mb-3">Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between text-secondary"><span>Services Subtotal</span><span>{serviceSubtotal.toLocaleString("en-IN")}</span></div>
+                    {!isProforma && <div className="flex justify-between text-secondary"><span>Services GST</span><span>{serviceGstTotal.toLocaleString("en-IN")}</span></div>}
+                    <div className="flex justify-between text-secondary"><span>Parts Subtotal</span><span>{partSubtotal.toLocaleString("en-IN")}</span></div>
+                    {!isProforma && <div className="flex justify-between text-secondary"><span>Parts GST</span><span>{partGstTotal.toLocaleString("en-IN")}</span></div>}
+                    <div className="flex justify-between text-foreground font-bold text-base border-t border-edge pt-2">
+                      <span className="flex items-center gap-1"><IndianRupee className="w-4 h-4" /> Grand Total</span>
+                      <span>{grandTotal.toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="mt-5 flex gap-3">
                 {canEdit && (
                   <button onClick={handleSave} disabled={saving}
@@ -1439,7 +1609,7 @@ export default function OrderDetailPage() {
           )}
 
           {/* ─── Status Actions ─── */}
-          {order.status !== "completed" && order.status !== "cancelled" && order.status !== "payment_due" && isOwner && (
+          {order.status !== "completed" && order.status !== "cancelled" && order.status !== "payment_due" && (isOwner || manage) && (
             <div className="bg-background rounded-xl border border-edge p-5">
               <p className="text-xs font-medium text-muted uppercase mb-3">Actions</p>
               <div className="flex flex-wrap gap-2">
@@ -1521,13 +1691,16 @@ export default function OrderDetailPage() {
                     invoice.status === "paid" ? "text-ok font-medium" : invoice.status === "sent" ? "text-primary font-medium" : "text-muted"
                   }>{invoice.status === "paid" ? "Paid" : invoice.status === "sent" ? "Sent" : "Draft"}</span></p>
                 </div>
-                <p className="text-sm font-bold text-foreground">{"\u20B9"} {invoice.grandTotal?.toLocaleString("en-IN")}</p>
+                {canViewFinancial("ORDERS") && (
+                  <p className="text-sm font-bold text-foreground">{"\u20B9"} {invoice.grandTotal?.toLocaleString("en-IN")}</p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => router.push(`/dashboard/invoices/${invoice.id}`)}
                   className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-primary border border-primary/20 rounded-lg hover:bg-primary-light transition-colors">
                   <Eye className="w-3.5 h-3.5" /> View Invoice
                 </button>
+                {!isGarageStaff() && (
                 <button onClick={() => {
                   const token = getAccessToken();
                   const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -1538,6 +1711,7 @@ export default function OrderDetailPage() {
                   className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors">
                   <Download className="w-3.5 h-3.5" /> Download PDF
                 </button>
+                )}
               </div>
             </div>
           )}

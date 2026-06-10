@@ -38,9 +38,21 @@ public class GarageRole {
      */
     private List<String> permissions;
 
+    /**
+     * Modules where financial data (prices, totals, GST, etc.) is visible to this role.
+     * E.g. ["ORDERS", "INVOICES"] means this role can see money data only in those modules.
+     */
+    @Builder.Default
+    private List<String> financialModules = List.of();
+
     @JsonProperty("isActive")
     @Builder.Default
     private boolean isActive = true;
+
+    /** True for the 6 system-seeded roles — cannot be deleted, only edited. */
+    @JsonProperty("isDefault")
+    @Builder.Default
+    private boolean isDefault = false;
 
     @CreatedDate
     private LocalDateTime createdAt;

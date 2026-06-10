@@ -19,7 +19,7 @@ import {
   ChevronRight,
   Wrench,
 } from "lucide-react";
-import { getAccessToken } from "@/lib/auth";
+import { getAccessToken, canManage } from "@/lib/auth";
 import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
 
 /* ── Types ─────────────────────────────────────────── */
@@ -360,7 +360,7 @@ export default function AppointmentsPage() {
               )}
 
               {/* Actions for pending bookings */}
-              {selectedBooking.status === "pending" && !actionMode && (
+              {selectedBooking.status === "pending" && !actionMode && canManage("APPOINTMENTS") && (
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => setActionMode("confirm")}
@@ -435,14 +435,14 @@ export default function AppointmentsPage() {
                 </div>
               )}
 
-              {/* Convert to Repair Order */}
-              {!actionMode && (
+              {/* Convert to Job Card */}
+              {!actionMode && canManage("APPOINTMENTS") && (
                 <div className="pt-3 mt-1 border-t border-edge">
                   <button
                     onClick={() => handleConvertToOrder(selectedBooking)}
                     className="w-full py-2.5 border border-edge text-foreground rounded-lg text-sm font-medium hover:bg-hover flex items-center justify-center gap-2 transition-colors"
                   >
-                    <Wrench className="w-4 h-4" /> Convert to Repair Order
+                    <Wrench className="w-4 h-4" /> Convert to Job Card
                   </button>
                 </div>
               )}

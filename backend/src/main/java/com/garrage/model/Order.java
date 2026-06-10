@@ -121,6 +121,10 @@ public class Order {
 
     private LocalDateTime paymentSentAt;
 
+    /** UUID for public order status / live updates link */
+    @Indexed(unique = true, sparse = true)
+    private String statusToken;
+
     // ─── Customer response ───
 
     private Boolean customerApproved;
@@ -182,5 +186,24 @@ public class Order {
         private LocalDateTime assignedAt;
         private LocalDateTime completedAt;
         private String notes;
+
+        // ─── Timer fields ───
+
+        /** When technician clicked "Start Work" */
+        private LocalDateTime workStartedAt;
+        /** When technician clicked "Pause" (null if not paused) */
+        private LocalDateTime workPausedAt;
+        /** Accumulated pause duration in milliseconds */
+        @Builder.Default
+        private long totalPausedMs = 0;
+        /** Final computed work duration in milliseconds */
+        private Long totalWorkMs;
+
+        // ─── Work photo fields ───
+
+        /** GridFS IDs for before-work photos */
+        private List<String> beforeImageIds;
+        /** GridFS IDs for after-work photos */
+        private List<String> afterImageIds;
     }
 }

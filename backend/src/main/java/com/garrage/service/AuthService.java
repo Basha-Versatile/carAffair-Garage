@@ -108,13 +108,15 @@ public class AuthService {
         // Find or create user based on role
         User user = findOrCreateUser(phone, role);
 
-        // Resolve permissions for garage_staff
-        List<String> permissions = resolvePermissions(user);
+        // Resolve permissions and financial modules for garage_staff
+        GarageRole garageRole = resolveGarageRole(user);
+        List<String> permissions = garageRole != null ? garageRole.getPermissions() : null;
+        List<String> financialModules = garageRole != null ? garageRole.getFinancialModules() : null;
 
-        // Generate tokens (permissions embedded in JWT for garage_staff)
+        // Generate tokens (permissions + financialModules embedded in JWT for garage_staff)
         String accessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getRole(), user.getGarageId(), user.getGarageName(),
-                user.getPhone(), permissions);
+                user.getPhone(), permissions, financialModules);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         return AuthResponse.builder()
@@ -127,6 +129,7 @@ public class AuthService {
                 .garageId(user.getGarageId())
                 .garageName(user.getGarageName())
                 .permissions(permissions)
+                .financialModules(financialModules)
                 .garageRoleId(user.getGarageRoleId())
                 .staffTitle(user.getStaffTitle())
                 .build();
@@ -150,13 +153,15 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
 
-        // Resolve permissions for garage_staff (fresh from DB on refresh)
-        List<String> permissions = resolvePermissions(user);
+        // Resolve permissions and financial modules (fresh from DB on refresh)
+        GarageRole garageRole = resolveGarageRole(user);
+        List<String> permissions = garageRole != null ? garageRole.getPermissions() : null;
+        List<String> financialModules = garageRole != null ? garageRole.getFinancialModules() : null;
 
         // Generate new access token
         String newAccessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getRole(), user.getGarageId(), user.getGarageName(),
-                user.getPhone(), permissions);
+                user.getPhone(), permissions, financialModules);
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
@@ -168,6 +173,7 @@ public class AuthService {
                 .garageId(user.getGarageId())
                 .garageName(user.getGarageName())
                 .permissions(permissions)
+                .financialModules(financialModules)
                 .garageRoleId(user.getGarageRoleId())
                 .staffTitle(user.getStaffTitle())
                 .build();
@@ -215,16 +221,15 @@ public class AuthService {
     }
 
     /**
-     * Resolves permissions for garage_staff users by looking up their GarageRole.
+     * Resolves the GarageRole for garage_staff users.
      * Returns null for non-staff roles (super_admin, garage_admin, customer, vendor).
      */
-    private List<String> resolvePermissions(User user) {
+    private GarageRole resolveGarageRole(User user) {
         if (!"garage_staff".equals(user.getRole()) || user.getGarageRoleId() == null) {
             return null;
         }
         return garageRoleRepository.findByIdAndGarageId(user.getGarageRoleId(), user.getGarageId())
-                .map(GarageRole::getPermissions)
-                .orElse(Collections.emptyList());
+                .orElse(null);
     }
 
     private String generateOtp() {

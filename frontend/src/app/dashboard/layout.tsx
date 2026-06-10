@@ -33,16 +33,27 @@ const ROUTE_MODULE_MAP: Record<string, string> = {
   "/dashboard/vendors": "VENDORS",
   "/dashboard/vehicle-search": "VEHICLES",
   "/dashboard/appointments": "APPOINTMENTS",
-  "/dashboard/service-reminders": "REMINDERS",
-  "/dashboard/service-feedbacks": "REMINDERS",
-  "/dashboard/insurance-due": "REMINDERS",
+  "/dashboard/service-reminders": "SERVICE_REMINDERS",
+  "/dashboard/service-feedbacks": "SERVICE_FEEDBACKS",
+  "/dashboard/insurance-due": "INSURANCE_DUE",
+  "/dashboard/reports/staff-performance": "STAFF_PERFORMANCE",
   "/dashboard/reports": "REPORTS",
-  "/dashboard/tally-export": "REPORTS",
+  "/dashboard/tally-export": "TALLY_EXPORT",
+  "/dashboard/leaves": "LEAVES",
+  "/dashboard/attendance": "ATTENDANCE",
+  "/dashboard/settings/users": "STAFF",
+  "/dashboard/settings/roles": "SETTINGS",
+  "/dashboard/settings/logs": "LOGS",
   "/dashboard/settings": "SETTINGS",
 };
 
+/** Sorted entries longest-prefix-first so specific routes match before general ones. */
+const ROUTE_MODULE_ENTRIES = Object.entries(ROUTE_MODULE_MAP).sort(
+  (a, b) => b[0].length - a[0].length
+);
+
 function getRequiredModule(pathname: string): string | null {
-  for (const [prefix, module] of Object.entries(ROUTE_MODULE_MAP)) {
+  for (const [prefix, module] of ROUTE_MODULE_ENTRIES) {
     if (pathname === prefix || pathname.startsWith(prefix + "/")) {
       return module;
     }
@@ -113,7 +124,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <Backdrop />
       <div
         className={`flex-1 flex flex-col overflow-hidden min-w-0 transition-all duration-300
-          ${showFull ? "xl:ml-[280px]" : "xl:ml-[84px]"}`}
+          ${showFull ? "xl:ml-[272px]" : "xl:ml-[78px]"}`}
       >
         <TopBar />
         <main className="flex-1 overflow-y-auto relative">
