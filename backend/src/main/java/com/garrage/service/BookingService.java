@@ -22,7 +22,7 @@ public class BookingService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String ALPHANUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private static final String DEFAULT_GARAGE_ID = "6a070ce037702834b23ba760";
+    private static final String DEFAULT_GARAGE_ID = "6a29730fe41e1f13f7f90ed1";
 
     public Booking createBooking(CreateBookingRequest request) {
         String bookingId = generateBookingId();
