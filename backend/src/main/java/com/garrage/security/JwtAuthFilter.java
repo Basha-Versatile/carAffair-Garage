@@ -44,16 +44,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String garageName = claims.get("garageName", String.class);
                 String phone = claims.get("phone", String.class);
 
-                // Extract permissions and financial modules from JWT (only present for garage_staff)
+                // Extract permissions, financial modules, and role name from JWT (only present for garage_staff)
                 @SuppressWarnings("unchecked")
                 List<String> permissions = claims.get("permissions", List.class);
                 @SuppressWarnings("unchecked")
                 List<String> financialModules = claims.get("financialModules", List.class);
+                String roleName = claims.get("roleName", String.class);
 
                 UserPrincipal userPrincipal = UserPrincipal.builder()
                         .id(userId)
                         .phone(phone)
                         .role(role != null ? role : "")
+                        .roleName(roleName)
                         .garageId(garageId)
                         .garageName(garageName)
                         .permissions(permissions)

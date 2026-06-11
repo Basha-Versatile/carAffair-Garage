@@ -27,6 +27,7 @@ public class ServicePackageController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ServicePackage>>> getPackages() {
+        PermissionChecker.require("SETTINGS:VIEW");
         String garageId = TenantContext.getGarageId();
         List<ServicePackage> packages = packageRepository.findByGarageIdAndIsActiveTrue(garageId);
         return ResponseEntity.ok(ApiResponse.ok(packages));

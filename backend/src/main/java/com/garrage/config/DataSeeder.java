@@ -37,7 +37,7 @@ public class DataSeeder implements CommandLineRunner {
         seedBrands();
         seedSuperAdmin();
         seedGarageRoles();
-        garageRoleService.migrateToGranularPermissions();
+        garageRoleService.migrateAndSyncPermissions();
     }
 
     /**

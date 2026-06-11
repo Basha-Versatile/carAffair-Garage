@@ -43,6 +43,7 @@ public class LeaveController {
     @GetMapping("/api/leaves")
     public ResponseEntity<ApiResponse<List<LeaveRequest>>> getLeaves(
             @RequestParam(required = false) String status) {
+        PermissionChecker.require("LEAVES:VIEW");
         String garageId = TenantContext.getGarageId();
         List<LeaveRequest> requests = leaveService.getLeaveRequests(garageId, status);
         return ResponseEntity.ok(ApiResponse.ok(requests));
@@ -93,6 +94,7 @@ public class LeaveController {
 
     @GetMapping("/api/leaves/balance/{staffId}")
     public ResponseEntity<ApiResponse<LeaveBalance>> getStaffBalance(@PathVariable String staffId) {
+        PermissionChecker.require("LEAVES:VIEW");
         String garageId = TenantContext.getGarageId();
         LeaveBalance balance = leaveService.getBalance(garageId, staffId, Year.now().toString());
         return ResponseEntity.ok(ApiResponse.ok(balance));
@@ -117,6 +119,7 @@ public class LeaveController {
     public ResponseEntity<ApiResponse<List<LeaveRequest>>> getCalendar(
             @RequestParam String startDate,
             @RequestParam String endDate) {
+        PermissionChecker.require("LEAVES:VIEW");
         String garageId = TenantContext.getGarageId();
         List<LeaveRequest> leaves = leaveService.getLeaveCalendar(garageId, startDate, endDate);
         return ResponseEntity.ok(ApiResponse.ok(leaves));

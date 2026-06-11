@@ -3,6 +3,7 @@ package com.garrage.service;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.springframework.stereotype.Service;
@@ -108,16 +109,27 @@ public class AuthService {
         // Find or create user based on role
         User user = findOrCreateUser(phone, role);
 
-        // Resolve permissions and financial modules for garage_staff
+        // Resolve permissions, financial modules, and role name for garage_staff
         GarageRole garageRole = resolveGarageRole(user);
-        List<String> permissions = garageRole != null ? garageRole.getPermissions() : null;
+        List<String> permissionList = garageRole != null ? garageRole.getPermissions() : null;
         List<String> financialModules = garageRole != null ? garageRole.getFinancialModules() : null;
+        String roleName = garageRole != null ? garageRole.getName() : user.getRoleName();
 
-        // Generate tokens (permissions + financialModules embedded in JWT for garage_staff)
+        // Sync roleName on user if it changed (e.g. role was renamed, or first login after migration)
+        if (roleName != null && !roleName.equals(user.getRoleName())) {
+            user.setRoleName(roleName);
+            userRepository.save(user);
+        }
+
+        // Generate tokens (flat arrays in JWT for compactness)
         String accessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getRole(), user.getGarageId(), user.getGarageName(),
-                user.getPhone(), permissions, financialModules);
+                user.getPhone(), permissionList, financialModules, roleName);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+
+        // Build structured permission map for the response
+        Map<String, AuthResponse.ModulePermission> permissionMap =
+                AuthResponse.buildPermissionMap(user.getRole(), permissionList, financialModules);
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
@@ -128,9 +140,9 @@ public class AuthService {
                 .role(user.getRole())
                 .garageId(user.getGarageId())
                 .garageName(user.getGarageName())
-                .permissions(permissions)
-                .financialModules(financialModules)
+                .permissions(permissionMap)
                 .garageRoleId(user.getGarageRoleId())
+                .roleName(roleName)
                 .staffTitle(user.getStaffTitle())
                 .build();
     }
@@ -153,28 +165,33 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
 
-        // Resolve permissions and financial modules (fresh from DB on refresh)
+        // Resolve permissions, financial modules, and role name (fresh from DB on refresh)
         GarageRole garageRole = resolveGarageRole(user);
-        List<String> permissions = garageRole != null ? garageRole.getPermissions() : null;
+        List<String> permissionList = garageRole != null ? garageRole.getPermissions() : null;
         List<String> financialModules = garageRole != null ? garageRole.getFinancialModules() : null;
+        String roleName = garageRole != null ? garageRole.getName() : user.getRoleName();
 
-        // Generate new access token
+        // Generate new access token (flat arrays in JWT for compactness)
         String newAccessToken = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getRole(), user.getGarageId(), user.getGarageName(),
-                user.getPhone(), permissions, financialModules);
+                user.getPhone(), permissionList, financialModules, roleName);
+
+        // Build structured permission map for the response
+        Map<String, AuthResponse.ModulePermission> permissionMap =
+                AuthResponse.buildPermissionMap(user.getRole(), permissionList, financialModules);
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
-                .refreshToken(refreshToken) // keep same refresh token
+                .refreshToken(refreshToken)
                 .userId(user.getId())
                 .name(user.getName())
                 .phone(user.getPhone())
                 .role(user.getRole())
                 .garageId(user.getGarageId())
                 .garageName(user.getGarageName())
-                .permissions(permissions)
-                .financialModules(financialModules)
+                .permissions(permissionMap)
                 .garageRoleId(user.getGarageRoleId())
+                .roleName(roleName)
                 .staffTitle(user.getStaffTitle())
                 .build();
     }

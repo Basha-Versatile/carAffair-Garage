@@ -21,6 +21,7 @@ public class TaxProfileController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<TaxProfile>>> getProfiles(
             @RequestParam(required = false) String type) {
+        PermissionChecker.require("SETTINGS:VIEW");
         String garageId = TenantContext.getGarageId();
         List<TaxProfile> profiles;
         if (type != null && !type.isBlank()) {

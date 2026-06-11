@@ -88,6 +88,7 @@ public class GarageStaffService {
                 .garageName(garageName)
                 .staffTitle(request.getStaffTitle())
                 .garageRoleId(request.getGarageRoleId())
+                .roleName(targetRole.getName())
                 .isActive(true)
                 .build();
 
@@ -117,6 +118,7 @@ public class GarageStaffService {
             // Enforce role hierarchy for the new role being assigned
             validateRoleHierarchy(principal, newRole, garageId);
             staff.setGarageRoleId(request.getGarageRoleId());
+            staff.setRoleName(newRole.getName());
         }
 
         if (request.getName() != null) staff.setName(request.getName());

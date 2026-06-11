@@ -1,3 +1,11 @@
+export interface ModulePermission {
+  view: boolean;
+  manage: boolean;
+  financial: boolean;
+}
+
+export type PermissionMap = Record<string, ModulePermission>;
+
 export interface User {
   id: string;
   name: string;
@@ -5,9 +13,11 @@ export interface User {
   role: string;
   garageId: string | null;
   garageName: string;
-  permissions?: string[];
-  financialModules?: string[];
+  /** Structured permission map: { ORDERS: { view, manage, financial }, ... } */
+  permissions?: PermissionMap;
   garageRoleId?: string;
+  /** Actual role name from GarageRole, e.g. "General Manager", "Service Advisor" */
+  roleName?: string;
   staffTitle?: string;
 }
 
@@ -16,6 +26,13 @@ interface AuthData {
   accessToken: string;
   refreshToken: string;
 }
+
+/** Returns the current user's permission map. */
+export function getPermissionMap(): PermissionMap {
+  return getUser()?.permissions ?? {};
+}
+
+// ─── Auth state ───
 
 const AUTH_KEY = "garrage_auth";
 
@@ -75,49 +92,47 @@ export function isGarageOwner(): boolean {
   return isGarageAdmin();
 }
 
-/**
- * Maps new granular module names back to their legacy parent module.
- * Allows old JWTs (issued before migration) to still grant access.
- */
-const LEGACY_MODULE_MAP: Record<string, string> = {
-  SERVICE_REMINDERS: "REMINDERS",
-  SERVICE_FEEDBACKS: "REMINDERS",
-  INSURANCE_DUE: "REMINDERS",
-};
+/** Returns the specific role name (e.g. "General Manager", "Technician"). Falls back to staffTitle or role. */
+export function getRoleName(): string {
+  const user = getUser();
+  if (!user) return "";
+  if (user.role === "super_admin") return "Super Admin";
+  if (user.role === "garage_admin") return "Owner";
+  return user.roleName ?? user.staffTitle ?? user.role;
+}
 
-/** Check if the current user has a specific permission. */
+// ─── Permission check functions (read from structured permission map) ───
+
+/** Check if the current user has a specific permission (e.g. "ORDERS:MANAGE"). */
 export function hasPermission(permission: string): boolean {
   const user = getUser();
   if (!user) return false;
-  // super_admin and garage_admin have implicit full access
   if (user.role === "super_admin" || user.role === "garage_admin") return true;
   if (user.role !== "garage_staff") return false;
-  const perms = user.permissions ?? [];
-  if (perms.includes(permission)) return true;
 
   const [mod, action] = permission.split(":");
+  const modPerm = (user.permissions ?? {})[mod];
+  if (!modPerm) return false;
 
-  // MANAGE implies VIEW
-  if (action === "VIEW" && perms.includes(`${mod}:MANAGE`)) return true;
-
-  // Backward compat: check legacy module name for old JWT tokens
-  const legacyMod = LEGACY_MODULE_MAP[mod];
-  if (legacyMod) {
-    if (perms.includes(`${legacyMod}:${action}`)) return true;
-    if (action === "VIEW" && perms.includes(`${legacyMod}:MANAGE`)) return true;
-  }
-
+  if (action === "VIEW") return modPerm.view;
+  if (action === "MANAGE") return modPerm.manage;
   return false;
 }
 
 /** Check if the user can view a module (e.g., "ORDERS"). */
 export function canView(module: string): boolean {
-  return hasPermission(`${module}:VIEW`);
+  const user = getUser();
+  if (!user) return false;
+  if (user.role === "super_admin" || user.role === "garage_admin") return true;
+  return (user.permissions ?? {})[module]?.view ?? false;
 }
 
 /** Check if the user can manage (create/edit/delete) a module. */
 export function canManage(module: string): boolean {
-  return hasPermission(`${module}:MANAGE`);
+  const user = getUser();
+  if (!user) return false;
+  if (user.role === "super_admin" || user.role === "garage_admin") return true;
+  return (user.permissions ?? {})[module]?.manage ?? false;
 }
 
 /** Check if the user can see financial data (prices, totals, GST) in a specific module. */
@@ -125,9 +140,10 @@ export function canViewFinancial(module: string): boolean {
   const user = getUser();
   if (!user) return false;
   if (user.role === "super_admin" || user.role === "garage_admin") return true;
-  if (user.role !== "garage_staff") return false;
-  return (user.financialModules ?? []).includes(module);
+  return (user.permissions ?? {})[module]?.financial ?? false;
 }
+
+// ─── Route helpers ───
 
 /** Route order for staff — used to find the first accessible page after login. */
 const MODULE_ROUTES: { module: string; path: string }[] = [
@@ -151,11 +167,9 @@ const MODULE_ROUTES: { module: string; path: string }[] = [
 export function getFirstPermittedRoute(): string {
   const user = getUser();
   if (!user) return "/login";
-  // Non-staff users always go to /dashboard
   if (user.role !== "garage_staff") return "/dashboard";
   for (const { module, path } of MODULE_ROUTES) {
     if (canView(module)) return path;
   }
-  // Fallback if no permissions at all
   return "/dashboard";
 }

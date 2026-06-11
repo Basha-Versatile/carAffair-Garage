@@ -22,6 +22,7 @@ public class UserPrincipal implements UserDetails {
     private String id;
     private String phone;
     private String role;
+    private String roleName;
     private String garageId;
     private String garageName;
 

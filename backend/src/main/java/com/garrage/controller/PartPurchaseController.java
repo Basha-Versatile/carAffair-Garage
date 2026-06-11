@@ -22,6 +22,7 @@ public class PartPurchaseController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<PartPurchase>>> getPartPurchases() {
+        PermissionChecker.require("INVENTORY:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/part-purchases for garage {}", garageId);
         List<PartPurchase> purchases = partPurchaseService.getPartPurchases(garageId);

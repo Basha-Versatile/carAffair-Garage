@@ -21,6 +21,7 @@ public class ServiceCategoryController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ServiceCategory>>> getCategories() {
+        PermissionChecker.require("SETTINGS:VIEW");
         List<ServiceCategory> categories = serviceCategoryService.getCategories(TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(categories));
     }

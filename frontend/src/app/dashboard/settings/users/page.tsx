@@ -22,7 +22,7 @@ import {
   type AssignableRole,
 } from "@/lib/api-staff";
 import { Pagination, PAGE_SIZES, type PageSize } from "@/components/tables/Pagination";
-import { canManage } from "@/lib/auth";
+import { canManage, getUser } from "@/lib/auth";
 
 const INPUT_CLS =
   "w-full px-3 py-2 border border-edge rounded-lg text-sm text-foreground bg-background placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";
@@ -209,6 +209,18 @@ export default function GarageUsersPage() {
     return role?.name || "\u2014";
   }
 
+  // \u2500\u2500 Hierarchy: can the current user edit/delete this member? \u2500\u2500
+  const currentUser = getUser();
+  const isAdmin = currentUser?.role === "garage_admin" || currentUser?.role === "super_admin";
+  const assignableRoleIds = new Set(roles.map((r) => r.id));
+
+  function canManageMember(member: StaffMember): boolean {
+    if (isAdmin) return true;
+    if (member.id === currentUser?.id) return false;
+    if (!member.garageRoleId) return false;
+    return assignableRoleIds.has(member.garageRoleId);
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -344,7 +356,7 @@ export default function GarageUsersPage() {
                               )}
                             </td>
                             <td className="px-4 py-3">
-                              {canManage("STAFF") && (
+                              {canManage("STAFF") && canManageMember(member) && (
                                 <div className="flex items-center justify-end gap-1">
                                   <button
                                     onClick={() => openEdit(member)}
@@ -410,7 +422,7 @@ export default function GarageUsersPage() {
                         </span>
                       </div>
 
-                      {canManage("STAFF") && (
+                      {canManage("STAFF") && canManageMember(member) && (
                         <div className="flex items-center justify-end gap-2 border-t border-edge pt-3">
                           <button
                             onClick={() => openEdit(member)}

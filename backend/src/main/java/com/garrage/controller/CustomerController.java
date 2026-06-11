@@ -22,6 +22,7 @@ public class CustomerController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Customer>>> getCustomers() {
+        PermissionChecker.require("CUSTOMERS:VIEW");
         List<Customer> customers = customerService.getCustomers(TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(customers));
     }
@@ -35,12 +36,14 @@ public class CustomerController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<Customer>>> searchCustomers(@RequestParam("q") String query) {
+        PermissionChecker.require("CUSTOMERS:VIEW");
         List<Customer> customers = customerService.searchCustomers(query, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(customers));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Customer>> getCustomerById(@PathVariable String id) {
+        PermissionChecker.require("CUSTOMERS:VIEW");
         Customer customer = customerService.getCustomerById(id, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(customer));
     }

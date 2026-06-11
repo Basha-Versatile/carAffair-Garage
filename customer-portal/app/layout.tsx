@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, Montserrat } from "next/font/google";
+import { Poppins } from "next/font/google";
 import { ThemeProvider } from "@/context/ThemeContext";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
-});
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
@@ -29,7 +23,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${montserrat.variable} antialiased`}
+      className={`${poppins.variable} antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-screen overflow-x-hidden" suppressHydrationWarning>

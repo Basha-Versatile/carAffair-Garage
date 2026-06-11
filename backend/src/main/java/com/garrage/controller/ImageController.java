@@ -88,6 +88,7 @@ public class ImageController {
             @PathVariable String orderId,
             @RequestParam("lineItemId") String lineItemId,
             @RequestParam("files") List<MultipartFile> files) throws IOException {
+        PermissionChecker.require("ORDERS:VIEW");
         String garageId = TenantContext.getGarageId();
         List<String> fileIds = imageStorageService.storeImages(files, garageId, orderId);
         Order order = orderService.addTaskBeforeImages(orderId, garageId, lineItemId, fileIds);
@@ -99,6 +100,7 @@ public class ImageController {
             @PathVariable String orderId,
             @RequestParam("lineItemId") String lineItemId,
             @RequestParam("files") List<MultipartFile> files) throws IOException {
+        PermissionChecker.require("ORDERS:VIEW");
         String garageId = TenantContext.getGarageId();
         List<String> fileIds = imageStorageService.storeImages(files, garageId, orderId);
         Order order = orderService.addTaskAfterImages(orderId, garageId, lineItemId, fileIds);
@@ -109,6 +111,7 @@ public class ImageController {
     public ResponseEntity<ApiResponse<java.util.Map<String, List<String>>>> getTaskImages(
             @PathVariable String orderId,
             @PathVariable String lineItemId) {
+        PermissionChecker.require("ORDERS:VIEW");
         String garageId = TenantContext.getGarageId();
         var images = orderService.getTaskImages(orderId, garageId, lineItemId);
         return ResponseEntity.ok(ApiResponse.ok(images));
@@ -118,6 +121,7 @@ public class ImageController {
     public ResponseEntity<ApiResponse<Void>> deleteTaskImage(
             @PathVariable String orderId,
             @PathVariable String fileId) {
+        PermissionChecker.require("ORDERS:MANAGE");
         String garageId = TenantContext.getGarageId();
         imageStorageService.deleteImage(fileId);
         orderService.deleteTaskImage(orderId, garageId, fileId);

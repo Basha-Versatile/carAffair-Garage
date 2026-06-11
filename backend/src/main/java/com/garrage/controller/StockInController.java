@@ -22,6 +22,7 @@ public class StockInController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<StockInRecord>>> getStockInRecords() {
+        PermissionChecker.require("INVENTORY:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/stock-in for garage {}", garageId);
         List<StockInRecord> records = stockInService.getStockInRecords(garageId);

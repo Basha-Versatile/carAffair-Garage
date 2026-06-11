@@ -22,6 +22,7 @@ public class ExpenseController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Expense>>> getExpenses() {
+        PermissionChecker.require("ACCOUNTS:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/expenses for garage {}", garageId);
         List<Expense> expenses = expenseService.getExpenses(garageId);

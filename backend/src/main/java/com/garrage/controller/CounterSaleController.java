@@ -22,6 +22,7 @@ public class CounterSaleController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<CounterSale>>> getCounterSales() {
+        PermissionChecker.require("INVENTORY:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/counter-sales for garage {}", garageId);
         List<CounterSale> sales = counterSaleService.getCounterSales(garageId);

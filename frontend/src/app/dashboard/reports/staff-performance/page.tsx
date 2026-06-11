@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { getStaffPerformance, type StaffPerformance } from "@/lib/api-performance";
+import { canView } from "@/lib/auth";
 import {
   BarChart3, Loader2, Users, Clock, CheckCircle2,
   CalendarDays, TrendingUp, Download,
@@ -33,11 +34,16 @@ export default function StaffPerformancePage() {
   const router = useRouter();
   const [data, setData] = useState<StaffPerformance[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Date range
   const [dateRange, setDateRange] = useState<DateRange>("30d");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const allowed = canView("STAFF_PERFORMANCE");
+
+  useEffect(() => {
+    if (!allowed) router.replace("/dashboard");
+  }, [allowed, router]);
+
+  if (!allowed) return null;
 
   const { startDate, endDate } = useMemo(() => {
     if (dateRange === "custom" && customFrom && customTo) {
@@ -198,7 +204,7 @@ export default function StaffPerformancePage() {
                           fontSize: 12,
                         }}
                       />
-                      <Bar dataKey="tasks" fill="#dc2626" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="tasks" fill="#6366f1" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

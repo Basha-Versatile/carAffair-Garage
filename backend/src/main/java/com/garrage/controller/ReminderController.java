@@ -23,6 +23,7 @@ public class ReminderController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<ServiceReminder>>> getReminders(
             @RequestParam(required = false) String status) {
+        PermissionChecker.require("SERVICE_REMINDERS:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/service-reminders (status={}) for garage {}", status, garageId);
 

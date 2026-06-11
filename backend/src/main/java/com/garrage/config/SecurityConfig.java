@@ -108,13 +108,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/bookings").hasAnyRole("CUSTOMER", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/bookings/**").hasAnyRole("CUSTOMER", "SUPER_ADMIN")
 
-                        // Garage role management (owner only)
-                        .requestMatchers("/api/garage-roles/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
+                        // Garage role management (controller checks granular permissions)
+                        .requestMatchers("/api/garage-roles/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
                         // Staff management (owner + staff with STAFF:MANAGE permission)
                         .requestMatchers("/api/garage-staff/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
 
-                        // Activity logs (owner only)
-                        .requestMatchers("/api/activity-logs/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
+                        // Activity logs (controller checks LOGS:VIEW permission)
+                        .requestMatchers("/api/activity-logs/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
 
                         // Notifications (all authenticated roles)
                         .requestMatchers("/api/notifications/stream").permitAll()  // Auth via query param token
@@ -149,7 +149,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/packages/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
                         .requestMatchers("/api/attendance/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
                         .requestMatchers("/api/leaves/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
-                        .requestMatchers("/api/performance/**").hasAnyRole("GARAGE_ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/api/performance/**").hasAnyRole("GARAGE_ADMIN", "GARAGE_STAFF", "SUPER_ADMIN")
 
                         .anyRequest().authenticated()
                 )

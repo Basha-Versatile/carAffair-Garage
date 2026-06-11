@@ -21,6 +21,7 @@ public class TagController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<Tag>>> getTags(
             @RequestParam(required = false) String type) {
+        PermissionChecker.require("SETTINGS:VIEW");
         String garageId = TenantContext.getGarageId();
         List<Tag> tags;
         if (type != null && !type.isBlank()) {

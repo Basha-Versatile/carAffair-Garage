@@ -2,6 +2,7 @@ package com.garrage.controller;
 
 import com.garrage.dto.response.ApiResponse;
 import com.garrage.model.Attendance;
+import com.garrage.security.PermissionChecker;
 import com.garrage.security.TenantContext;
 import com.garrage.security.UserPrincipal;
 import com.garrage.service.AttendanceService;
@@ -58,6 +59,7 @@ public class AttendanceController {
 
     @GetMapping("/api/attendance/today")
     public ResponseEntity<ApiResponse<List<Attendance>>> getTodayAttendance() {
+        PermissionChecker.require("ATTENDANCE:VIEW");
         String garageId = TenantContext.getGarageId();
         List<Attendance> records = attendanceService.getTodayAttendance(garageId);
         return ResponseEntity.ok(ApiResponse.ok(records));
@@ -68,6 +70,7 @@ public class AttendanceController {
             @PathVariable String staffId,
             @RequestParam String startDate,
             @RequestParam String endDate) {
+        PermissionChecker.require("ATTENDANCE:VIEW");
         String garageId = TenantContext.getGarageId();
         List<Attendance> records = attendanceService.getStaffAttendance(garageId, staffId,
                 startDate, endDate);
@@ -78,6 +81,7 @@ public class AttendanceController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> getSummary(
             @RequestParam String startDate,
             @RequestParam String endDate) {
+        PermissionChecker.require("ATTENDANCE:VIEW");
         String garageId = TenantContext.getGarageId();
         Map<String, Object> summary = attendanceService.getSummary(garageId, startDate, endDate);
         return ResponseEntity.ok(ApiResponse.ok(summary));
@@ -86,6 +90,7 @@ public class AttendanceController {
     @GetMapping("/api/attendance/absentees")
     public ResponseEntity<ApiResponse<List<Map<String, String>>>> getAbsentees(
             @RequestParam(required = false) String date) {
+        PermissionChecker.require("ATTENDANCE:VIEW");
         String garageId = TenantContext.getGarageId();
         if (date == null || date.isBlank()) {
             date = java.time.LocalDate.now().toString();

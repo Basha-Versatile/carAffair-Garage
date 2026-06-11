@@ -66,8 +66,8 @@
 /* ================================================================== */
 
 @theme inline {
-  --font-sans: var(--font-inter);
-  --font-heading: var(--font-montserrat);
+  --font-sans: var(--font-poppins);
+  --font-heading: var(--font-poppins);
   --color-primary: #CC0000;
   --color-primary-hover: #A30000;
   --color-primary-light: #fef1f3;
@@ -309,14 +309,14 @@ section {
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-sans), "Inter", system-ui, sans-serif;
+  font-family: var(--font-sans), "Poppins", system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.6;
   min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading), "Montserrat", system-ui, sans-serif;
+  font-family: var(--font-heading), "Poppins", system-ui, sans-serif;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
@@ -908,7 +908,7 @@ h1, h2, h3, h4, h5, h6 {
 /* ================================================================== */
 
 .prose-content h3 {
-  font-family: var(--font-heading), "Montserrat", system-ui, sans-serif;
+  font-family: var(--font-heading), "Poppins", system-ui, sans-serif;
   font-weight: 700;
   font-size: 1.25rem;
   color: var(--text-primary);

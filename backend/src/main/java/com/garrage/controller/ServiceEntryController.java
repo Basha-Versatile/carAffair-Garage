@@ -20,6 +20,7 @@ public class ServiceEntryController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ServiceEntry>>> getServices() {
+        PermissionChecker.require("SETTINGS:VIEW");
         List<ServiceEntry> services = serviceEntryService.getServices(TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(services));
     }

@@ -23,6 +23,7 @@ public class VehicleController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Vehicle>>> getVehicles() {
+        PermissionChecker.require("VEHICLES:VIEW");
         List<Vehicle> vehicles = vehicleService.getVehicles(TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(vehicles));
     }
@@ -36,6 +37,7 @@ public class VehicleController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<Vehicle>>> searchByRegNumber(@RequestParam("reg") String regNumber) {
+        PermissionChecker.require("VEHICLES:VIEW");
         List<Vehicle> vehicles = vehicleService.searchVehicles(regNumber, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(vehicles));
     }

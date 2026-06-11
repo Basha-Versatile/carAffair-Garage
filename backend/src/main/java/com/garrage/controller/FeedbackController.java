@@ -22,6 +22,7 @@ public class FeedbackController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ServiceFeedback>>> getFeedbacks() {
+        PermissionChecker.require("SERVICE_FEEDBACKS:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/service-feedbacks for garage {}", garageId);
         List<ServiceFeedback> feedbacks = feedbackService.getFeedbacks(garageId);

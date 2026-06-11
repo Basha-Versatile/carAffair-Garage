@@ -29,6 +29,7 @@ public class OrderController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String dateFrom,
             @RequestParam(required = false) String dateTo) {
+        PermissionChecker.require("ORDERS:VIEW");
         String garageId = TenantContext.getGarageId();
         List<Order> orders;
 
@@ -62,6 +63,7 @@ public class OrderController {
 
     @GetMapping("/api/orders/{id}")
     public ResponseEntity<ApiResponse<Order>> getOrderById(@PathVariable String id) {
+        PermissionChecker.require("ORDERS:VIEW");
         Order order = orderService.getOrderById(id, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(order));
     }
@@ -77,6 +79,7 @@ public class OrderController {
 
     @GetMapping("/api/orders/counts")
     public ResponseEntity<ApiResponse<Map<String, Long>>> getOrderCounts() {
+        PermissionChecker.require("ORDERS:VIEW");
         Map<String, Long> counts = orderService.getOrderCounts(TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(counts));
     }
@@ -125,6 +128,7 @@ public class OrderController {
 
     @GetMapping("/api/orders/{id}/estimate-link")
     public ResponseEntity<ApiResponse<String>> getEstimateLink(@PathVariable String id) {
+        PermissionChecker.require("ORDERS:VIEW");
         String token = orderService.getEstimateLink(id, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(token));
     }
@@ -145,6 +149,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<Order>> updateAssignmentStatus(
             @PathVariable String id,
             @Valid @RequestBody UpdateAssignmentRequest request) {
+        PermissionChecker.require("ORDERS:VIEW");
         Order order = orderService.updateAssignmentStatus(id, TenantContext.getGarageId(),
                 request.getLineItemId(), request.getStatus(), request.getNotes());
         return ResponseEntity.ok(ApiResponse.ok(order));
@@ -156,6 +161,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<Order>> startTimer(
             @PathVariable String id,
             @RequestBody Map<String, String> body) {
+        PermissionChecker.require("ORDERS:VIEW");
         Order order = orderService.startTimer(id, TenantContext.getGarageId(), body.get("lineItemId"));
         return ResponseEntity.ok(ApiResponse.ok(order));
     }
@@ -164,6 +170,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<Order>> pauseTimer(
             @PathVariable String id,
             @RequestBody Map<String, String> body) {
+        PermissionChecker.require("ORDERS:VIEW");
         Order order = orderService.pauseTimer(id, TenantContext.getGarageId(), body.get("lineItemId"));
         return ResponseEntity.ok(ApiResponse.ok(order));
     }
@@ -172,6 +179,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<Order>> resumeTimer(
             @PathVariable String id,
             @RequestBody Map<String, String> body) {
+        PermissionChecker.require("ORDERS:VIEW");
         Order order = orderService.resumeTimer(id, TenantContext.getGarageId(), body.get("lineItemId"));
         return ResponseEntity.ok(ApiResponse.ok(order));
     }
@@ -180,6 +188,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<Order>> completeTimer(
             @PathVariable String id,
             @RequestBody Map<String, String> body) {
+        PermissionChecker.require("ORDERS:VIEW");
         Order order = orderService.completeTimer(id, TenantContext.getGarageId(),
                 body.get("lineItemId"), body.get("notes"));
         return ResponseEntity.ok(ApiResponse.ok(order));
@@ -187,6 +196,7 @@ public class OrderController {
 
     @GetMapping("/api/orders/task-analytics")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getTaskAnalytics() {
+        PermissionChecker.require("ORDERS:VIEW");
         Map<String, Object> analytics = orderService.getTaskAnalytics(TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(analytics));
     }
@@ -216,6 +226,7 @@ public class OrderController {
 
     @GetMapping("/api/orders/by-customer/{customerId}")
     public ResponseEntity<ApiResponse<List<Order>>> getOrdersByCustomer(@PathVariable String customerId) {
+        PermissionChecker.require("ORDERS:VIEW");
         String garageId = TenantContext.getGarageId();
         List<Order> orders = orderService.getOrdersByCustomer(customerId, garageId);
         return ResponseEntity.ok(ApiResponse.ok(orders));
@@ -225,6 +236,7 @@ public class OrderController {
 
     @GetMapping("/api/orders/delivery-alerts")
     public ResponseEntity<ApiResponse<List<Order>>> getDeliveryAlerts() {
+        PermissionChecker.require("ORDERS:VIEW");
         List<Order> alerts = orderService.getDeliveryAlerts(TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(alerts));
     }
@@ -233,6 +245,7 @@ public class OrderController {
 
     @GetMapping("/api/orders/vehicle-analytics")
     public ResponseEntity<ApiResponse<List<VehicleAnalytics>>> getVehicleAnalytics() {
+        PermissionChecker.require("ORDERS:VIEW");
         List<VehicleAnalytics> analytics = orderService.getVehicleAnalytics(TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(analytics));
     }
@@ -253,6 +266,7 @@ public class OrderController {
 
     @GetMapping("/api/orders/{id}/status-link")
     public ResponseEntity<ApiResponse<String>> getStatusLink(@PathVariable String id) {
+        PermissionChecker.require("ORDERS:VIEW");
         String token = orderService.ensureStatusToken(id, TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(token));
     }

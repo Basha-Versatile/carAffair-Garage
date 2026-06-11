@@ -106,6 +106,7 @@ com\garrage\service\BookingService.class
 com\garrage\config\WebConfig.class
 com\garrage\controller\OrderController.class
 com\garrage\model\Manufacturer$ManufacturerBuilder.class
+com\garrage\service\GarageRoleService$RoleDef.class
 com\garrage\model\StockHistory$StockHistoryBuilder.class
 com\garrage\repository\ReminderRepository.class
 com\garrage\config\MongoConfig.class
@@ -164,6 +165,7 @@ com\garrage\model\CounterSale$CSService$CSServiceBuilder.class
 com\garrage\model\Part$ApplicableBrand$ApplicableBrandBuilder.class
 com\garrage\model\Vehicle$VehicleBuilder.class
 com\garrage\config\OtpProperties.class
+com\garrage\dto\response\AuthResponse$ModulePermission$ModulePermissionBuilder.class
 com\garrage\service\NotificationService.class
 com\garrage\model\ExpenseLabel$ExpenseLabelBuilder.class
 com\garrage\model\Notification$NotificationBuilder.class
@@ -266,6 +268,7 @@ com\garrage\TestPdfGen.class
 com\garrage\service\GstCalculationService.class
 com\garrage\service\TagService.class
 com\garrage\model\PurchaseOrder$PurchaseOrderBuilder.class
+com\garrage\dto\response\AuthResponse$ModulePermission.class
 com\garrage\dto\request\CreateBookingRequest.class
 com\garrage\controller\ExpenseController.class
 com\garrage\controller\CustomerController.class

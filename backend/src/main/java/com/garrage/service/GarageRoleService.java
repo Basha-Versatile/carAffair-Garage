@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -52,6 +54,75 @@ public class GarageRoleService {
     private static final Set<String> VALID_FINANCIAL_MODULES = Set.of(
             "ORDERS", "INVOICES", "INVENTORY", "ACCOUNTS", "DASHBOARD", "REPORTS"
     );
+
+    // ─── Structured role permission config (single source of truth) ───
+
+    private record RoleDef(String name, String description, List<String> permissions, List<String> financialModules) {}
+
+    private static final Map<String, RoleDef> ROLE_DEFAULTS;
+    static {
+        Map<String, RoleDef> m = new LinkedHashMap<>();
+
+        m.put("General Manager", new RoleDef(
+                "General Manager",
+                "Oversees all operations, staff, and reports",
+                List.of(
+                        "DASHBOARD:MANAGE", "ORDERS:MANAGE", "INVOICES:MANAGE",
+                        "CUSTOMERS:MANAGE", "VEHICLES:MANAGE", "APPOINTMENTS:MANAGE",
+                        "SERVICE_REMINDERS:MANAGE", "SERVICE_FEEDBACKS:MANAGE", "INSURANCE_DUE:MANAGE",
+                        "REPORTS:MANAGE", "TALLY_EXPORT:MANAGE", "STAFF:MANAGE",
+                        "ATTENDANCE:MANAGE", "LEAVES:MANAGE", "STAFF_PERFORMANCE:MANAGE",
+                        "INVENTORY:VIEW", "ACCOUNTS:VIEW", "LOGS:VIEW"),
+                List.of("ORDERS", "INVOICES", "INVENTORY", "ACCOUNTS", "DASHBOARD", "REPORTS")));
+
+        m.put("Service Advisor", new RoleDef(
+                "Service Advisor",
+                "Manages job cards, customers, appointments, and staff",
+                List.of(
+                        "DASHBOARD:VIEW", "ORDERS:MANAGE", "INVOICES:VIEW",
+                        "CUSTOMERS:MANAGE", "VEHICLES:MANAGE", "APPOINTMENTS:MANAGE",
+                        "SERVICE_REMINDERS:VIEW", "SERVICE_FEEDBACKS:VIEW", "INSURANCE_DUE:VIEW",
+                        "ATTENDANCE:VIEW", "LEAVES:VIEW",
+                        "STAFF:MANAGE", "STAFF_PERFORMANCE:VIEW"),
+                List.of("ORDERS", "INVOICES")));
+
+        m.put("Technician", new RoleDef(
+                "Technician",
+                "Works on assigned tasks, updates progress",
+                List.of(
+                        "DASHBOARD:VIEW", "ORDERS:VIEW",
+                        "ATTENDANCE:VIEW", "LEAVES:VIEW"),
+                List.of()));
+
+        m.put("Store Keeper", new RoleDef(
+                "Store Keeper",
+                "Manages inventory, vendors, and purchase orders",
+                List.of(
+                        "DASHBOARD:VIEW", "INVENTORY:MANAGE", "VENDORS:MANAGE",
+                        "ORDERS:VIEW", "ATTENDANCE:VIEW", "LEAVES:VIEW"),
+                List.of("INVENTORY")));
+
+        m.put("Accountant", new RoleDef(
+                "Accountant",
+                "Manages invoices, expenses, accounts, and reports",
+                List.of(
+                        "DASHBOARD:VIEW", "ORDERS:VIEW", "INVOICES:MANAGE",
+                        "ACCOUNTS:MANAGE", "INVENTORY:VIEW", "VENDORS:VIEW",
+                        "REPORTS:MANAGE", "TALLY_EXPORT:MANAGE", "ATTENDANCE:VIEW"),
+                List.of("ORDERS", "INVOICES", "INVENTORY", "ACCOUNTS", "DASHBOARD", "REPORTS")));
+
+        m.put("Front Desk Executive", new RoleDef(
+                "Front Desk Executive",
+                "Handles customers, appointments, and basic job cards",
+                List.of(
+                        "DASHBOARD:VIEW", "ORDERS:VIEW", "CUSTOMERS:MANAGE",
+                        "VEHICLES:MANAGE", "APPOINTMENTS:MANAGE",
+                        "SERVICE_REMINDERS:VIEW", "SERVICE_FEEDBACKS:VIEW", "INSURANCE_DUE:VIEW",
+                        "INVOICES:VIEW", "ATTENDANCE:VIEW", "LEAVES:VIEW"),
+                List.of("ORDERS", "INVOICES")));
+
+        ROLE_DEFAULTS = Map.copyOf(m);
+    }
 
     public List<GarageRole> listRoles(String garageId) {
         return garageRoleRepository.findByGarageIdAndIsActiveTrue(garageId);
@@ -130,7 +201,7 @@ public class GarageRoleService {
     }
 
     /**
-     * Seeds the 6 default roles for a newly created garage.
+     * Seeds default roles for a newly created garage.
      * Idempotent: skips if roles already exist for this garage.
      */
     public void seedDefaultRoles(String garageId) {
@@ -141,88 +212,78 @@ public class GarageRoleService {
         }
 
         List<GarageRole> defaults = new ArrayList<>();
-
-        defaults.add(GarageRole.builder()
-                .garageId(garageId).name("General Manager").isDefault(true)
-                .description("Oversees all operations, staff, and reports")
-                .permissions(List.of(
-                        "DASHBOARD:MANAGE", "ORDERS:MANAGE", "INVOICES:MANAGE",
-                        "CUSTOMERS:MANAGE", "VEHICLES:MANAGE", "APPOINTMENTS:MANAGE",
-                        "SERVICE_REMINDERS:MANAGE", "SERVICE_FEEDBACKS:MANAGE", "INSURANCE_DUE:MANAGE",
-                        "REPORTS:MANAGE", "TALLY_EXPORT:MANAGE", "STAFF:MANAGE",
-                        "ATTENDANCE:MANAGE", "LEAVES:MANAGE", "STAFF_PERFORMANCE:MANAGE",
-                        "INVENTORY:VIEW", "ACCOUNTS:VIEW", "LOGS:VIEW"))
-                .financialModules(List.of("ORDERS", "INVOICES", "INVENTORY", "ACCOUNTS", "DASHBOARD", "REPORTS"))
-                .build());
-
-        defaults.add(GarageRole.builder()
-                .garageId(garageId).name("Service Advisor").isDefault(true)
-                .description("Manages job cards, customers, and appointments")
-                .permissions(List.of(
-                        "DASHBOARD:VIEW", "ORDERS:MANAGE", "INVOICES:VIEW",
-                        "CUSTOMERS:MANAGE", "VEHICLES:MANAGE", "APPOINTMENTS:MANAGE",
-                        "SERVICE_REMINDERS:VIEW", "SERVICE_FEEDBACKS:VIEW", "INSURANCE_DUE:VIEW",
-                        "ATTENDANCE:VIEW", "LEAVES:VIEW"))
-                .financialModules(List.of("ORDERS", "INVOICES"))
-                .build());
-
-        defaults.add(GarageRole.builder()
-                .garageId(garageId).name("Technician").isDefault(true)
-                .description("Works on assigned tasks, updates progress")
-                .permissions(List.of(
-                        "DASHBOARD:VIEW", "ORDERS:VIEW", "ATTENDANCE:VIEW",
-                        "LEAVES:VIEW"))
-                .financialModules(List.of())
-                .build());
-
-        defaults.add(GarageRole.builder()
-                .garageId(garageId).name("Store Keeper").isDefault(true)
-                .description("Manages inventory, vendors, and purchase orders")
-                .permissions(List.of(
-                        "DASHBOARD:VIEW", "INVENTORY:MANAGE", "VENDORS:MANAGE",
-                        "ORDERS:VIEW", "ATTENDANCE:VIEW", "LEAVES:VIEW"))
-                .financialModules(List.of("INVENTORY"))
-                .build());
-
-        defaults.add(GarageRole.builder()
-                .garageId(garageId).name("Accountant").isDefault(true)
-                .description("Manages invoices, expenses, accounts, and reports")
-                .permissions(List.of(
-                        "DASHBOARD:VIEW", "ORDERS:VIEW", "INVOICES:MANAGE",
-                        "ACCOUNTS:MANAGE", "INVENTORY:VIEW", "VENDORS:VIEW",
-                        "REPORTS:MANAGE", "TALLY_EXPORT:MANAGE", "ATTENDANCE:VIEW"))
-                .financialModules(List.of("ORDERS", "INVOICES", "INVENTORY", "ACCOUNTS", "DASHBOARD", "REPORTS"))
-                .build());
-
-        defaults.add(GarageRole.builder()
-                .garageId(garageId).name("Front Desk Executive").isDefault(true)
-                .description("Handles customers, appointments, and basic job cards")
-                .permissions(List.of(
-                        "DASHBOARD:VIEW", "ORDERS:VIEW", "CUSTOMERS:MANAGE",
-                        "VEHICLES:MANAGE", "APPOINTMENTS:MANAGE",
-                        "SERVICE_REMINDERS:VIEW", "SERVICE_FEEDBACKS:VIEW", "INSURANCE_DUE:VIEW",
-                        "INVOICES:VIEW", "ATTENDANCE:VIEW", "LEAVES:VIEW"))
-                .financialModules(List.of("ORDERS", "INVOICES"))
-                .build());
+        for (RoleDef def : ROLE_DEFAULTS.values()) {
+            defaults.add(GarageRole.builder()
+                    .garageId(garageId)
+                    .name(def.name())
+                    .description(def.description())
+                    .permissions(new ArrayList<>(def.permissions()))
+                    .financialModules(new ArrayList<>(def.financialModules()))
+                    .isDefault(true)
+                    .isActive(true)
+                    .build());
+        }
 
         garageRoleRepository.saveAll(defaults);
         log.info("Seeded {} default roles for garage {}", defaults.size(), garageId);
     }
 
     /**
-     * Migrates old permission names to new granular ones for all existing roles.
-     * Also converts FINANCIAL:VIEW/MANAGE into per-module financialModules.
-     * Idempotent: only modifies roles that still have legacy permission names.
+     * Syncs default role permissions for an existing garage to match the latest ROLE_DEFAULTS config.
+     * Only updates default roles (isDefault=true). Custom roles are left untouched.
+     * This ensures permission changes (e.g. removing STAFF_PERFORMANCE from Technician) propagate.
      */
-    public void migrateToGranularPermissions() {
-        List<GarageRole> allRoles = garageRoleRepository.findAll();
+    public void syncDefaultRolePermissions(String garageId) {
+        List<GarageRole> existing = garageRoleRepository.findByGarageId(garageId);
         int updated = 0;
 
+        for (GarageRole role : existing) {
+            if (!role.isDefault()) continue;
+
+            RoleDef def = ROLE_DEFAULTS.get(role.getName());
+            if (def == null) continue;
+
+            boolean changed = false;
+
+            if (!new HashSet<>(def.permissions()).equals(new HashSet<>(role.getPermissions() != null ? role.getPermissions() : List.of()))) {
+                role.setPermissions(new ArrayList<>(def.permissions()));
+                changed = true;
+            }
+            if (!new HashSet<>(def.financialModules()).equals(
+                    new HashSet<>(role.getFinancialModules() != null ? role.getFinancialModules() : List.of()))) {
+                role.setFinancialModules(new ArrayList<>(def.financialModules()));
+                changed = true;
+            }
+            if (!def.description().equals(role.getDescription())) {
+                role.setDescription(def.description());
+                changed = true;
+            }
+
+            if (changed) {
+                garageRoleRepository.save(role);
+                updated++;
+                log.info("Synced role '{}' for garage {}", role.getName(), garageId);
+            }
+        }
+
+        if (updated > 0) {
+            log.info("Synced {} default roles for garage {}", updated, garageId);
+        }
+    }
+
+    /**
+     * Migrates legacy permission names to current format.
+     * Then syncs all default roles to match ROLE_DEFAULTS config.
+     */
+    public void migrateAndSyncPermissions() {
+        List<GarageRole> allRoles = garageRoleRepository.findAll();
+        int migrated = 0;
+
+        // Phase 1: legacy name migration (REMINDERS → granular, FINANCIAL → financialModules)
         for (GarageRole role : allRoles) {
             Set<String> perms = new HashSet<>(role.getPermissions());
             boolean changed = false;
 
-            // Replace REMINDERS with SERVICE_REMINDERS + SERVICE_FEEDBACKS + INSURANCE_DUE
             if (perms.remove("REMINDERS:VIEW")) {
                 perms.add("SERVICE_REMINDERS:VIEW");
                 perms.add("SERVICE_FEEDBACKS:VIEW");
@@ -235,28 +296,6 @@ public class GarageRoleService {
                 perms.add("INSURANCE_DUE:MANAGE");
                 changed = true;
             }
-
-            // Add STAFF_PERFORMANCE alongside ATTENDANCE (if not already present)
-            if (perms.contains("ATTENDANCE:VIEW") && !perms.contains("STAFF_PERFORMANCE:VIEW")) {
-                perms.add("STAFF_PERFORMANCE:VIEW");
-                changed = true;
-            }
-            if (perms.contains("ATTENDANCE:MANAGE") && !perms.contains("STAFF_PERFORMANCE:MANAGE")) {
-                perms.add("STAFF_PERFORMANCE:MANAGE");
-                changed = true;
-            }
-
-            // Add TALLY_EXPORT alongside REPORTS (if not already present)
-            if (perms.contains("REPORTS:VIEW") && !perms.contains("TALLY_EXPORT:VIEW")) {
-                perms.add("TALLY_EXPORT:VIEW");
-                changed = true;
-            }
-            if (perms.contains("REPORTS:MANAGE") && !perms.contains("TALLY_EXPORT:MANAGE")) {
-                perms.add("TALLY_EXPORT:MANAGE");
-                changed = true;
-            }
-
-            // Migrate FINANCIAL:VIEW/MANAGE to per-module financialModules
             if (perms.remove("FINANCIAL:VIEW") || perms.remove("FINANCIAL:MANAGE")) {
                 perms.remove("FINANCIAL:VIEW");
                 perms.remove("FINANCIAL:MANAGE");
@@ -264,9 +303,7 @@ public class GarageRoleService {
                     Set<String> finMods = new HashSet<>();
                     for (String p : perms) {
                         String mod = p.split(":")[0];
-                        if (VALID_FINANCIAL_MODULES.contains(mod)) {
-                            finMods.add(mod);
-                        }
+                        if (VALID_FINANCIAL_MODULES.contains(mod)) finMods.add(mod);
                     }
                     role.setFinancialModules(new ArrayList<>(finMods));
                 }
@@ -276,12 +313,21 @@ public class GarageRoleService {
             if (changed) {
                 role.setPermissions(new ArrayList<>(perms));
                 garageRoleRepository.save(role);
-                updated++;
+                migrated++;
             }
         }
 
-        if (updated > 0) {
-            log.info("Migrated permissions for {} roles to granular format.", updated);
+        if (migrated > 0) {
+            log.info("Migrated legacy permissions for {} roles.", migrated);
+        }
+
+        // Phase 2: sync default roles to latest config for all garages
+        Set<String> garageIds = new HashSet<>();
+        for (GarageRole role : allRoles) {
+            if (role.getGarageId() != null) garageIds.add(role.getGarageId());
+        }
+        for (String garageId : garageIds) {
+            syncDefaultRolePermissions(garageId);
         }
     }
 

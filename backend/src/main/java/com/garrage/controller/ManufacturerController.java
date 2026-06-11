@@ -21,6 +21,7 @@ public class ManufacturerController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Manufacturer>>> getManufacturers() {
+        PermissionChecker.require("INVENTORY:VIEW");
         List<Manufacturer> manufacturers = manufacturerService.getManufacturers(TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(manufacturers));
     }

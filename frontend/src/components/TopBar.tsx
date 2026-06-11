@@ -185,7 +185,7 @@ const TYPE_META: Record<SearchResult["type"], { icon: typeof Car; label: string;
   garage:           { icon: Building2,    label: "Garage",     color: "#a855f7", bg: "rgba(168,85,247,0.1)" },
   "garage-request": { icon: ClipboardList, label: "Garage Req", color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
   "brand-request":  { icon: Palette,      label: "Brand Req",  color: "#14b8a6", bg: "rgba(20,184,166,0.1)" },
-  customer:         { icon: UserIcon,     label: "Customer",   color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
+  customer:         { icon: UserIcon,     label: "Customer",   color: "#6366f1", bg: "rgba(99,102,241,0.1)" },
   vehicle:          { icon: Car,          label: "Vehicle",    color: "#22c55e", bg: "rgba(34,197,94,0.1)" },
   order:            { icon: ShoppingCart, label: "Order",      color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
   invoice:          { icon: FileText,     label: "Invoice",    color: "#3b82f6", bg: "rgba(59,130,246,0.1)" },
@@ -268,7 +268,7 @@ export default function TopBar() {
 
   function handleLogout() { clearUser(); router.replace("/login"); }
 
-  const roleLabel = user?.role === "super_admin" ? "Super Admin" : user?.role === "garage_admin" ? "Owner" : user?.staffTitle || "Staff";
+  const roleLabel = user?.role === "super_admin" ? "Super Admin" : user?.role === "garage_admin" ? "Owner" : user?.roleName || user?.staffTitle || "Staff";
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border-color)] bg-[var(--surface-bg)]/80 backdrop-blur-xl">
@@ -285,8 +285,8 @@ export default function TopBar() {
           </motion.button>
 
           <div className="hidden sm:flex items-center gap-2 min-w-0">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center bg-red-500/10">
-              <Building2 className="w-3 h-3 text-red-500" />
+            <div className="w-6 h-6 rounded-md flex items-center justify-center bg-indigo-500/10">
+              <Building2 className="w-3 h-3 text-indigo-500" />
             </div>
             <span className="text-[13px] font-semibold text-[var(--surface-fg)] truncate">
               {user?.garageName || (superAdmin ? "Super Admin" : "My Garage")}
@@ -301,12 +301,12 @@ export default function TopBar() {
             <div
               className="relative rounded-xl transition-shadow duration-300"
               style={{
-                boxShadow: searchFocused ? "0 0 0 2px rgba(239,68,68,0.2), 0 4px 20px rgba(0,0,0,0.08)" : "none",
+                boxShadow: searchFocused ? "0 0 0 2px rgba(99,102,241,0.2), 0 4px 20px rgba(0,0,0,0.08)" : "none",
               }}
             >
               <Search
                 className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200
-                  ${searchFocused ? "text-red-500" : "text-[var(--text-tertiary)]"}`}
+                  ${searchFocused ? "text-indigo-500" : "text-[var(--text-tertiary)]"}`}
               />
               <input
                 ref={inputRef}
@@ -317,7 +317,7 @@ export default function TopBar() {
                 onBlur={() => { if (!query.trim()) setSearchFocused(false); }}
                 onKeyDown={handleKeyDown}
                 placeholder={superAdmin ? "Search garages, requests..." : "Search anything..."}
-                className="w-full pl-9 pr-16 py-2 rounded-xl text-sm text-[var(--surface-fg)] placeholder:text-[var(--text-tertiary)] bg-[var(--bg-tertiary)] border border-[var(--border-color)] focus:outline-none focus:border-red-500/30 transition-all duration-200"
+                className="w-full pl-9 pr-16 py-2 rounded-xl text-sm text-[var(--surface-fg)] placeholder:text-[var(--text-tertiary)] bg-[var(--bg-tertiary)] border border-[var(--border-color)] focus:outline-none focus:border-indigo-500/30 transition-all duration-200"
               />
               {!searchFocused && !query && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
@@ -326,7 +326,7 @@ export default function TopBar() {
                   </kbd>
                 </div>
               )}
-              {searchLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500 animate-spin" />}
+              {searchLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500 animate-spin" />}
             </div>
 
             {/* Dropdown */}
@@ -425,8 +425,8 @@ export default function TopBar() {
               <div
                 className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0"
                 style={{
-                  background: garageLogoUrl ? "transparent" : "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-                  boxShadow: "0 2px 8px rgba(239,68,68,0.2)",
+                  background: garageLogoUrl ? "transparent" : "linear-gradient(135deg, #818cf8 0%, #6366f1 100%)",
+                  boxShadow: "0 2px 8px rgba(99,102,241,0.2)",
                 }}
               >
                 {garageLogoUrl ? (
@@ -459,7 +459,7 @@ export default function TopBar() {
                     <div className="flex items-center gap-3">
                       <div
                         className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center shrink-0"
-                        style={{ background: garageLogoUrl ? "transparent" : "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)" }}
+                        style={{ background: garageLogoUrl ? "transparent" : "linear-gradient(135deg, #818cf8 0%, #6366f1 100%)" }}
                       >
                         {garageLogoUrl ? (
                           <Image src={garageLogoUrl} alt="Garage" width={36} height={36} className="w-full h-full object-cover" unoptimized />
@@ -486,7 +486,7 @@ export default function TopBar() {
                     )}
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2.5 px-4 py-2 text-left text-red-500 hover:bg-red-500/5 transition-all cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-4 py-2 text-left text-rose-500 hover:bg-rose-500/5 transition-all cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
                       <span className="text-[13px] font-medium">Logout</span>

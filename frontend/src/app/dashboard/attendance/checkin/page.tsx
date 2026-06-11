@@ -229,12 +229,15 @@ export default function CheckInPage() {
                     In Uniform
                   </label>
                   <button
+                    type="button"
+                    role="switch"
+                    aria-checked={inUniform}
                     onClick={() => setInUniform(!inUniform)}
-                    className={`w-10 h-6 rounded-full transition-colors relative ${
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                       inUniform ? "bg-ok" : "bg-gray-300"
                     }`}>
-                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                      inUniform ? "translate-x-[18px]" : "translate-x-0.5"
+                    <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${
+                      inUniform ? "translate-x-5" : "translate-x-0"
                     }`} />
                   </button>
                 </div>

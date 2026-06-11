@@ -22,6 +22,7 @@ public class PurchaseOrderController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<PurchaseOrder>>> getPurchaseOrders() {
+        PermissionChecker.require("INVENTORY:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/purchase-orders for garage {}", garageId);
         List<PurchaseOrder> orders = purchaseOrderService.getPurchaseOrders(garageId);

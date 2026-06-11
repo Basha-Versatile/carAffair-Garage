@@ -8,7 +8,7 @@ import {
   getEstimateLink, getIndianStates, assignService, markPaymentDue,
   type Order, type OrderLineItem, type OrderStatus,
 } from "@/lib/api-orders";
-import { getStaffMembers, type StaffMember } from "@/lib/api-staff";
+import { getStaffMembers, getAssignableRoles, type StaffMember, type AssignableRole } from "@/lib/api-staff";
 import { getInvoiceByOrderId, type Invoice } from "@/lib/api-invoices";
 import { getPackages, type ServicePackage } from "@/lib/api-packages";
 import { getGarageServices, createGarageService, type GarageService } from "@/lib/api-garage-services";
@@ -270,6 +270,7 @@ export default function OrderDetailPage() {
 
   // Staff assignment
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [assignableRoles, setAssignableRoles] = useState<AssignableRole[]>([]);
   const [assigning, setAssigning] = useState<string | null>(null);
   const [staffDropdownOpen, setStaffDropdownOpen] = useState<string | null>(null);
   const [assignConfirm, setAssignConfirm] = useState<{ lineItemId: string; serviceName: string; staff: StaffMember } | null>(null);
@@ -351,6 +352,7 @@ export default function OrderDetailPage() {
     getManufacturers().then(setManufacturers).catch(() => {});
     getPartCategories().then(setPartCategories).catch(() => {});
     getStaffMembers().then(setStaffMembers).catch(() => {});
+    getAssignableRoles().then(setAssignableRoles).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -1310,7 +1312,7 @@ export default function OrderDetailPage() {
           })()}
 
           {/* ─── Staff Assignment Section ─── */}
-          {order.status === "wip" && isOwner && serviceRows.length > 0 && (
+          {order.status === "wip" && (isOwner || canManage("STAFF")) && serviceRows.length > 0 && (
             <div className="bg-background rounded-lg border border-edge">
               <div className="flex items-center justify-between px-5 py-3 bg-dim border-b border-edge rounded-t-lg">
                 <div className="flex items-center gap-2">
@@ -1356,7 +1358,9 @@ export default function OrderDetailPage() {
                               {existing?.status === "completed" ? <Check className="w-3 h-3 shrink-0" /> : <ChevronDown className="w-3 h-3 shrink-0" />}
                             </button>
                             {isDropdownOpen && staffMembers.length > 0 && (() => {
-                              const activeStaff = staffMembers.filter(m => m.isActive);
+                              const isAdmin = user?.role === "garage_admin" || user?.role === "super_admin";
+                              const allowedRoleIds = new Set(assignableRoles.map(r => r.id));
+                              const activeStaff = staffMembers.filter(m => m.isActive && (isAdmin || (m.garageRoleId && allowedRoleIds.has(m.garageRoleId))));
                               const uniqueRoles = [...new Set(activeStaff.filter(m => m.roleName).map(m => m.roleName!))];
                               const filteredStaff = assignRoleFilter === "all" ? activeStaff : activeStaff.filter(m => m.roleName === assignRoleFilter);
                               return (
@@ -1700,7 +1704,7 @@ export default function OrderDetailPage() {
                   className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-primary border border-primary/20 rounded-lg hover:bg-primary-light transition-colors">
                   <Eye className="w-3.5 h-3.5" /> View Invoice
                 </button>
-                {!isGarageStaff() && (
+                {canViewFinancial("ORDERS") && (
                 <button onClick={() => {
                   const token = getAccessToken();
                   const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";

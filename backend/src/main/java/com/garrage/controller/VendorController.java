@@ -23,6 +23,7 @@ public class VendorController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Vendor>>> getVendors() {
+        PermissionChecker.require("VENDORS:VIEW");
         List<Vendor> vendors = vendorService.getVendors(TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(vendors));
     }
@@ -56,6 +57,7 @@ public class VendorController {
 
     @GetMapping("/pending")
     public ResponseEntity<ApiResponse<List<Vendor>>> getPendingVendors() {
+        PermissionChecker.require("VENDORS:VIEW");
         List<Vendor> vendors = vendorService.getPendingVendors();
         return ResponseEntity.ok(ApiResponse.ok(vendors));
     }

@@ -78,9 +78,9 @@ export default function LoginPage() {
         role: string;
         garageId: string | null;
         garageName: string;
-        permissions?: string[];
-        financialModules?: string[];
+        permissions?: Record<string, { view: boolean; manage: boolean; financial: boolean }>;
         garageRoleId?: string;
+        roleName?: string;
         staffTitle?: string;
       }>("/api/auth/verify-otp", { phone, otp: otp.join(""), role: "garage_admin" });
       setAuth({
@@ -92,8 +92,8 @@ export default function LoginPage() {
           garageId: data.garageId,
           garageName: data.garageName,
           permissions: data.permissions,
-          financialModules: data.financialModules,
           garageRoleId: data.garageRoleId,
+          roleName: data.roleName,
           staffTitle: data.staffTitle,
         },
         accessToken: data.accessToken,
@@ -111,13 +111,13 @@ export default function LoginPage() {
 
   /* ── 3D Tool data ── */
   const tools = [
-    { Icon: Wrench, top: "10%", left: "12%", size: 66, tilt: -20, dy: 20, dx: 8, fd: 6, sd: 14, accent: "#dc2626" },
+    { Icon: Wrench, top: "10%", left: "12%", size: 66, tilt: -20, dy: 20, dx: 8, fd: 6, sd: 14, accent: "#6366f1" },
     { Icon: Cog, top: "7%", left: "74%", size: 74, tilt: 12, dy: 24, dx: 10, fd: 7.5, sd: 18, accent: "#ffffff" },
-    { Icon: Gauge, top: "76%", left: "15%", size: 60, tilt: 8, dy: 18, dx: 6, fd: 5.5, sd: 16, accent: "#ef4444" },
-    { Icon: Fuel, top: "72%", left: "80%", size: 56, tilt: -15, dy: 22, dx: 9, fd: 6.5, sd: 20, accent: "#fca5a5" },
-    { Icon: CircleDot, top: "35%", left: "88%", size: 52, tilt: 25, dy: 16, dx: 7, fd: 5, sd: 22, accent: "#dc2626" },
-    { Icon: Zap, top: "40%", left: "6%", size: 50, tilt: -30, dy: 19, dx: 8, fd: 7, sd: 12, accent: "#f87171" },
-    { Icon: Wrench, top: "20%", left: "52%", size: 42, tilt: 40, dy: 14, dx: 5, fd: 8, sd: 24, accent: "#991b1b" },
+    { Icon: Gauge, top: "76%", left: "15%", size: 60, tilt: 8, dy: 18, dx: 6, fd: 5.5, sd: 16, accent: "#818cf8" },
+    { Icon: Fuel, top: "72%", left: "80%", size: 56, tilt: -15, dy: 22, dx: 9, fd: 6.5, sd: 20, accent: "#c7d2fe" },
+    { Icon: CircleDot, top: "35%", left: "88%", size: 52, tilt: 25, dy: 16, dx: 7, fd: 5, sd: 22, accent: "#6366f1" },
+    { Icon: Zap, top: "40%", left: "6%", size: 50, tilt: -30, dy: 19, dx: 8, fd: 7, sd: 12, accent: "#a5b4fc" },
+    { Icon: Wrench, top: "20%", left: "52%", size: 42, tilt: 40, dy: 14, dx: 5, fd: 8, sd: 24, accent: "#3730a3" },
     { Icon: Cog, top: "85%", left: "52%", size: 48, tilt: -8, dy: 16, dx: 7, fd: 6, sd: 15, accent: "#ffffff" },
   ] as const;
 
@@ -174,7 +174,7 @@ export default function LoginPage() {
               >
                 <div className="text-center mb-2">
                   <div className="inline-flex items-center justify-center bg-[var(--primary-lt-bg)] p-2.5 rounded-full mb-3">
-                    <Phone className="w-5 h-5 text-red-600" />
+                    <Phone className="w-5 h-5 text-indigo-600" />
                   </div>
                   <p className="text-sm text-[var(--text-mut)] mt-1">Enter your mobile number to continue</p>
                 </div>
@@ -192,7 +192,7 @@ export default function LoginPage() {
                       onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "")); setError(""); }}
                       onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
                       placeholder="Enter 10-digit number"
-                      className="flex-1 px-3.5 py-2.5 border border-[var(--border-color)] rounded-r-xl text-[var(--surface-fg)] bg-[var(--bg-tertiary)] placeholder:text-[var(--text-mut)] focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 text-base tracking-wide transition-all"
+                      className="flex-1 px-3.5 py-2.5 border border-[var(--border-color)] rounded-r-xl text-[var(--surface-fg)] bg-[var(--bg-tertiary)] placeholder:text-[var(--text-mut)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 text-base tracking-wide transition-all"
                       autoFocus
                     />
                   </div>
@@ -213,7 +213,7 @@ export default function LoginPage() {
                   whileTap={{ scale: 0.98 }}
                   onClick={handleSendOtp}
                   disabled={sendingOtp}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-red-600/20 hover:shadow-red-600/30 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sendingOtp ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -258,7 +258,7 @@ export default function LoginPage() {
                       value={digit}
                       onChange={(e) => handleOtpChange(i, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                      className="w-12 h-12 text-center text-xl font-semibold border-2 border-[var(--border-color)] rounded-xl text-[var(--surface-fg)] bg-[var(--bg-tertiary)] focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500/50 transition-all"
+                      className="w-12 h-12 text-center text-xl font-semibold border-2 border-[var(--border-color)] rounded-xl text-[var(--surface-fg)] bg-[var(--bg-tertiary)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all"
                     />
                   ))}
                 </div>
@@ -278,7 +278,7 @@ export default function LoginPage() {
                   whileTap={{ scale: 0.98 }}
                   onClick={handleVerifyOtp}
                   disabled={verifying}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-red-600/20 hover:shadow-red-600/30 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {verifying ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -296,7 +296,7 @@ export default function LoginPage() {
                       Resend OTP in <span className="font-medium text-[var(--text-sec)]">{countdown}s</span>
                     </p>
                   ) : (
-                    <button onClick={handleResend} className="text-sm text-red-500 font-medium hover:text-red-400 transition-colors">
+                    <button onClick={handleResend} className="text-sm text-indigo-500 font-medium hover:text-indigo-400 transition-colors">
                       Resend OTP
                     </button>
                   )}
@@ -357,13 +357,13 @@ export default function LoginPage() {
             style={{ transformStyle: "preserve-3d" }}
             className="w-[540px] h-[540px] xl:w-[640px] xl:h-[640px] rounded-full"
           >
-            <div className="absolute inset-0 rounded-full border-2 border-red-500/30" />
-            <div className="absolute inset-[3px] rounded-full border border-red-500/10" />
-            <div className="absolute inset-0 rounded-full shadow-[0_0_120px_rgba(220,38,38,0.2),0_0_40px_rgba(220,38,38,0.1),inset_0_0_80px_rgba(220,38,38,0.05)]" />
+            <div className="absolute inset-0 rounded-full border-2 border-indigo-500/30" />
+            <div className="absolute inset-[3px] rounded-full border border-indigo-500/10" />
+            <div className="absolute inset-0 rounded-full shadow-[0_0_120px_rgba(99,102,241,0.2),0_0_40px_rgba(99,102,241,0.1),inset_0_0_80px_rgba(99,102,241,0.05)]" />
             {ring1Nodes.map((deg) => (
               <div key={deg} className="absolute" style={{ top: "50%", left: "50%", transform: `rotate(${deg}deg) translateX(270px) translate(-50%,-50%)` }}>
-                <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_24px_rgba(220,38,38,1),0_0_50px_rgba(220,38,38,0.5),0_0_80px_rgba(220,38,38,0.2)]" />
-                <div className="absolute top-1/2 right-full -translate-y-1/2 w-8 h-0.5 bg-gradient-to-l from-red-500/60 to-transparent rounded-full" />
+                <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_24px_rgba(99,102,241,1),0_0_50px_rgba(99,102,241,0.5),0_0_80px_rgba(99,102,241,0.2)]" />
+                <div className="absolute top-1/2 right-full -translate-y-1/2 w-8 h-0.5 bg-gradient-to-l from-indigo-500/60 to-transparent rounded-full" />
               </div>
             ))}
           </motion.div>
@@ -395,9 +395,9 @@ export default function LoginPage() {
             style={{ transformStyle: "preserve-3d" }}
             className="w-[720px] h-[720px] xl:w-[840px] xl:h-[840px] rounded-full"
           >
-            <div className="absolute inset-0 rounded-full border border-red-800/[0.08]" />
+            <div className="absolute inset-0 rounded-full border border-indigo-800/[0.08]" />
             {ring3Nodes.map((deg) => (
-              <div key={deg} className="absolute w-1 h-1 rounded-full bg-red-400/20"
+              <div key={deg} className="absolute w-1 h-1 rounded-full bg-indigo-400/20"
                 style={{ top: "50%", left: "50%", transform: `rotate(${deg}deg) translateX(360px) translate(-50%,-50%)` }} />
             ))}
           </motion.div>
@@ -411,10 +411,10 @@ export default function LoginPage() {
             style={{ transformStyle: "preserve-3d" }}
             className="w-[480px] h-[480px] xl:w-[560px] xl:h-[560px] rounded-full"
           >
-            <div className="absolute inset-0 rounded-full border border-red-500/[0.08]" />
+            <div className="absolute inset-0 rounded-full border border-indigo-500/[0.08]" />
             {ring4Nodes.map((deg) => (
               <div key={deg} className="absolute" style={{ top: "50%", left: "50%", transform: `rotate(${deg}deg) translateX(240px) translate(-50%,-50%)` }}>
-                <div className="w-2 h-2 rounded-full bg-red-500/40 shadow-[0_0_12px_rgba(220,38,38,0.5)]" />
+                <div className="w-2 h-2 rounded-full bg-indigo-500/40 shadow-[0_0_12px_rgba(99,102,241,0.5)]" />
               </div>
             ))}
           </motion.div>
@@ -580,7 +580,7 @@ export default function LoginPage() {
           initial={{ x: "250%", opacity: 0 }}
           animate={{ x: "-200%", opacity: [0, 0.04, 0] }}
           transition={{ duration: 4.5, repeat: Infinity, repeatDelay: 11, ease: "easeInOut", delay: 4 }}
-          className="absolute top-0 left-0 w-1/5 h-full skew-x-12 bg-gradient-to-r from-transparent via-red-500/15 to-transparent pointer-events-none"
+          className="absolute top-0 left-0 w-1/5 h-full skew-x-12 bg-gradient-to-r from-transparent via-indigo-500/15 to-transparent pointer-events-none"
         />
 
         {/* Vignette */}

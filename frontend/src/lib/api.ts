@@ -59,9 +59,9 @@ async function tryRefreshToken(): Promise<boolean> {
         role: string;
         garageId: string | null;
         garageName: string;
-        permissions?: string[];
-        financialModules?: string[];
+        permissions?: Record<string, { view: boolean; manage: boolean; financial: boolean }>;
         garageRoleId?: string;
+        roleName?: string;
         staffTitle?: string;
       }>;
       try {
@@ -82,8 +82,8 @@ async function tryRefreshToken(): Promise<boolean> {
           garageId: d.garageId,
           garageName: d.garageName,
           permissions: d.permissions,
-          financialModules: d.financialModules,
           garageRoleId: d.garageRoleId,
+          roleName: d.roleName,
           staffTitle: d.staffTitle,
         },
         accessToken: d.accessToken,

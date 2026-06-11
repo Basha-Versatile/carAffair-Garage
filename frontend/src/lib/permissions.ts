@@ -128,3 +128,79 @@ export const FINANCIAL_MODULES: Module[] = [
   "DASHBOARD",
   "REPORTS",
 ];
+
+// ─── Static role defaults (mirrors backend ROLE_DEFAULTS — single source of truth for UI) ───
+
+export interface RoleDefault {
+  name: string;
+  description: string;
+  permissions: string[];
+  financialModules: string[];
+}
+
+export const ROLE_DEFAULTS: Record<string, RoleDefault> = {
+  "General Manager": {
+    name: "General Manager",
+    description: "Oversees all operations, staff, and reports",
+    permissions: [
+      "DASHBOARD:MANAGE", "ORDERS:MANAGE", "INVOICES:MANAGE",
+      "CUSTOMERS:MANAGE", "VEHICLES:MANAGE", "APPOINTMENTS:MANAGE",
+      "SERVICE_REMINDERS:MANAGE", "SERVICE_FEEDBACKS:MANAGE", "INSURANCE_DUE:MANAGE",
+      "REPORTS:MANAGE", "TALLY_EXPORT:MANAGE", "STAFF:MANAGE",
+      "ATTENDANCE:MANAGE", "LEAVES:MANAGE", "STAFF_PERFORMANCE:MANAGE",
+      "INVENTORY:VIEW", "ACCOUNTS:VIEW", "LOGS:VIEW",
+    ],
+    financialModules: ["ORDERS", "INVOICES", "INVENTORY", "ACCOUNTS", "DASHBOARD", "REPORTS"],
+  },
+  "Service Advisor": {
+    name: "Service Advisor",
+    description: "Manages job cards, customers, appointments, and staff",
+    permissions: [
+      "DASHBOARD:VIEW", "ORDERS:MANAGE", "INVOICES:VIEW",
+      "CUSTOMERS:MANAGE", "VEHICLES:MANAGE", "APPOINTMENTS:MANAGE",
+      "SERVICE_REMINDERS:VIEW", "SERVICE_FEEDBACKS:VIEW", "INSURANCE_DUE:VIEW",
+      "ATTENDANCE:VIEW", "LEAVES:VIEW",
+      "STAFF:MANAGE", "STAFF_PERFORMANCE:VIEW",
+    ],
+    financialModules: ["ORDERS", "INVOICES"],
+  },
+  "Technician": {
+    name: "Technician",
+    description: "Works on assigned tasks, updates progress",
+    permissions: [
+      "DASHBOARD:VIEW", "ORDERS:VIEW",
+      "ATTENDANCE:VIEW", "LEAVES:VIEW",
+    ],
+    financialModules: [],
+  },
+  "Store Keeper": {
+    name: "Store Keeper",
+    description: "Manages inventory, vendors, and purchase orders",
+    permissions: [
+      "DASHBOARD:VIEW", "INVENTORY:MANAGE", "VENDORS:MANAGE",
+      "ORDERS:VIEW", "ATTENDANCE:VIEW", "LEAVES:VIEW",
+    ],
+    financialModules: ["INVENTORY"],
+  },
+  "Accountant": {
+    name: "Accountant",
+    description: "Manages invoices, expenses, accounts, and reports",
+    permissions: [
+      "DASHBOARD:VIEW", "ORDERS:VIEW", "INVOICES:MANAGE",
+      "ACCOUNTS:MANAGE", "INVENTORY:VIEW", "VENDORS:VIEW",
+      "REPORTS:MANAGE", "TALLY_EXPORT:MANAGE", "ATTENDANCE:VIEW",
+    ],
+    financialModules: ["ORDERS", "INVOICES", "INVENTORY", "ACCOUNTS", "DASHBOARD", "REPORTS"],
+  },
+  "Front Desk Executive": {
+    name: "Front Desk Executive",
+    description: "Handles customers, appointments, and basic job cards",
+    permissions: [
+      "DASHBOARD:VIEW", "ORDERS:VIEW", "CUSTOMERS:MANAGE",
+      "VEHICLES:MANAGE", "APPOINTMENTS:MANAGE",
+      "SERVICE_REMINDERS:VIEW", "SERVICE_FEEDBACKS:VIEW", "INSURANCE_DUE:VIEW",
+      "INVOICES:VIEW", "ATTENDANCE:VIEW", "LEAVES:VIEW",
+    ],
+    financialModules: ["ORDERS", "INVOICES"],
+  },
+};

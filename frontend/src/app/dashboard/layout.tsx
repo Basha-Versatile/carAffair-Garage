@@ -119,7 +119,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   }, [pathname, router]);
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen bg-[#f8f9fc] dark:bg-gray-950">
       <Sidebar />
       <Backdrop />
       <div
@@ -180,7 +180,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!ready) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="flex items-center justify-center min-h-screen bg-[#f8f9fc] dark:bg-gray-950">
         <div className="w-7 h-7 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );

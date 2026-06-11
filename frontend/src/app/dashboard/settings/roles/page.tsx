@@ -63,7 +63,10 @@ export default function RolesPage() {
 
   // ── Permission helpers ──
   function hasPermission(module: Module, action: "VIEW" | "MANAGE"): boolean {
-    return formPermissions.includes(`${module}:${action}`);
+    if (action === "VIEW") {
+      return formPermissions.includes(`${module}:VIEW`) || formPermissions.includes(`${module}:MANAGE`);
+    }
+    return formPermissions.includes(`${module}:MANAGE`);
   }
 
   function togglePermission(module: Module, action: "VIEW" | "MANAGE") {

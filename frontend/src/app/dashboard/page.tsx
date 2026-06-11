@@ -36,7 +36,7 @@ import {
 /* ── Palette ──────────────────────────────────────── */
 
 const BRAND_COLORS = [
-  "#dc2626", "#2563eb", "#16a34a", "#d97706", "#7c3aed",
+  "#6366f1", "#2563eb", "#16a34a", "#d97706", "#7c3aed",
   "#db2777", "#0891b2", "#ea580c", "#4f46e5", "#059669",
   "#be123c", "#1d4ed8", "#15803d", "#b45309", "#6d28d9",
 ];
@@ -71,48 +71,77 @@ const CATEGORY_COLORS: Record<string, string> = {
   VAN: "#dc2626",
 };
 
-/* ── KPI card ─────────────────────────────────────── */
+/* ── KPI card (glassmorphic with colored top strip) ── */
+
+/* Color pairs for dual-tone icon gradients */
+const COLOR_PAIRS: Record<string, string> = {
+  "#6366f1": "#a78bfa", // indigo → violet
+  "#10b981": "#34d399", // emerald → green
+  "#f59e0b": "#fbbf24", // amber → yellow
+  "#8b5cf6": "#c084fc", // purple → lavender
+  "#14b8a6": "#2dd4bf", // teal → cyan
+  "#ef4444": "#f87171", // red → rose
+  "#3b82f6": "#60a5fa", // blue → sky
+  "#ec4899": "#f472b6", // pink → rose
+  "#f97316": "#fb923c", // orange → amber
+  "#9ca3af": "#d1d5db", // gray → light gray
+};
 
 function KpiCard({
-  label, value, icon: Icon, iconBg, change,
+  label, value, icon: Icon, color, change, subtitle,
 }: {
   label: string;
   value: string;
   icon: React.ElementType;
-  iconBg: string;
+  color: string;
   change?: { pct: number; label: string };
+  subtitle?: string;
 }) {
+  const color2 = COLOR_PAIRS[color] || color;
   return (
-    <div className="glass-card p-5 flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${iconBg}`}>
-          <Icon className="w-5 h-5 text-white" />
-        </div>
-        {change && change.pct !== 0 && (
-          <span
-            className={`flex items-center gap-0.5 text-xs font-medium px-2 py-0.5 rounded-full ${
-              change.pct > 0
-                ? "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-400"
-                : "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-400"
-            }`}
+    <div
+      className="relative overflow-hidden rounded-2xl p-5 transition-all duration-300 bg-white dark:bg-gray-800/70 hover:-translate-y-1 hover:scale-[1.01]"
+      style={{
+        boxShadow: `0 6px 28px -4px ${color}30, 0 2px 10px ${color}18`,
+        border: '1px solid transparent',
+        backgroundImage: `linear-gradient(white, white), linear-gradient(135deg, ${color}45, ${color2}25 40%, rgba(139,92,246,0.15) 60%, ${color}35)`,
+        backgroundOrigin: 'border-box',
+        backgroundClip: 'padding-box, border-box',
+      }}
+    >
+      <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: `linear-gradient(to right, ${color}, ${color2})` }} />
+      <div className="absolute -top-10 -left-10 w-40 h-40" style={{ background: `radial-gradient(circle, ${color}18, ${color}08 40%, transparent 70%)` }} />
+      <div className="absolute inset-0" style={{ background: `linear-gradient(to right, ${color}0d, ${color}05 40%, transparent 70%)` }} />
+      <div className="relative z-10">
+        <div className="flex items-center gap-3 mb-3">
+          <div
+            className="p-2.5 rounded-xl"
+            style={{ background: color, boxShadow: `0 4px 12px ${color}45` }}
           >
-            {change.pct > 0 ? (
-              <TrendingUp className="w-3 h-3" />
-            ) : (
-              <TrendingDown className="w-3 h-3" />
-            )}
-            {Math.abs(change.pct).toFixed(1)}%
-          </span>
-        )}
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
-        <p className="text-xs text-muted mt-0.5">
-          {label}
-          {change && change.label && (
-            <span className="text-muted"> &middot; {change.label}</span>
+            <Icon className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{label}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{value}</div>
+          {change && change.pct !== 0 && (
+            <span
+              className={`flex items-center gap-0.5 text-xs font-semibold px-2.5 py-1 rounded-full ${
+                change.pct > 0
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                  : "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400"
+              }`}
+            >
+              {change.pct > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {Math.abs(change.pct).toFixed(1)}%
+            </span>
           )}
-        </p>
+        </div>
+        {(subtitle || change?.label) && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            {subtitle || change?.label}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -137,7 +166,20 @@ function SectionHeader({ icon: Icon, title, subtitle }: { icon: React.ElementTyp
 /* ── Chart card wrapper ───────────────────────────── */
 
 function ChartCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`glass-card p-5 ${className}`}>{children}</div>;
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl p-5 bg-white dark:bg-gray-800/90 transition-all duration-300 ${className}`}
+      style={{
+        boxShadow: "0 6px 28px -4px rgba(99,102,241,0.15), 0 2px 10px rgba(0,0,0,0.05)",
+        border: "1px solid transparent",
+        backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.18) 40%, rgba(16,185,129,0.15) 60%, rgba(99,102,241,0.25))",
+        backgroundOrigin: "border-box",
+        backgroundClip: "padding-box, border-box",
+      }}
+    >
+      {children}
+    </div>
+  );
 }
 
 /* ── Custom tooltips ──────────────────────────────── */
@@ -213,6 +255,7 @@ function WidgetCard({
   title,
   icon: Icon,
   count,
+  color = "#6366f1",
   dateRange,
   onDateChange,
   customFrom,
@@ -224,6 +267,7 @@ function WidgetCard({
   title: string;
   icon: React.ElementType;
   count?: number | string;
+  color?: string;
   dateRange: DateRange;
   onDateChange: (v: DateRange) => void;
   customFrom?: string;
@@ -232,23 +276,40 @@ function WidgetCard({
   children: React.ReactNode;
   className?: string;
 }) {
+  const color2 = COLOR_PAIRS[color] || color;
   return (
-    <div className={`glass-card overflow-hidden ${className}`}>
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge-light">
+    <div
+      className={`relative overflow-hidden rounded-2xl transition-all duration-300 bg-white dark:bg-gray-800/90 hover:-translate-y-0.5 ${className}`}
+      style={{
+        boxShadow: `0 6px 28px -4px ${color}25, 0 2px 10px rgba(0,0,0,0.06)`,
+        border: `1px solid transparent`,
+        backgroundImage: `linear-gradient(white, white), linear-gradient(135deg, ${color}55, ${color2}30 30%, rgba(139,92,246,0.18) 50%, rgba(16,185,129,0.22) 70%, ${color}45)`,
+        backgroundOrigin: 'border-box',
+        backgroundClip: 'padding-box, border-box',
+      }}
+    >
+      <div className="absolute -top-10 -left-10 w-44 h-44" style={{ background: `radial-gradient(circle, ${color}18, ${color}08 40%, transparent 70%)` }} />
+      <div className="relative z-10 flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700/50">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center">
-            <Icon className="w-4 h-4 text-brand-500" />
+          <div
+            className="p-2 rounded-xl"
+            style={{ background: color, boxShadow: `0 4px 12px ${color}45` }}
+          >
+            <Icon className="w-4 h-4 text-white" />
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          </div>
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
           {count !== undefined && (
-            <span className="text-xs font-bold text-brand-500 bg-brand-500/10 px-2 py-0.5 rounded-full ml-1">{count}</span>
+            <span
+              className="text-xs font-bold px-2.5 py-0.5 rounded-full ml-1"
+              style={{ color, backgroundColor: `${color}12` }}
+            >
+              {count}
+            </span>
           )}
         </div>
         <DateRangeFilter value={dateRange} onChange={onDateChange} customFrom={customFrom} customTo={customTo} onCustomChange={onCustomChange} />
       </div>
-      <div className="p-5">{children}</div>
+      <div className="relative z-10 p-5">{children}</div>
     </div>
   );
 }
@@ -335,16 +396,16 @@ function StaffDashboard() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <KpiCard label="Total Tasks" value={tasks.length.toString()} icon={ClipboardList} iconBg="bg-brand-500" />
-        <KpiCard label="Pending" value={pending.toString()} icon={Clock} iconBg="bg-gray-400" />
-        <KpiCard label="In Progress" value={inProgress.toString()} icon={Wrench} iconBg="bg-warning-500" />
-        <KpiCard label="Completed" value={completed.toString()} icon={CheckCircle2} iconBg="bg-success-500" />
+        <KpiCard label="Total Tasks" value={tasks.length.toString()} icon={ClipboardList} color="#6366f1" />
+        <KpiCard label="Pending" value={pending.toString()} icon={Clock} color="#9ca3af" />
+        <KpiCard label="In Progress" value={inProgress.toString()} icon={Wrench} color="#f59e0b" />
+        <KpiCard label="Completed" value={completed.toString()} icon={CheckCircle2} color="#10b981" />
       </div>
 
       {tasks.length > 0 && (
-        <div className="glass-card p-5">
+        <div className="relative overflow-hidden rounded-2xl p-5 bg-white/80 dark:bg-gray-800/60 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/60 dark:border-gray-600/40 shadow-lg shadow-indigo-500/5">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-foreground">Overall Progress</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">Overall Progress</p>
             <span className="text-xs font-medium text-muted">{completed} / {tasks.length} completed</span>
           </div>
           <div className="w-full h-2.5 bg-hover rounded-full overflow-hidden">
@@ -362,7 +423,7 @@ function StaffDashboard() {
         </h2>
 
         {activeTasks.length === 0 ? (
-          <div className="glass-card p-10 text-center">
+          <div className="relative overflow-hidden rounded-2xl p-10 text-center bg-white/80 dark:bg-gray-800/60 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/60 dark:border-gray-600/40">
             <CheckCircle2 className="w-10 h-10 text-ok mx-auto mb-3" />
             <p className="text-foreground font-medium">All tasks completed!</p>
             <p className="text-sm text-muted mt-1">No pending work right now.</p>
@@ -371,7 +432,7 @@ function StaffDashboard() {
           <div className="space-y-3">
             {activeTasks.map((task) => (
               <div key={`${task.orderId}-${task.assignment.lineItemId}`}
-                className="glass-card p-4">
+                className="relative overflow-hidden rounded-2xl p-4 bg-white/80 dark:bg-gray-800/60 backdrop-blur-xl backdrop-saturate-150 border border-gray-200/60 dark:border-gray-600/40 shadow-md">
                 <div className="flex items-start justify-between mb-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-foreground">{task.serviceDescription}</p>
@@ -425,7 +486,7 @@ function StaffDashboard() {
           <div className="space-y-2">
             {tasks.filter(t => t.assignment.status === "completed").map((task) => (
               <div key={`${task.orderId}-${task.assignment.lineItemId}`}
-                className="glass-card-light p-4 opacity-75">
+                className="rounded-2xl p-4 opacity-75 bg-gray-50/60 dark:bg-gray-800/30 border border-gray-200/40 dark:border-gray-600/20">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -501,17 +562,18 @@ function SuperAdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard label="Active Garages" value={s.activeGarages.toLocaleString()} icon={Building2} iconBg="bg-success-500" />
-        <KpiCard label="Inactive Garages" value={s.inactiveGarages.toLocaleString()} icon={Building2} iconBg="bg-error-500" />
-        <KpiCard label="Pending Garage Requests" value={s.pendingGarageRequests.toLocaleString()} icon={ClipboardList} iconBg="bg-warning-500" />
-        <KpiCard label="Pending Brand Requests" value={s.pendingBrandRequests.toLocaleString()} icon={Palette} iconBg="bg-brand-500" />
+        <KpiCard label="Active Garages" value={s.activeGarages.toLocaleString()} icon={Building2} color="#10b981" />
+        <KpiCard label="Inactive Garages" value={s.inactiveGarages.toLocaleString()} icon={Building2} color="#ef4444" />
+        <KpiCard label="Pending Garage Requests" value={s.pendingGarageRequests.toLocaleString()} icon={ClipboardList} color="#f59e0b" />
+        <KpiCard label="Pending Brand Requests" value={s.pendingBrandRequests.toLocaleString()} icon={Palette} color="#6366f1" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Garage Status */}
-        <div onClick={() => router.push("/dashboard/super-admin/garages")} className="glass-card p-5 cursor-pointer hover:shadow-theme-lg transition-shadow group">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-foreground">Garage Status</h3>
+        <div onClick={() => router.push("/dashboard/super-admin/garages")} className="relative overflow-hidden rounded-2xl p-5 cursor-pointer bg-white dark:bg-gray-800/90 hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 group" style={{ boxShadow: "0 6px 28px -4px rgba(16,185,129,0.22), 0 2px 10px rgba(0,0,0,0.05)", border: "1px solid transparent", backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, rgba(16,185,129,0.4), rgba(52,211,153,0.2) 40%, rgba(139,92,246,0.15) 60%, rgba(16,185,129,0.3))", backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box" }}>
+          <div className="absolute -top-10 -left-10 w-44 h-44" style={{ background: "radial-gradient(circle, rgba(16,185,129,0.15), rgba(16,185,129,0.05) 40%, transparent 70%)" }} />
+          <div className="relative z-10 flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Garage Status</h3>
             <ChevronRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors" />
           </div>
           <p className="text-xs text-muted mb-3">{s.totalGarages} total garages</p>
@@ -535,9 +597,10 @@ function SuperAdminDashboard() {
         </div>
 
         {/* Garage Requests */}
-        <div onClick={() => router.push("/dashboard/super-admin/garage-requests")} className="glass-card p-5 cursor-pointer hover:shadow-theme-lg transition-shadow group">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-foreground">Garage Requests</h3>
+        <div onClick={() => router.push("/dashboard/super-admin/garage-requests")} className="relative overflow-hidden rounded-2xl p-5 cursor-pointer bg-white dark:bg-gray-800/90 hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 group" style={{ boxShadow: "0 6px 28px -4px rgba(245,158,11,0.22), 0 2px 10px rgba(0,0,0,0.05)", border: "1px solid transparent", backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, rgba(245,158,11,0.4), rgba(251,191,36,0.2) 40%, rgba(139,92,246,0.15) 60%, rgba(245,158,11,0.3))", backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box" }}>
+          <div className="absolute -top-10 -left-10 w-44 h-44" style={{ background: "radial-gradient(circle, rgba(245,158,11,0.15), rgba(245,158,11,0.05) 40%, transparent 70%)" }} />
+          <div className="relative z-10 flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Garage Requests</h3>
             <ChevronRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors" />
           </div>
           <p className="text-xs text-muted mb-3">{s.totalGarageRequests} total requests</p>
@@ -560,9 +623,10 @@ function SuperAdminDashboard() {
         </div>
 
         {/* Brand Requests */}
-        <div onClick={() => router.push("/dashboard/super-admin/brand-requests")} className="glass-card p-5 cursor-pointer hover:shadow-theme-lg transition-shadow group">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold text-foreground">Brand Requests</h3>
+        <div onClick={() => router.push("/dashboard/super-admin/brand-requests")} className="relative overflow-hidden rounded-2xl p-5 cursor-pointer bg-white dark:bg-gray-800/90 hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 group" style={{ boxShadow: "0 6px 28px -4px rgba(99,102,241,0.22), 0 2px 10px rgba(0,0,0,0.05)", border: "1px solid transparent", backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, rgba(99,102,241,0.4), rgba(165,180,252,0.2) 40%, rgba(16,185,129,0.15) 60%, rgba(99,102,241,0.3))", backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box" }}>
+          <div className="absolute -top-10 -left-10 w-44 h-44" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.15), rgba(99,102,241,0.05) 40%, transparent 70%)" }} />
+          <div className="relative z-10 flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Brand Requests</h3>
             <ChevronRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors" />
           </div>
           <p className="text-xs text-muted mb-3">{s.totalBrandRequests} total requests</p>
@@ -587,20 +651,23 @@ function SuperAdminDashboard() {
 
       {/* Quick Links */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <button onClick={() => router.push("/dashboard/super-admin/garages")} className="glass-card p-4 flex items-center gap-3 hover:shadow-theme-lg transition-shadow text-left group">
-          <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center shrink-0"><Building2 className="w-5 h-5 text-white" /></div>
-          <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground">Manage Garages</p><p className="text-xs text-muted">{s.totalGarages} total</p></div>
-          <ArrowRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
+        <button onClick={() => router.push("/dashboard/super-admin/garages")} className="relative overflow-hidden rounded-2xl p-4 flex items-center gap-3 bg-white dark:bg-gray-800/90 hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 text-left group" style={{ boxShadow: "0 6px 28px -4px rgba(139,92,246,0.22), 0 2px 10px rgba(0,0,0,0.05)", border: "1px solid transparent", backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, rgba(139,92,246,0.4), rgba(192,132,252,0.2) 50%, rgba(139,92,246,0.3))", backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box" }}>
+          <div className="absolute -top-8 -left-8 w-32 h-32" style={{ background: "radial-gradient(circle, rgba(139,92,246,0.12), transparent 70%)" }} />
+          <div className="p-2.5 rounded-xl" style={{ background: "#8b5cf6", boxShadow: "0 4px 12px rgba(139,92,246,0.45)" }}><Building2 className="w-5 h-5 text-white" /></div>
+          <div className="flex-1 min-w-0"><p className="text-sm font-medium text-gray-900 dark:text-white">Manage Garages</p><p className="text-xs text-gray-500 dark:text-gray-400">{s.totalGarages} total</p></div>
+          <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors shrink-0" />
         </button>
-        <button onClick={() => router.push("/dashboard/super-admin/garage-requests")} className="glass-card p-4 flex items-center gap-3 hover:shadow-theme-lg transition-shadow text-left group">
-          <div className="w-10 h-10 rounded-lg bg-amber-500 flex items-center justify-center shrink-0"><ClipboardList className="w-5 h-5 text-white" /></div>
-          <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground">Garage Requests</p><p className="text-xs text-muted">{s.pendingGarageRequests} pending</p></div>
-          <ArrowRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
+        <button onClick={() => router.push("/dashboard/super-admin/garage-requests")} className="relative overflow-hidden rounded-2xl p-4 flex items-center gap-3 bg-white dark:bg-gray-800/90 hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 text-left group" style={{ boxShadow: "0 6px 28px -4px rgba(245,158,11,0.22), 0 2px 10px rgba(0,0,0,0.05)", border: "1px solid transparent", backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, rgba(245,158,11,0.4), rgba(251,191,36,0.2) 50%, rgba(245,158,11,0.3))", backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box" }}>
+          <div className="absolute -top-8 -left-8 w-32 h-32" style={{ background: "radial-gradient(circle, rgba(245,158,11,0.12), transparent 70%)" }} />
+          <div className="p-2.5 rounded-xl" style={{ background: "#f59e0b", boxShadow: "0 4px 12px rgba(245,158,11,0.45)" }}><ClipboardList className="w-5 h-5 text-white" /></div>
+          <div className="flex-1 min-w-0"><p className="text-sm font-medium text-gray-900 dark:text-white">Garage Requests</p><p className="text-xs text-gray-500 dark:text-gray-400">{s.pendingGarageRequests} pending</p></div>
+          <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors shrink-0" />
         </button>
-        <button onClick={() => router.push("/dashboard/super-admin/brand-requests")} className="glass-card p-4 flex items-center gap-3 hover:shadow-theme-lg transition-shadow text-left group">
-          <div className="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center shrink-0"><Palette className="w-5 h-5 text-white" /></div>
-          <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground">Brand Requests</p><p className="text-xs text-muted">{s.pendingBrandRequests} pending</p></div>
-          <ArrowRight className="w-4 h-4 text-muted group-hover:text-foreground transition-colors shrink-0" />
+        <button onClick={() => router.push("/dashboard/super-admin/brand-requests")} className="relative overflow-hidden rounded-2xl p-4 flex items-center gap-3 bg-white dark:bg-gray-800/90 hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 text-left group" style={{ boxShadow: "0 6px 28px -4px rgba(20,184,166,0.22), 0 2px 10px rgba(0,0,0,0.05)", border: "1px solid transparent", backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, rgba(20,184,166,0.4), rgba(45,212,191,0.2) 50%, rgba(20,184,166,0.3))", backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box" }}>
+          <div className="absolute -top-8 -left-8 w-32 h-32" style={{ background: "radial-gradient(circle, rgba(20,184,166,0.12), transparent 70%)" }} />
+          <div className="p-2.5 rounded-xl" style={{ background: "#14b8a6", boxShadow: "0 4px 12px rgba(20,184,166,0.45)" }}><Palette className="w-5 h-5 text-white" /></div>
+          <div className="flex-1 min-w-0"><p className="text-sm font-medium text-gray-900 dark:text-white">Brand Requests</p><p className="text-xs text-gray-500 dark:text-gray-400">{s.pendingBrandRequests} pending</p></div>
+          <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors shrink-0" />
         </button>
       </div>
     </div>
@@ -977,39 +1044,40 @@ function AdminDashboard() {
       </div>
 
       {/* ═══ KPI Cards ═══ */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {canViewFinancial("DASHBOARD") && (
-          <KpiCard label="Revenue This Month" value={`₹${currentMonthRevenue.toLocaleString("en-IN")}`} icon={IndianRupee} iconBg="bg-brand-500" change={revenueChange} />
+          <KpiCard label="Revenue This Month" value={`₹${currentMonthRevenue.toLocaleString("en-IN")}`} icon={IndianRupee} color="#6366f1" change={revenueChange} />
         )}
-        <KpiCard label="Total Orders" value={totalOrders.toLocaleString()} icon={ClipboardList} iconBg="bg-success-500" />
-        <KpiCard label="Customers" value={customerCount.toLocaleString()} icon={Users} iconBg="bg-warning-500" />
+        <KpiCard label="Total Orders" value={totalOrders.toLocaleString()} icon={ClipboardList} color="#10b981" />
+        <KpiCard label="Customers" value={customerCount.toLocaleString()} icon={Users} color="#f59e0b" />
         {canViewFinancial("DASHBOARD") && (
-          <KpiCard label="Avg Order Value" value={`₹${avgOrderValue.toLocaleString("en-IN")}`} icon={Receipt} iconBg="bg-purple-500" />
+          <KpiCard label="Avg Order Value" value={`₹${avgOrderValue.toLocaleString("en-IN")}`} icon={Receipt} color="#8b5cf6" />
         )}
         {canViewFinancial("DASHBOARD") && (
-          <KpiCard label="Collection Rate" value={`${collectionRate}%`} icon={FileText} iconBg="bg-teal-500" />
+          <KpiCard label="Collection Rate" value={`${collectionRate}%`} icon={FileText} color="#14b8a6" />
         )}
-        <KpiCard label="Low Stock Parts" value={lowStockParts.length.toLocaleString()} icon={AlertTriangle} iconBg="bg-error-500" />
+        <KpiCard label="Low Stock Parts" value={lowStockParts.length.toLocaleString()} icon={AlertTriangle} color="#ef4444" />
       </div>
 
       {/* ═══ Staff Attendance + Top Performers + Appointments ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* TODAY'S ATTENDANCE */}
-        <div className="glass-card overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge-light">
+        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/90 hover:shadow-lg transition-all duration-300" style={{ boxShadow: "0 6px 28px -4px rgba(16,185,129,0.22), 0 2px 10px rgba(0,0,0,0.05)", border: "1px solid transparent", backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, rgba(16,185,129,0.4), rgba(52,211,153,0.2) 40%, rgba(139,92,246,0.15) 60%, rgba(16,185,129,0.3))", backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box" }}>
+          <div className="absolute -top-10 -left-10 w-44 h-44" style={{ background: "radial-gradient(circle, rgba(16,185,129,0.15), rgba(16,185,129,0.05) 40%, transparent 70%)" }} />
+          <div className="relative z-10 flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700/50">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-success-500/10 flex items-center justify-center">
-                <UserCheck className="w-4 h-4 text-success-500" />
+              <div className="p-2 rounded-xl" style={{ background: "#10b981", boxShadow: "0 4px 12px rgba(16,185,129,0.45)" }}>
+                <UserCheck className="w-4 h-4 text-white" />
               </div>
-              <h3 className="text-sm font-semibold text-foreground">Today&apos;s Attendance</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Today&apos;s Attendance</h3>
             </div>
-            <button onClick={() => router.push("/dashboard/attendance")} className="text-[11px] font-medium text-brand-500 hover:underline">View All</button>
+            <button onClick={() => router.push("/dashboard/attendance")} className="text-[11px] font-medium text-indigo-500 hover:underline">View All</button>
           </div>
-          <div className="p-5">
+          <div className="relative z-10 p-5">
             <div className="flex items-center gap-4 mb-4">
               <div className="flex-1 text-center">
-                <p className="text-2xl font-bold text-success-500">{todayAttendance.filter(a => a.status === "checked_in").length}</p>
-                <p className="text-[11px] text-muted">Working</p>
+                <p className="text-2xl font-bold text-emerald-500">{todayAttendance.filter(a => a.status === "checked_in").length}</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">Working</p>
               </div>
               <div className="w-px h-10 bg-edge-light" />
               <div className="flex-1 text-center">
@@ -1048,15 +1116,16 @@ function AdminDashboard() {
         </div>
 
         {/* TOP PERFORMERS THIS MONTH */}
-        <div className="glass-card overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge-light">
+        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/90 hover:shadow-lg transition-all duration-300" style={{ boxShadow: "0 6px 28px -4px rgba(245,158,11,0.22), 0 2px 10px rgba(0,0,0,0.05)", border: "1px solid transparent", backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, rgba(245,158,11,0.4), rgba(251,191,36,0.2) 40%, rgba(139,92,246,0.15) 60%, rgba(245,158,11,0.3))", backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box" }}>
+          <div className="absolute -top-10 -left-10 w-44 h-44" style={{ background: "radial-gradient(circle, rgba(245,158,11,0.15), rgba(245,158,11,0.05) 40%, transparent 70%)" }} />
+          <div className="relative z-10 flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700/50">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-warning-500/10 flex items-center justify-center">
-                <Trophy className="w-4 h-4 text-warning-500" />
+              <div className="p-2 rounded-xl" style={{ background: "#f59e0b", boxShadow: "0 4px 12px rgba(245,158,11,0.45)" }}>
+                <Trophy className="w-4 h-4 text-white" />
               </div>
-              <h3 className="text-sm font-semibold text-foreground">Top Performers</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Top Performers</h3>
             </div>
-            <button onClick={() => router.push("/dashboard/reports/staff-performance")} className="text-[11px] font-medium text-brand-500 hover:underline">View All</button>
+            <button onClick={() => router.push("/dashboard/reports/staff-performance")} className="text-[11px] font-medium text-indigo-500 hover:underline">View All</button>
           </div>
           <div className="p-5">
             {staffPerf.length === 0 ? (
@@ -1095,15 +1164,16 @@ function AdminDashboard() {
         </div>
 
         {/* UPCOMING APPOINTMENTS */}
-        <div className="glass-card overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge-light">
+        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/90 hover:shadow-lg transition-all duration-300" style={{ boxShadow: "0 6px 28px -4px rgba(99,102,241,0.22), 0 2px 10px rgba(0,0,0,0.05)", border: "1px solid transparent", backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, rgba(99,102,241,0.4), rgba(165,180,252,0.2) 40%, rgba(16,185,129,0.15) 60%, rgba(99,102,241,0.3))", backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box" }}>
+          <div className="absolute -top-10 -left-10 w-44 h-44" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.15), rgba(99,102,241,0.05) 40%, transparent 70%)" }} />
+          <div className="relative z-10 flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-700/50">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center">
-                <Calendar className="w-4 h-4 text-brand-500" />
+              <div className="p-2 rounded-xl" style={{ background: "#6366f1", boxShadow: "0 4px 12px rgba(99,102,241,0.45)" }}>
+                <Calendar className="w-4 h-4 text-white" />
               </div>
-              <h3 className="text-sm font-semibold text-foreground">Upcoming Appointments</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Upcoming Appointments</h3>
             </div>
-            <button onClick={() => router.push("/dashboard/appointments")} className="text-[11px] font-medium text-brand-500 hover:underline">View All</button>
+            <button onClick={() => router.push("/dashboard/appointments")} className="text-[11px] font-medium text-indigo-500 hover:underline">View All</button>
           </div>
           <div className="p-5">
             {upcomingBookings.length === 0 ? (
@@ -1137,7 +1207,7 @@ function AdminDashboard() {
       {/* ═══ Vehicle by Make + Work Orders Status ═══ */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         {/* VEHICLE BY MAKE */}
-        <WidgetCard title="Vehicle by Make" icon={Car} count={totalVehiclesFiltered} dateRange={vehicleDateRange} onDateChange={setVehicleDateRange} customFrom={cd("vehicle").from} customTo={cd("vehicle").to} onCustomChange={(f, t) => setCd("vehicle", f, t)}>
+        <WidgetCard title="Vehicle by Make" icon={Car} color="#3b82f6" count={totalVehiclesFiltered} dateRange={vehicleDateRange} onDateChange={setVehicleDateRange} customFrom={cd("vehicle").from} customTo={cd("vehicle").to} onCustomChange={(f, t) => setCd("vehicle", f, t)}>
           {vehicleBrandGrid.length === 0 ? (
             <div className="flex items-center justify-center h-32">
               <p className="text-sm text-muted">No vehicle data yet</p>
@@ -1168,7 +1238,7 @@ function AdminDashboard() {
         </WidgetCard>
 
         {/* WORK ORDERS STATUS */}
-        <WidgetCard title="Work Orders Status" icon={ClipboardList} count={orderStatusTotal.count} dateRange={orderStatusDateRange} onDateChange={setOrderStatusDateRange} customFrom={cd("orderStatus").from} customTo={cd("orderStatus").to} onCustomChange={(f, t) => setCd("orderStatus", f, t)}>
+        <WidgetCard title="Work Orders Status" icon={ClipboardList} color="#8b5cf6" count={orderStatusTotal.count} dateRange={orderStatusDateRange} onDateChange={setOrderStatusDateRange} customFrom={cd("orderStatus").from} customTo={cd("orderStatus").to} onCustomChange={(f, t) => setCd("orderStatus", f, t)}>
           <div className="space-y-1">
             {orderStatusRows.map((row) => {
               const Icon = row.icon;
@@ -1201,7 +1271,7 @@ function AdminDashboard() {
       </div>
 
       {/* ═══ Work Orders Day Wise ═══ */}
-      <WidgetCard title="Work Orders Day Wise" icon={Calendar} count={orderDayWiseData.reduce((s, d) => s + d.count, 0)} dateRange={orderDayWiseDateRange} onDateChange={setOrderDayWiseDateRange} customFrom={cd("orderDayWise").from} customTo={cd("orderDayWise").to} onCustomChange={(f, t) => setCd("orderDayWise", f, t)}>
+      <WidgetCard title="Work Orders Day Wise" icon={Calendar} color="#6366f1" count={orderDayWiseData.reduce((s, d) => s + d.count, 0)} dateRange={orderDayWiseDateRange} onDateChange={setOrderDayWiseDateRange} customFrom={cd("orderDayWise").from} customTo={cd("orderDayWise").to} onCustomChange={(f, t) => setCd("orderDayWise", f, t)}>
         {orderDayWiseData.length === 0 ? (
           <div className="flex items-center justify-center h-48">
             <p className="text-sm text-muted">No orders in selected period</p>
@@ -1212,8 +1282,8 @@ function AdminDashboard() {
               <BarChart data={orderDayWiseData}>
                 <defs>
                   <linearGradient id="dayBarGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#dc2626" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#dc2626" stopOpacity={0.5} />
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0.5} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-edge, #e5e7eb)" strokeOpacity={0.5} />
@@ -1231,7 +1301,7 @@ function AdminDashboard() {
       {canViewFinancial("DASHBOARD") && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           {/* SALES */}
-          <WidgetCard title="Sales" icon={IndianRupee} dateRange={salesDateRange} onDateChange={setSalesDateRange} customFrom={cd("sales").from} customTo={cd("sales").to} onCustomChange={(f, t) => setCd("sales", f, t)}>
+          <WidgetCard title="Sales" icon={IndianRupee} color="#10b981" dateRange={salesDateRange} onDateChange={setSalesDateRange} customFrom={cd("sales").from} customTo={cd("sales").to} onCustomChange={(f, t) => setCd("sales", f, t)}>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { label: "Estimates", count: salesSummary.estimates.count, amount: salesSummary.estimates.amount, color: "bg-blue-500", icon: FileText },
@@ -1240,13 +1310,13 @@ function AdminDashboard() {
               ].map((item) => {
                 const ItemIcon = item.icon;
                 return (
-                  <div key={item.label} className="rounded-xl border border-edge-light p-4 text-center hover:border-brand-500/20 transition-all">
-                    <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center mx-auto mb-3`}>
+                  <div key={item.label} className="rounded-xl border border-gray-200/60 dark:border-gray-600/30 p-4 text-center hover:shadow-md transition-all duration-200 bg-white/50 dark:bg-gray-700/30">
+                    <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center mx-auto mb-3 shadow-md`}>
                       <ItemIcon className="w-5 h-5 text-white" />
                     </div>
-                    <p className="text-2xl font-bold text-foreground">{item.count}</p>
-                    <p className="text-xs text-muted mt-0.5">{item.label}</p>
-                    <p className="text-xs font-semibold text-foreground mt-1">₹{item.amount.toLocaleString("en-IN")}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{item.count}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.label}</p>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white mt-1">₹{item.amount.toLocaleString("en-IN")}</p>
                   </div>
                 );
               })}
@@ -1254,22 +1324,22 @@ function AdminDashboard() {
           </WidgetCard>
 
           {/* PURCHASES */}
-          <WidgetCard title="Purchases" icon={ShoppingCart} dateRange={purchasesDateRange} onDateChange={setPurchasesDateRange} customFrom={cd("purchases").from} customTo={cd("purchases").to} onCustomChange={(f, t) => setCd("purchases", f, t)}>
+          <WidgetCard title="Purchases" icon={ShoppingCart} color="#f97316" dateRange={purchasesDateRange} onDateChange={setPurchasesDateRange} customFrom={cd("purchases").from} customTo={cd("purchases").to} onCustomChange={(f, t) => setCd("purchases", f, t)}>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { label: "Part Purchases", count: purchasesSummary.purchases.count, amount: purchasesSummary.purchases.amount, color: "bg-orange-500", icon: Truck },
-                { label: "Expenses", count: purchasesSummary.expenses.count, amount: purchasesSummary.expenses.amount, color: "bg-red-500", icon: Tag },
+                { label: "Expenses", count: purchasesSummary.expenses.count, amount: purchasesSummary.expenses.amount, color: "bg-rose-500", icon: Tag },
                 { label: "Total Outflow", count: purchasesSummary.purchases.count + purchasesSummary.expenses.count, amount: purchasesSummary.total, color: "bg-gray-600", icon: CreditCard },
               ].map((item) => {
                 const ItemIcon = item.icon;
                 return (
-                  <div key={item.label} className="rounded-xl border border-edge-light p-4 text-center hover:border-brand-500/20 transition-all">
-                    <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center mx-auto mb-3`}>
+                  <div key={item.label} className="rounded-xl border border-gray-200/60 dark:border-gray-600/30 p-4 text-center hover:shadow-md transition-all duration-200 bg-white/50 dark:bg-gray-700/30">
+                    <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center mx-auto mb-3 shadow-md`}>
                       <ItemIcon className="w-5 h-5 text-white" />
                     </div>
-                    <p className="text-2xl font-bold text-foreground">{item.count}</p>
-                    <p className="text-xs text-muted mt-0.5">{item.label}</p>
-                    <p className="text-xs font-semibold text-foreground mt-1">₹{item.amount.toLocaleString("en-IN")}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{item.count}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.label}</p>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-white mt-1">₹{item.amount.toLocaleString("en-IN")}</p>
                   </div>
                 );
               })}
@@ -1280,14 +1350,14 @@ function AdminDashboard() {
 
       {/* ═══ Revenue & Orders Trend ═══ */}
       {canViewFinancial("DASHBOARD") && (
-        <WidgetCard title="Revenue vs Expenses" icon={BarChart3} dateRange={revenueDateRange} onDateChange={setRevenueDateRange} customFrom={cd("revenue").from} customTo={cd("revenue").to} onCustomChange={(f, t) => setCd("revenue", f, t)}>
+        <WidgetCard title="Revenue vs Expenses" icon={BarChart3} color="#6366f1" dateRange={revenueDateRange} onDateChange={setRevenueDateRange} customFrom={cd("revenue").from} customTo={cd("revenue").to} onCustomChange={(f, t) => setCd("revenue", f, t)}>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyRevenueData}>
                 <defs>
                   <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#dc2626" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#dc2626" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#d97706" stopOpacity={0.3} />
@@ -1298,7 +1368,7 @@ function AdminDashboard() {
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#98a2b3" }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#98a2b3" }} tickFormatter={(v: number) => v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`} />
                 <Tooltip content={<CurrencyTooltip />} />
-                <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#dc2626" strokeWidth={2.5} fill="url(#revGrad)" />
+                <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#6366f1" strokeWidth={2.5} fill="url(#revGrad)" />
                 <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#d97706" strokeWidth={2} fill="url(#expGrad)" />
                 <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} />
               </AreaChart>
@@ -1310,7 +1380,7 @@ function AdminDashboard() {
       {/* ═══ Service & Parts Analytics ═══ */}
       {canViewFinancial("DASHBOARD") && (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        <WidgetCard title="Service vs Parts Revenue" icon={Wrench} dateRange={servicePartsDateRange} onDateChange={setServicePartsDateRange} customFrom={cd("serviceParts").from} customTo={cd("serviceParts").to} onCustomChange={(f, t) => setCd("serviceParts", f, t)}>
+        <WidgetCard title="Service vs Parts Revenue" icon={Wrench} color="#14b8a6" dateRange={servicePartsDateRange} onDateChange={setServicePartsDateRange} customFrom={cd("serviceParts").from} customTo={cd("serviceParts").to} onCustomChange={(f, t) => setCd("serviceParts", f, t)}>
           <div className="h-64 flex items-center justify-center">
             {serviceVsPartsData.length === 0 ? (
               <p className="text-sm text-muted">No data yet</p>
@@ -1318,7 +1388,7 @@ function AdminDashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={serviceVsPartsData} innerRadius={60} outerRadius={90} paddingAngle={4} dataKey="value" stroke="none">
-                    <Cell fill="#dc2626" />
+                    <Cell fill="#6366f1" />
                     <Cell fill="#2563eb" />
                   </Pie>
                   <Tooltip formatter={(value) => [`₹${Number(value).toLocaleString("en-IN")}`, ""]} />
@@ -1328,11 +1398,11 @@ function AdminDashboard() {
             )}
           </div>
           {serviceVsPartsData.length > 0 && (
-            <InlineLegend items={serviceVsPartsData.map((d, i) => ({ name: d.name, color: i === 0 ? "#dc2626" : "#2563eb", value: `₹${d.value.toLocaleString("en-IN")}` }))} />
+            <InlineLegend items={serviceVsPartsData.map((d, i) => ({ name: d.name, color: i === 0 ? "#6366f1" : "#2563eb", value: `₹${d.value.toLocaleString("en-IN")}` }))} />
           )}
         </WidgetCard>
 
-        <WidgetCard title="Top Services by Revenue" icon={Wrench} dateRange={servicePartsDateRange} onDateChange={setServicePartsDateRange} customFrom={cd("serviceParts").from} customTo={cd("serviceParts").to} onCustomChange={(f, t) => setCd("serviceParts", f, t)}>
+        <WidgetCard title="Top Services by Revenue" icon={Wrench} color="#ec4899" dateRange={servicePartsDateRange} onDateChange={setServicePartsDateRange} customFrom={cd("serviceParts").from} customTo={cd("serviceParts").to} onCustomChange={(f, t) => setCd("serviceParts", f, t)}>
           <div className="h-64">
             {topServicesData.length === 0 ? (
               <div className="flex items-center justify-center h-full"><p className="text-sm text-muted">No service data</p></div>
@@ -1343,7 +1413,7 @@ function AdminDashboard() {
                   <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#98a2b3" }} tickFormatter={(v: number) => v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`} />
                   <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#98a2b3" }} width={130} />
                   <Tooltip content={<CurrencyTooltip />} />
-                  <Bar dataKey="revenue" name="Revenue" fill="#dc2626" radius={[0, 6, 6, 0]} barSize={18} />
+                  <Bar dataKey="revenue" name="Revenue" fill="#6366f1" radius={[0, 6, 6, 0]} barSize={18} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -1354,7 +1424,7 @@ function AdminDashboard() {
 
       {/* ═══ Inventory & Expenses ═══ */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        <WidgetCard title="Parts Stock by Category" icon={Package} dateRange={inventoryDateRange} onDateChange={setInventoryDateRange} customFrom={cd("inventory").from} customTo={cd("inventory").to} onCustomChange={(f, t) => setCd("inventory", f, t)}>
+        <WidgetCard title="Parts Stock by Category" icon={Package} color="#3b82f6" dateRange={inventoryDateRange} onDateChange={setInventoryDateRange} customFrom={cd("inventory").from} customTo={cd("inventory").to} onCustomChange={(f, t) => setCd("inventory", f, t)}>
           <div className="h-64">
             {partsCategoryData.length === 0 ? (
               <div className="flex items-center justify-center h-full"><p className="text-sm text-muted">No inventory data</p></div>
@@ -1373,7 +1443,7 @@ function AdminDashboard() {
         </WidgetCard>
 
         {canViewFinancial("DASHBOARD") && (
-          <WidgetCard title="Expenses by Category" icon={Tag} dateRange={inventoryDateRange} onDateChange={setInventoryDateRange} customFrom={cd("inventory").from} customTo={cd("inventory").to} onCustomChange={(f, t) => setCd("inventory", f, t)}>
+          <WidgetCard title="Expenses by Category" icon={Tag} color="#f59e0b" dateRange={inventoryDateRange} onDateChange={setInventoryDateRange} customFrom={cd("inventory").from} customTo={cd("inventory").to} onCustomChange={(f, t) => setCd("inventory", f, t)}>
             <div className="h-64">
               {expenseByCategoryData.length === 0 ? (
                 <div className="flex items-center justify-center h-full"><p className="text-sm text-muted">No expenses recorded</p></div>
@@ -1395,13 +1465,14 @@ function AdminDashboard() {
 
       {/* ═══ Low Stock Alert Table ═══ */}
       {lowStockParts.length > 0 && (
-        <div className="glass-card overflow-hidden">
-          <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-edge-light">
-            <div className="w-8 h-8 rounded-lg bg-error-500/10 flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4 text-error-500" />
+        <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800/90 hover:shadow-lg transition-all duration-300" style={{ boxShadow: "0 6px 28px -4px rgba(239,68,68,0.22), 0 2px 10px rgba(0,0,0,0.05)", border: "1px solid transparent", backgroundImage: "linear-gradient(white, white), linear-gradient(135deg, rgba(239,68,68,0.4), rgba(248,113,113,0.2) 40%, rgba(245,158,11,0.15) 60%, rgba(239,68,68,0.3))", backgroundOrigin: "border-box", backgroundClip: "padding-box, border-box" }}>
+          <div className="absolute -top-10 -left-10 w-44 h-44" style={{ background: "radial-gradient(circle, rgba(239,68,68,0.15), rgba(239,68,68,0.05) 40%, transparent 70%)" }} />
+          <div className="relative z-10 flex items-center gap-2.5 px-5 py-3.5 border-b border-gray-100 dark:border-gray-700/50">
+            <div className="p-2 rounded-xl" style={{ background: "#ef4444", boxShadow: "0 4px 12px rgba(239,68,68,0.45)" }}>
+              <AlertTriangle className="w-4 h-4 text-white" />
             </div>
-            <h3 className="text-sm font-semibold text-foreground">Low Stock Alerts</h3>
-            <span className="text-xs font-bold text-error-500 bg-error-500/10 px-2 py-0.5 rounded-full">{lowStockParts.length}</span>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Low Stock Alerts</h3>
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full" style={{ color: "#ef4444", backgroundColor: "rgba(239,68,68,0.1)" }}>{lowStockParts.length}</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

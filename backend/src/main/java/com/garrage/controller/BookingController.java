@@ -52,6 +52,7 @@ public class BookingController {
 
     @GetMapping("/api/admin/bookings")
     public ResponseEntity<ApiResponse<List<Booking>>> getBookingsForGarage() {
+        PermissionChecker.require("APPOINTMENTS:VIEW");
         List<Booking> bookings = bookingService.getBookingsForGarage(TenantContext.getGarageId());
         return ResponseEntity.ok(ApiResponse.ok(bookings));
     }

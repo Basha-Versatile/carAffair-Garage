@@ -30,6 +30,7 @@ public class PartController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Part>>> getParts() {
+        PermissionChecker.require("INVENTORY:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/parts for garage {}", garageId);
         List<Part> parts = partService.getParts(garageId);
@@ -38,6 +39,7 @@ public class PartController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Part>> getPartById(@PathVariable String id) {
+        PermissionChecker.require("INVENTORY:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/parts/{} for garage {}", id, garageId);
         Part part = partService.getPartById(id, garageId);
@@ -66,6 +68,7 @@ public class PartController {
 
     @GetMapping("/low-stock")
     public ResponseEntity<ApiResponse<List<Part>>> getLowStockParts() {
+        PermissionChecker.require("INVENTORY:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/parts/low-stock for garage {}", garageId);
         List<Part> parts = partService.getLowStockParts(garageId);

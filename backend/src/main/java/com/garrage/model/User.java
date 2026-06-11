@@ -45,6 +45,9 @@ public class User {
     /** Reference to GarageRole.id. Only used for garage_staff. */
     private String garageRoleId;
 
+    /** Actual role name from GarageRole, e.g. "General Manager", "Service Advisor". Only for garage_staff. */
+    private String roleName;
+
     @JsonProperty("isActive")
     @Builder.Default
     private boolean isActive = true;

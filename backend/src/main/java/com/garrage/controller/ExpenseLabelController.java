@@ -23,6 +23,7 @@ public class ExpenseLabelController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ExpenseLabel>>> getLabels() {
+        PermissionChecker.require("ACCOUNTS:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/expense-labels for garage {}", garageId);
         List<ExpenseLabel> labels = expenseLabelRepository.findByGarageIdOrderByCreatedAtDesc(garageId);

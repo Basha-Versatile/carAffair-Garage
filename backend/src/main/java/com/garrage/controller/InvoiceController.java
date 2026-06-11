@@ -34,6 +34,7 @@ public class InvoiceController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Invoice>>> getInvoices() {
+        PermissionChecker.require("INVOICES:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/invoices for garage {}", garageId);
         List<Invoice> invoices = invoiceService.getInvoices(garageId);
@@ -51,6 +52,7 @@ public class InvoiceController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Invoice>> getInvoiceById(@PathVariable String id) {
+        PermissionChecker.require("INVOICES:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/invoices/{} for garage {}", id, garageId);
         Invoice invoice = invoiceService.getInvoiceById(id, garageId);
@@ -71,6 +73,7 @@ public class InvoiceController {
 
     @GetMapping("/by-order/{orderId}")
     public ResponseEntity<ApiResponse<Invoice>> getInvoiceByOrder(@PathVariable String orderId) {
+        PermissionChecker.require("INVOICES:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/invoices/by-order/{} for garage {}", orderId, garageId);
         Invoice invoice = invoiceService.getInvoiceByOrderId(orderId, garageId);
@@ -79,6 +82,7 @@ public class InvoiceController {
 
     @GetMapping("/{id}/pdf")
     public ResponseEntity<byte[]> downloadInvoicePdf(@PathVariable String id) {
+        PermissionChecker.require("INVOICES:VIEW");
         String garageId = TenantContext.getGarageId();
         log.info("GET /api/invoices/{}/pdf for garage {}", id, garageId);
         Invoice invoice = invoiceService.getInvoiceById(id, garageId);
